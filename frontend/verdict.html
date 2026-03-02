@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalScan — Your Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #05080f;
+  --bg2:     #090d18;
+  --surface: #0e1420;
+  --surface2:#131a27;
+  --border:  #1a2436;
+  --border2: #223048;
+  --text:    #c5d8f0;
+  --muted:   #3d5a7a;
+  --dim:     #7a9ab8;
+  --white:   #e8f3ff;
+  --blue:    #3b9eff;
+  --cyan:    #22d3ee;
+  --green:   #34d399;
+  --yellow:  #f59e0b;
+  --orange:  #fb923c;
+  --red:     #f43f5e;
+  --purple:  #a78bfa;
+  --grad:    linear-gradient(135deg, #3b9eff, #22d3ee);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cabinet Grotesk', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .4;
+}
+
+.orb { position: fixed; border-radius: 50%; filter: blur(130px); pointer-events: none; z-index: 0; }
+.orb1 { width: 600px; height: 600px; background: rgba(59,158,255,.05); top: -100px; left: -200px; }
+.orb2 { width: 500px; height: 500px; background: rgba(34,211,238,.04); bottom: -100px; right: -100px; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 60px;
+  background: rgba(5,8,15,.88); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-mark {
+  width: 28px; height: 28px; background: var(--grad);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+}
+.nav-logo-mark svg { width: 16px; height: 16px; }
+.nav-logo-text { font-size: 15px; font-weight: 800; color: var(--white); letter-spacing: -.02em; }
+.nav-meta {
+  font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+}
+
+/* ── PAGE ── */
+main {
+  position: relative; z-index: 1;
+  max-width: 640px; margin: 0 auto;
+  padding: 88px 24px 80px;
+}
+
+/* ── VERDICT HEADER ── */
+.verdict-header {
+  margin-bottom: 32px;
+  animation: fadeUp .5s ease both;
+}
+
+.verdict-status-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.status-badge.warn {
+  background: rgba(251,146,60,.1);
+  border: 1px solid rgba(251,146,60,.25);
+  color: var(--orange);
+}
+.status-badge.warn::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.data-meta {
+  font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+}
+
+.verdict-headline {
+  font-size: clamp(26px, 5vw, 36px);
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -.03em;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.verdict-headline em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.verdict-summary {
+  font-size: 15px;
+  color: var(--dim);
+  line-height: 1.7;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--orange);
+  border-radius: 0 10px 10px 0;
+}
+.verdict-summary strong { color: var(--text); font-weight: 600; }
+
+/* ── DATA CONTEXT ── */
+.data-context {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+  animation: fadeUp .5s .1s ease both;
+}
+
+.dc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.dc-val {
+  font-size: 18px; font-weight: 800;
+  color: var(--white); letter-spacing: -.02em;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 2px;
+}
+.dc-label {
+  font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 14px;
+}
+
+/* ── FINDING CARDS (free) ── */
+.findings-free {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+  animation: fadeUp .5s .2s ease both;
+}
+
+.finding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: border-color .2s, background .2s;
+}
+.finding-card:hover {
+  border-color: var(--border2);
+  background: var(--surface2);
+}
+
+.finding-card.critical { border-left: 3px solid var(--red); }
+.finding-card.elevated { border-left: 3px solid var(--orange); }
+.finding-card.moderate { border-left: 3px solid var(--yellow); }
+.finding-card.good     { border-left: 3px solid var(--green); }
+
+.fc-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fc-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
+
+.fc-icon {
+  width: 36px; height: 36px; min-width: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.finding-card.critical .fc-icon { background: rgba(244,63,94,.1); }
+.finding-card.elevated .fc-icon { background: rgba(251,146,60,.1); }
+.finding-card.moderate .fc-icon { background: rgba(245,158,11,.1); }
+.finding-card.good     .fc-icon { background: rgba(52,211,153,.1); }
+.fc-icon svg { width: 18px; height: 18px; }
+
+.fc-title-wrap {}
+.fc-title {
+  font-size: 15px; font-weight: 800;
+  color: var(--white); letter-spacing: -.01em;
+  margin-bottom: 3px;
+}
+
+.severity-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.severity-pill.critical { background: rgba(244,63,94,.12); color: var(--red); }
+.severity-pill.elevated { background: rgba(251,146,60,.12); color: var(--orange); }
+.severity-pill.moderate { background: rgba(245,158,11,.12); color: var(--yellow); }
+.severity-pill.good     { background: rgba(52,211,153,.12); color: var(--green); }
+
+.fc-stat {
+  text-align: right;
+  flex-shrink: 0;
+}
+.fc-stat-val {
+  font-size: 22px; font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -.03em; line-height: 1;
+  margin-bottom: 2px;
+}
+.finding-card.critical .fc-stat-val { color: var(--red); }
+.finding-card.elevated .fc-stat-val { color: var(--orange); }
+.finding-card.moderate .fc-stat-val { color: var(--yellow); }
+.finding-card.good     .fc-stat-val { color: var(--green); }
+.fc-stat-unit {
+  font-size: 10px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+}
+
+.fc-desc {
+  font-size: 13px; color: var(--dim);
+  line-height: 1.6; margin-bottom: 12px;
+}
+.fc-desc strong { color: var(--text); font-weight: 600; }
+
+.fc-source {
+  font-size: 10px; font-family: 'JetBrains Mono', monospace;
+  color: var(--muted); letter-spacing: .04em;
+}
+
+/* ── PAYWALL SECTION ── */
+.paywall-wrap {
+  position: relative;
+  margin-top: 4px;
+  margin-bottom: 32px;
+  animation: fadeUp .5s .3s ease both;
+}
+
+.findings-locked {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paywall-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+  z-index: 10;
+  padding: 24px;
+}
+
+.paywall-card {
+  background: rgba(9,13,24,.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 28px 32px;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+
+.paywall-lock {
+  width: 44px; height: 44px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.paywall-lock svg { width: 20px; height: 20px; }
+
+.paywall-count {
+  font-size: 13px; font-weight: 700;
+  color: var(--dim); margin-bottom: 6px;
+}
+.paywall-count span {
+  color: var(--white);
+  font-size: 28px; font-weight: 900;
+  letter-spacing: -.03em;
+  display: block;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.paywall-desc {
+  font-size: 13px; color: var(--muted);
+  line-height: 1.6; margin-bottom: 20px;
+}
+.paywall-desc strong { color: var(--dim); font-weight: 600; }
+
+.paywall-features {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 22px; text-align: left;
+}
+.pf-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--dim);
+}
+.pf-item svg { width: 14px; height: 14px; color: var(--green); flex-shrink: 0; }
+
+.btn-unlock {
+  width: 100%;
+  padding: 15px;
+  background: var(--grad);
+  border: none; border-radius: 12px;
+  font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 15px; font-weight: 800;
+  color: #fff; cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  letter-spacing: -.01em;
+  position: relative; overflow: hidden;
+  margin-bottom: 10px;
+}
+.btn-unlock::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,.1); opacity: 0; transition: opacity .2s;
+}
+.btn-unlock:hover::after { opacity: 1; }
+.btn-unlock:active { transform: scale(.99); }
+
+.btn-unlock-inner {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 8px;
+}
+.btn-unlock-left { display: flex; align-items: center; gap: 8px; }
+.btn-unlock-left svg { width: 16px; height: 16px; }
+.btn-price {
+  font-size: 14px; font-weight: 900;
+  background: rgba(255,255,255,.2);
+  border-radius: 6px; padding: 2px 8px;
+}
+
+.paywall-guarantee {
+  font-size: 11px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── DOCTOR LETTER TEASER ── */
+.doctor-teaser {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex; gap: 16px; align-items: flex-start;
+  margin-bottom: 32px;
+  animation: fadeUp .5s .4s ease both;
+}
+.doctor-icon {
+  width: 40px; height: 40px; min-width: 40px;
+  background: rgba(167,139,250,.08);
+  border: 1px solid rgba(167,139,250,.2);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.doctor-icon svg { width: 20px; height: 20px; }
+.doctor-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--purple);
+  font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;
+}
+.doctor-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--white); margin-bottom: 4px;
+}
+.doctor-desc {
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+.doctor-badge {
+  margin-left: auto; flex-shrink: 0;
+  background: rgba(167,139,250,.1);
+  border: 1px solid rgba(167,139,250,.2);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 11px; font-weight: 700;
+  color: var(--purple); font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap; align-self: center;
+}
+
+/* ── DISCLAIMER ── */
+.disclaimer {
+  font-size: 11px; color: var(--muted);
+  line-height: 1.6; text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  animation: fadeUp .5s .5s ease both;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  nav { padding: 0 20px; }
+  main { padding: 80px 16px 60px; }
+  .data-context { grid-template-columns: repeat(2, 1fr); }
+  .fc-stat-val { font-size: 18px; }
+  .paywall-card { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 16 16" fill="none">
+        <path d="M8 2C8 2 4 5.5 4 9a4 4 0 0 0 8 0C12 5.5 8 2 8 2Z" fill="white" opacity=".9"/>
+        <path d="M5.5 9.5C5.5 8 6.5 7 8 7" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+    </div>
+    <span class="nav-logo-text">VitalScan</span>
+  </a>
+  <div class="nav-meta" id="navMeta">Apr 2023 – Feb 2026</div>
+</nav>
+
+<main>
+
+  <!-- Verdict header -->
+  <div class="verdict-header">
+    <div class="verdict-status-row">
+      <div class="status-badge warn">Needs attention</div>
+      <div class="data-meta" id="dataMeta">16 months · 402,153 records</div>
+    </div>
+    <h1 class="verdict-headline">Your data flagged <em>2 things</em> that need attention</h1>
+    <div class="verdict-summary" id="verdictSummary">
+      Your cardiovascular baseline is <strong>strong</strong> — resting HR of 62 bpm is excellent for your age. However, your SpO₂ has dropped below 95% <strong>over 400 times</strong> in the last 6 months, and your HRV has declined 16% since December. Both patterns warrant a conversation with your doctor.
+    </div>
+  </div>
+
+  <!-- Data context -->
+  <div class="data-context" id="dataContext">
+    <div class="dc-card">
+      <div class="dc-val">16</div>
+      <div class="dc-label">Months</div>
+    </div>
+    <div class="dc-card">
+      <div class="dc-val">72</div>
+      <div class="dc-label">HRV days</div>
+    </div>
+    <div class="dc-card">
+      <div class="dc-val">451</div>
+      <div class="dc-label">Sleep nights</div>
+    </div>
+    <div class="dc-card">
+      <div class="dc-val">3.4M</div>
+      <div class="dc-label">HR readings</div>
+    </div>
+  </div>
+
+  <!-- Free findings -->
+  <div class="section-label">Top findings — free preview</div>
+  <div class="findings-free" id="findingsFree">
+
+    <!-- Finding 1: SpO2 -->
+    <div class="finding-card critical">
+      <div class="fc-top">
+        <div class="fc-left">
+          <div class="fc-icon">
+            <svg viewBox="0 0 18 18" fill="none">
+              <path d="M9 2C9 2 4 6 4 10a5 5 0 0 0 10 0C14 6 9 2 9 2Z" stroke="#f43f5e" stroke-width="1.4" stroke-linejoin="round"/>
+              <path d="M9 7v3M9 11.5v.5" stroke="#f43f5e" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="fc-title-wrap">
+            <div class="fc-title">Blood oxygen dropping during sleep</div>
+            <div class="severity-pill critical">Critical</div>
+          </div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val">449</div>
+          <div class="fc-stat-unit">episodes &lt;95%</div>
+        </div>
+      </div>
+      <div class="fc-desc">
+        Your SpO₂ has dropped below 95% <strong>449 times in 6 months</strong>, with readings as low as <strong>80%</strong> in September. The pattern peaks between midnight and 4 AM, and has been getting worse month over month (34 episodes in Sep → 113 in Jan). This is a persistent, worsening signal that matches the clinical profile of <strong>obstructive sleep apnea</strong>.
+      </div>
+      <div class="fc-source">Source: AASM sleep apnea screening · SpO₂ &lt;88% threshold</div>
+    </div>
+
+    <!-- Finding 2: HRV decline -->
+    <div class="finding-card elevated">
+      <div class="fc-top">
+        <div class="fc-left">
+          <div class="fc-icon">
+            <svg viewBox="0 0 18 18" fill="none">
+              <path d="M2 9h3l2-5 3 10 2-7 2 2h2" stroke="#fb923c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="fc-title-wrap">
+            <div class="fc-title">HRV declining over 2 months</div>
+            <div class="severity-pill elevated">Elevated</div>
+          </div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val">−16%</div>
+          <div class="fc-stat-unit">Dec → Feb</div>
+        </div>
+      </div>
+      <div class="fc-desc">
+        Your morning HRV has dropped from <strong>66.5ms in December</strong> to <strong>56.1ms in February</strong> — a 16% decline in 8 weeks. For a 25-year-old male, the expected range is 60–80ms (Nunan et al. 2010). A sustained downward trend like this typically signals <strong>accumulated stress, poor recovery, or an underlying condition</strong> putting strain on your autonomic nervous system.
+      </div>
+      <div class="fc-source">Source: Shaffer & Ginsberg 2017 · Nunan et al. 2010 · Morning SDNN (2–9 AM)</div>
+    </div>
+
+    <!-- Finding 3: Sleep inconsistency -->
+    <div class="finding-card moderate">
+      <div class="fc-top">
+        <div class="fc-left">
+          <div class="fc-icon">
+            <svg viewBox="0 0 18 18" fill="none">
+              <path d="M9 3C6 3 4 5.7 4 9s2 6 5 6 5-2.7 5-6-2-6-5-6Z" stroke="#f59e0b" stroke-width="1.3"/>
+              <path d="M9 6v3l2 2" stroke="#f59e0b" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="fc-title-wrap">
+            <div class="fc-title">Inconsistent sleep schedule</div>
+            <div class="severity-pill moderate">Moderate</div>
+          </div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val">4.4h</div>
+          <div class="fc-stat-unit">lowest recent night</div>
+        </div>
+      </div>
+      <div class="fc-desc">
+        Your recent sleep ranges from <strong>4.4 to 8.5 hours</strong> night to night — a 4-hour swing that disrupts your circadian rhythm. While your sleep architecture is healthy when you do sleep (89 min deep, 108 min REM in February), the <strong>inconsistent schedule compounds the recovery deficit</strong> seen in your HRV trend. The CDC and AAS recommend 7+ hours on a consistent schedule.
+      </div>
+      <div class="fc-source">Source: CDC adult sleep recommendation · AAS guidelines</div>
+    </div>
+
+  </div>
+
+  <!-- Paywall -->
+  <div class="paywall-wrap">
+    <div class="findings-locked">
+
+      <!-- Blurred card 1 -->
+      <div class="finding-card good">
+        <div class="fc-top">
+          <div class="fc-left">
+            <div class="fc-icon">
+              <svg viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="6" stroke="#34d399" stroke-width="1.3"/>
+                <path d="M6 9l2 2 4-4" stroke="#34d399" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="fc-title-wrap">
+              <div class="fc-title">Cardiovascular fitness</div>
+              <div class="severity-pill good">Good</div>
+            </div>
+          </div>
+          <div class="fc-stat">
+            <div class="fc-stat-val">62</div>
+            <div class="fc-stat-unit">avg RHR bpm</div>
+          </div>
+        </div>
+        <div class="fc-desc">Your resting heart rate of 62 bpm is in the athletic range for your age, indicating strong cardiovascular fitness.</div>
+        <div class="fc-source">Source: Framingham Heart Study</div>
+      </div>
+
+      <!-- Blurred card 2 -->
+      <div class="finding-card moderate">
+        <div class="fc-top">
+          <div class="fc-left">
+            <div class="fc-icon">
+              <svg viewBox="0 0 18 18" fill="none">
+                <path d="M4 14l4-8 4 8" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5.5 11h5" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="fc-title-wrap">
+              <div class="fc-title">Activity trend analysis</div>
+              <div class="severity-pill moderate">Moderate</div>
+            </div>
+          </div>
+          <div class="fc-stat">
+            <div class="fc-stat-val">440K</div>
+            <div class="fc-stat-unit">peak month steps</div>
+          </div>
+        </div>
+        <div class="fc-desc">Your step count peaked in November but has declined significantly. Full breakdown inside.</div>
+        <div class="fc-source">Source: WHO physical activity guidelines</div>
+      </div>
+
+      <!-- Blurred card 3 -->
+      <div class="finding-card elevated">
+        <div class="fc-top">
+          <div class="fc-left">
+            <div class="fc-icon">
+              <svg viewBox="0 0 18 18" fill="none">
+                <rect x="3" y="4" width="12" height="10" rx="2" stroke="#fb923c" stroke-width="1.3"/>
+                <path d="M3 8h12" stroke="#fb923c" stroke-width="1.3"/>
+                <path d="M7 4V3M11 4V3" stroke="#fb923c" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="fc-title-wrap">
+              <div class="fc-title">Body composition trend</div>
+              <div class="severity-pill elevated">Elevated</div>
+            </div>
+          </div>
+          <div class="fc-stat">
+            <div class="fc-stat-val">21.2</div>
+            <div class="fc-stat-unit">BMI</div>
+          </div>
+        </div>
+        <div class="fc-desc">Weight and body composition trends over 3 years with trajectory analysis.</div>
+        <div class="fc-source">Source: WHO BMI classification</div>
+      </div>
+
+    </div>
+
+    <!-- Paywall overlay — temporarily hidden -->
+    <div class="paywall-overlay" style="display:none">
+      <div class="paywall-card">
+        <div class="paywall-lock">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="4" y="9" width="12" height="9" rx="2" stroke="#7a9ab8" stroke-width="1.4"/>
+            <path d="M7 9V7a3 3 0 0 1 6 0v2" stroke="#7a9ab8" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="paywall-count">
+          <span>3 more findings</span>
+          plus your full report
+        </div>
+        <div class="paywall-desc">
+          See your complete health picture — every metric, every trend, and a <strong>personalised action plan</strong> you can bring to your doctor.
+        </div>
+        <div class="paywall-features">
+          <div class="pf-item">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            All 6 findings with full clinical detail
+          </div>
+          <div class="pf-item">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Interactive charts across every metric
+          </div>
+          <div class="pf-item">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Prioritised action plan
+          </div>
+          <div class="pf-item">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            PDF export + doctor letter
+          </div>
+        </div>
+        <button class="btn-unlock" onclick="alert('Payment flow — coming soon.')">
+          <div class="btn-unlock-inner">
+            <div class="btn-unlock-left">
+              <svg viewBox="0 0 16 16" fill="none">
+                <rect x="3" y="8" width="10" height="7" rx="1.5" stroke="white" stroke-width="1.3"/>
+                <path d="M5.5 8V6a2.5 2.5 0 0 1 5 0v2" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              Unlock full report
+            </div>
+            <div class="btn-price">$29</div>
+          </div>
+        </button>
+        <div class="paywall-guarantee">One-time payment &nbsp;·&nbsp; No subscription &nbsp;·&nbsp; Instant access</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor letter teaser -->
+  <div class="doctor-teaser">
+    <div class="doctor-icon">
+      <svg viewBox="0 0 20 20" fill="none">
+        <rect x="4" y="2" width="12" height="16" rx="2" stroke="#a78bfa" stroke-width="1.3"/>
+        <path d="M7 7h6M7 10h6M7 13h4" stroke="#a78bfa" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div style="flex:1">
+      <div class="doctor-label">Included with full report</div>
+      <div class="doctor-title">Doctor letter</div>
+      <div class="doctor-desc">A 1–2 page clinical summary formatted for a GP appointment. Shows your data, the flagged patterns, and the relevant guidelines — so your doctor has everything they need in 60 seconds.</div>
+    </div>
+    <div class="doctor-badge">Included</div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    VitalScan detects patterns in your data using published clinical guidelines. It does not diagnose medical conditions. All findings should be discussed with a qualified healthcare provider. Data processed in memory — never stored.
+  </div>
+
+</main>
+
+</body>
+</html>

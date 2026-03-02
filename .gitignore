@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Health data — NEVER commit
+*.zip
+*.xml
+export.xml
+apple_health_export/
+output.json
+*_corrected.json
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Env
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
