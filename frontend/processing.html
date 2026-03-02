@@ -488,20 +488,24 @@ async function run() {
   let apiResult = null;
   let apiError  = null;
 
-  const formData = new FormData();
-  formData.append('file', file);
-
   function doFetch() {
     const fd = new FormData();
     fd.append('file', file, file.name || 'export.zip');
-    return fetch(API_URL, { method: 'POST', body: fd })
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000); // 90s timeout
+    return fetch(API_URL, { method: 'POST', body: fd, signal: controller.signal })
       .then(res => {
+        clearTimeout(timer);
         if (!res.ok) return res.text().then(t => { throw new Error(t || `Server error ${res.status}`); });
         return res.json();
+      })
+      .catch(err => {
+        clearTimeout(timer);
+        throw err.name === 'AbortError' ? new Error('Request timed out. Check your connection and try again.') : err;
       });
   }
 
-  // Retry once on failure (covers Railway cold-start 502s)
+  // Retry once on failure (covers cold-start / transient errors)
   doFetch()
     .catch(() => new Promise(r => setTimeout(r, 3000)).then(doFetch))
     .then(data => { apiResult = data; })
