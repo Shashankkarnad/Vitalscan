@@ -491,13 +491,21 @@ async function run() {
   const formData = new FormData();
   formData.append('file', file);
 
-  fetch(API_URL, { method: 'POST', body: formData })
-    .then(res => {
-      if (!res.ok) return res.text().then(t => { throw new Error(t || `Server error ${res.status}`); });
-      return res.json();
-    })
-    .then(data  => { apiResult = data; })
-    .catch(err  => { apiError  = err; });
+  function doFetch() {
+    const fd = new FormData();
+    fd.append('file', file, file.name || 'export.zip');
+    return fetch(API_URL, { method: 'POST', body: fd })
+      .then(res => {
+        if (!res.ok) return res.text().then(t => { throw new Error(t || `Server error ${res.status}`); });
+        return res.json();
+      });
+  }
+
+  // Retry once on failure (covers Railway cold-start 502s)
+  doFetch()
+    .catch(() => new Promise(r => setTimeout(r, 3000)).then(doFetch))
+    .then(data => { apiResult = data; })
+    .catch(err => { apiError  = err; });
 
   // 3. Run milestone animations
   let prevPct = 0;

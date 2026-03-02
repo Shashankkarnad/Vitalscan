@@ -674,6 +674,9 @@ function storeFile(file) {
   });
 }
 
+// Ping backend on page load so it's warm by the time user hits Analyze
+fetch('https://vitalscan-production.up.railway.app/health').catch(() => {});
+
 btnAnalyze.addEventListener('click', async () => {
   if (!selectedFile) return;
   btnAnalyze.disabled = true;
