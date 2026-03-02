@@ -433,11 +433,14 @@ def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
         key=lambda x: x[0]
     )
 
-    # ── Recent sleep (last 40 nights with sufficient data) ──
-    recent_dates = sorted([
-        d for d, n in sleep.items()
-        if n['asleep'] > 1 and d >= '2025-10-01'
-    ])
+    # ── Recent sleep (last ~4 months relative to latest data) ──
+    all_sleep_dates = [d for d, n in sleep.items() if n['asleep'] > 1]
+    if all_sleep_dates:
+        latest_sleep = max(all_sleep_dates)
+        cutoff = (datetime.strptime(latest_sleep, '%Y-%m-%d') - timedelta(days=120)).strftime('%Y-%m-%d')
+    else:
+        cutoff = '1970-01-01'
+    recent_dates = sorted([d for d in all_sleep_dates if d >= cutoff])
 
     recent_sleep = {
         'dates':  [d[5:] for d in recent_dates],
