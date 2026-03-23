@@ -106,6 +106,23 @@ main {
   background: var(--orange);
   animation: pulse 1.8s ease-in-out infinite;
 }
+.status-badge.critical {
+  background: rgba(244,63,94,.1);
+  border: 1px solid rgba(244,63,94,.25);
+  color: var(--red);
+}
+.status-badge.critical::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+.status-badge.good {
+  background: rgba(52,211,153,.1);
+  border: 1px solid rgba(52,211,153,.25);
+  color: var(--green);
+}
 
 .data-meta {
   font-size: 12px; font-family: 'JetBrains Mono', monospace;
@@ -213,10 +230,10 @@ main {
   display: flex; align-items: center; justify-content: center;
   margin-top: 1px;
 }
-.finding-card.critical .fc-icon { background: rgba(244,63,94,.1); }
-.finding-card.elevated .fc-icon { background: rgba(251,146,60,.1); }
-.finding-card.moderate .fc-icon { background: rgba(245,158,11,.1); }
-.finding-card.good     .fc-icon { background: rgba(52,211,153,.1); }
+.finding-card.critical .fc-icon { background: rgba(244,63,94,.1);  color: var(--red); }
+.finding-card.elevated .fc-icon { background: rgba(251,146,60,.1); color: var(--orange); }
+.finding-card.moderate .fc-icon { background: rgba(245,158,11,.1); color: var(--yellow); }
+.finding-card.good     .fc-icon { background: rgba(52,211,153,.1); color: var(--green); }
 .fc-icon svg { width: 18px; height: 18px; }
 
 .fc-title-wrap {}
@@ -476,7 +493,7 @@ main {
       <div class="status-badge warn">Needs attention</div>
       <div class="data-meta" id="dataMeta">16 months · 402,153 records</div>
     </div>
-    <h1 class="verdict-headline">Your data flagged <em>2 things</em> that need attention</h1>
+    <h1 class="verdict-headline"><span id="userName"></span>Your data flagged <em>2 things</em> that need attention</h1>
     <div class="verdict-summary" id="verdictSummary">
       Your cardiovascular baseline is <strong>strong</strong> — resting HR of 62 bpm is excellent for your age. However, your SpO₂ has dropped below 95% <strong>over 400 times</strong> in the last 6 months, and your HRV has declined 16% since December. Both patterns warrant a conversation with your doctor.
     </div>
@@ -738,5 +755,153 @@ main {
 
 </main>
 
+<script>
+(function () {
+  'use strict';
+
+  // ── Load data ──────────────────────────────────────────────────────────────
+  var DATA = null;
+  try { DATA = JSON.parse(sessionStorage.getItem('vitalscan_result')); } catch (_) {}
+  if (!DATA) { window.location.href = 'upload.html'; return; }
+
+  var PROFILE = DATA.profile  || {};
+  var MONTHS  = DATA.months   || [];
+  var FINDS   = DATA.findings || [];
+  var name    = PROFILE.name  || null;
+
+  var MNAMES = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fullMonth(m) { var p = m.split('-'); return MNAMES[+p[1]] + ' ' + p[0]; }
+  function el(id) { return document.getElementById(id); }
+
+  // ── Nav meta ───────────────────────────────────────────────────────────────
+  var navMeta = el('navMeta');
+  if (navMeta && MONTHS.length > 0) {
+    var dateRange = fullMonth(MONTHS[0]) + ' \u2013 ' + fullMonth(MONTHS[MONTHS.length - 1]);
+    navMeta.textContent = name ? name + '\u2019s report \u00b7 ' + dateRange : dateRange;
+  }
+
+  // ── Data context cards ─────────────────────────────────────────────────────
+  var hrvDays    = (DATA.hrv_dates || []).length;
+  var sleepNights = Object.keys(DATA.sleep_nights || {}).length;
+  var spo2Eps    = (DATA.spo2_low_count || []).reduce(function(a, b) { return a + b; }, 0);
+  var dcVals     = document.querySelectorAll('.dc-val');
+  var dcLabels   = document.querySelectorAll('.dc-label');
+  if (dcVals[0]) dcVals[0].textContent = MONTHS.length;
+  if (dcVals[1]) dcVals[1].textContent = hrvDays;
+  if (dcVals[2]) dcVals[2].textContent = sleepNights;
+  if (dcVals[3]) dcVals[3].textContent = spo2Eps > 0 ? spo2Eps : '--';
+  if (dcLabels[3]) dcLabels[3].textContent = 'SpO\u2082 episodes';
+
+  // ── Severity counts ────────────────────────────────────────────────────────
+  var critical = FINDS.filter(function(f) { return f.severity === 'critical'; });
+  var elevated = FINDS.filter(function(f) { return f.severity === 'elevated'; });
+  var flagged  = critical.length + elevated.length;
+
+  // ── Data meta ─────────────────────────────────────────────────────────────
+  var dataMeta = el('dataMeta');
+  if (dataMeta) dataMeta.textContent = MONTHS.length + ' months \u00b7 ' + hrvDays + ' HRV days';
+
+  // ── Status badge ──────────────────────────────────────────────────────────
+  var badge = document.querySelector('.status-badge');
+  if (badge) {
+    if (critical.length > 0)      { badge.textContent = 'Needs attention'; badge.className = 'status-badge critical'; }
+    else if (elevated.length > 0) { badge.textContent = 'Monitor closely';  badge.className = 'status-badge warn'; }
+    else                          { badge.textContent = 'Looking good';     badge.className = 'status-badge good'; }
+  }
+
+  // ── Headline ──────────────────────────────────────────────────────────────
+  var hl = document.querySelector('.verdict-headline');
+  if (hl) {
+    var prefix = name ? '<span>' + name + ', </span>' : '';
+    if (flagged > 0) {
+      hl.innerHTML = prefix + 'Your data flagged <em>' + flagged + ' thing' + (flagged !== 1 ? 's' : '') + '</em> that need' + (flagged === 1 ? 's' : '') + ' attention';
+    } else {
+      hl.innerHTML = prefix + 'Your health data <em>looks good</em>';
+    }
+  }
+
+  // ── Verdict summary ───────────────────────────────────────────────────────
+  var vs = el('verdictSummary');
+  if (vs) {
+    var topBad  = null, goodOne = null;
+    for (var i = 0; i < FINDS.length; i++) {
+      if (!topBad  && FINDS[i].severity !== 'good') topBad  = FINDS[i];
+      if (!goodOne && FINDS[i].severity === 'good') goodOne = FINDS[i];
+    }
+    var summary = '';
+    if (topBad) {
+      summary = topBad.description.replace(/<[^>]+>/g, '');
+      if (summary.length > 220) summary = summary.slice(0, 220).trimEnd() + '\u2026';
+    }
+    if (goodOne) {
+      var g = goodOne.description.replace(/<[^>]+>/g, '');
+      summary += (summary ? ' ' : '') + g.slice(0, 100).trimEnd() + '.';
+    }
+    vs.textContent = summary || 'Analysis complete. See your findings below.';
+    vs.style.borderLeftColor = critical.length > 0 ? 'var(--red)' : elevated.length > 0 ? 'var(--orange)' : 'var(--green)';
+  }
+
+  // ── Render top-3 findings dynamically ────────────────────────────────────
+  var ICONS = {
+    spo2_drops:          '<svg viewBox="0 0 18 18" fill="none"><path d="M9 2C9 2 4 6 4 10a5 5 0 0 0 10 0C14 6 9 2 9 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 7v3M9 11.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    hrv_decline:         '<svg viewBox="0 0 18 18" fill="none"><path d="M2 9h3l2-5 3 10 2-7 2 2h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    hrv_good:            '<svg viewBox="0 0 18 18" fill="none"><path d="M2 9h3l2-5 3 10 2-7 2 2h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    sleep_insufficiency: '<svg viewBox="0 0 18 18" fill="none"><path d="M9 3C6 3 4 5.7 4 9s2 6 5 6 5-2.7 5-6-2-6-5-6Z" stroke="currentColor" stroke-width="1.3"/><path d="M9 6v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    rhr_elevated:        '<svg viewBox="0 0 18 18" fill="none"><path d="M3 7.5C3 5.5 4.5 4 6.5 4c1.2 0 2.1.6 2.5 1.4C9.4 4.6 10.3 4 11.5 4 13.5 4 15 5.5 15 7.5c0 4-6 7.5-6 7.5S3 11.5 3 7.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    rhr_good:            '<svg viewBox="0 0 18 18" fill="none"><path d="M3 7.5C3 5.5 4.5 4 6.5 4c1.2 0 2.1.6 2.5 1.4C9.4 4.6 10.3 4 11.5 4 13.5 4 15 5.5 15 7.5c0 4-6 7.5-6 7.5S3 11.5 3 7.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    activity_decline:    '<svg viewBox="0 0 18 18" fill="none"><path d="M4 14l4-8 4 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    vo2_max:             '<svg viewBox="0 0 18 18" fill="none"><path d="M4 13c0-4 3-8 5-8s5 4 5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6.5 13c0-2 1.5-4 2.5-4s2.5 2 2.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".5"/></svg>',
+  };
+  var SEV_LABELS = { critical: 'Critical', elevated: 'Elevated', moderate: 'Moderate', good: 'Good' };
+  var fallbackIcon = ICONS.rhr_elevated;
+
+  var top3 = FINDS.slice(0, 3);
+  var rest  = FINDS.slice(3);
+
+  var findingsFree = el('findingsFree');
+  if (findingsFree) {
+    if (top3.length === 0) {
+      findingsFree.innerHTML = '<p style="color:var(--muted);font-size:13px">No significant findings detected.</p>';
+    } else {
+      findingsFree.innerHTML = top3.map(function(f) {
+        var icon  = ICONS[f.key] || fallbackIcon;
+        var label = SEV_LABELS[f.severity] || f.severity;
+        return '<div class="finding-card ' + f.severity + '">' +
+          '<div class="fc-top">' +
+            '<div class="fc-left">' +
+              '<div class="fc-icon">' + icon + '</div>' +
+              '<div class="fc-title-wrap">' +
+                '<div class="fc-title">' + f.title + '</div>' +
+                '<div class="severity-pill ' + f.severity + '">' + label + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="fc-stat">' +
+              '<div class="fc-stat-val">' + f.stat_value + '</div>' +
+              '<div class="fc-stat-unit">' + f.stat_unit + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fc-desc">' + f.description + '</div>' +
+          '<div class="fc-source">' + f.source + '</div>' +
+        '</div>';
+      }).join('');
+    }
+  }
+
+  // ── Paywall count ─────────────────────────────────────────────────────────
+  var pwCount = document.querySelector('.paywall-count span');
+  if (pwCount && rest.length > 0) {
+    pwCount.textContent = rest.length + ' more finding' + (rest.length !== 1 ? 's' : '');
+  }
+
+  // ── View full report link (since paywall is not active) ────────────────────
+  var disclaimer = document.querySelector('.disclaimer');
+  if (disclaimer && FINDS.length > 0) {
+    var btn = document.createElement('div');
+    btn.style.cssText = 'text-align:center;margin:28px 0 8px;';
+    btn.innerHTML = '<a href="results.html" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#3b9eff,#22d3ee);border-radius:12px;color:#fff;font-weight:800;font-size:14px;text-decoration:none;letter-spacing:-.01em;">View full report \u2192</a>';
+    disclaimer.parentNode.insertBefore(btn, disclaimer);
+  }
+})();
+</script>
 </body>
 </html>

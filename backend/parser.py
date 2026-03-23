@@ -1,6 +1,13 @@
 """
 VitalScan -- Apple Health XML Parser
-v0.3 -- Device-agnostic, profile extraction, RHR fixed
+v0.4 -- Sample size gating on all findings
+
+CHANGES IN v0.4:
+  - Sample size gating: findings suppressed when a month has too few readings
+    HRV / RHR < 5 readings → month treated as missing (None)
+    SpO2 < 10 readings → month treated as missing; low-count months excluded from drop tally
+    Sleep finding suppressed when fewer than 14 nights recorded in the window
+  - safe_mean() now accepts min_n to enforce minimum sample size
 
 CHANGES IN v0.3:
   - Device detection is now automatic (works with any wearable, not just Apple Watch)
@@ -24,7 +31,8 @@ CLINICAL THRESHOLDS (all referenced):
 """
 
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from collections import defaultdict, Counter
+import re
 from datetime import datetime, timedelta
 import statistics
 import json
@@ -42,6 +50,13 @@ _WEARABLE_KEYWORDS = {
     'polar', 'suunto', 'amazfit', 'samsung', 'fenix', 'vivosmart',
     'coros', 'withings', 'biostrap',
 }
+
+# Regex to extract a first name from Apple device source names.
+# Matches: "Vedant's iPhone", "Sarah's Apple Watch Series 9", "John's iPad".
+_NAME_FROM_SOURCE_RE = re.compile(
+    r"^(.+?)'s\s+(?:iPhone|Apple Watch|iPad)",
+    re.IGNORECASE,
+)
 
 
 def _source_priority(source_name: str) -> int:
@@ -354,11 +369,11 @@ def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
     """Compile all parsed data into dashboard-ready JSON structure."""
 
     # ── Helpers ──
-    def safe_mean(lst):
-        return round(statistics.mean(lst), 1) if lst else None
+    def safe_mean(lst, min_n=1):
+        return round(statistics.mean(lst), 1) if lst and len(lst) >= min_n else None
 
-    def safe_min(lst):
-        return round(min(lst), 1) if lst else None
+    def safe_min(lst, min_n=1):
+        return round(min(lst), 1) if lst and len(lst) >= min_n else None
 
     # ── Determine date range ──
     all_months = _get_months(raw, steps_daily, sleep)
@@ -460,11 +475,22 @@ def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
         return f"{month_names[int(p[1])]} '{p[0][2:]}"
 
     # Compile intermediate arrays for findings generation
-    rhr_avg_arr      = [safe_mean(rhr_month.get(m, [])) for m in all_months]
-    hrv_avg_arr      = [safe_mean(hrv_month.get(m, [])) for m in all_months]
-    spo2_avg_arr     = [safe_mean(spo2_month.get(m, [])) for m in all_months]
-    spo2_min_arr     = [safe_min(spo2_month.get(m, [])) for m in all_months]
-    spo2_low_arr     = [sum(1 for x in spo2_month.get(m, []) if x < 95) for m in all_months]
+    # min_n thresholds enforce a minimum sample size before a month is treated as valid.
+    # Months below threshold become None and are excluded from all findings logic.
+    _RHR_MIN_N   = 5   # need at least 5 RHR readings to trust a monthly average
+    _HRV_MIN_N   = 5   # need at least 5 morning HRV readings per month
+    _SPO2_MIN_N  = 10  # need at least 10 SpO2 readings; below this, drop counts are unreliable
+
+    rhr_avg_arr      = [safe_mean(rhr_month.get(m, []), _RHR_MIN_N) for m in all_months]
+    hrv_avg_arr      = [safe_mean(hrv_month.get(m, []), _HRV_MIN_N) for m in all_months]
+    spo2_avg_arr     = [safe_mean(spo2_month.get(m, []), _SPO2_MIN_N) for m in all_months]
+    spo2_min_arr     = [safe_min(spo2_month.get(m, []), _SPO2_MIN_N) for m in all_months]
+    # Only count sub-95% drops in months that have enough readings to be reliable
+    spo2_low_arr     = [
+        sum(1 for x in spo2_month.get(m, []) if x < 95)
+        if len(spo2_month.get(m, [])) >= _SPO2_MIN_N else 0
+        for m in all_months
+    ]
     steps_month_arr  = [round(steps_monthly.get(m, 0)) for m in all_months]
 
     findings = _generate_findings(
@@ -472,11 +498,13 @@ def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
         profile=profile,
         rhr_avg=rhr_avg_arr,
         hrv_avg=hrv_avg_arr,
+        hrv_daily=hrv_daily,
         spo2_avg_month=spo2_avg_arr,
         spo2_min_month=spo2_min_arr,
         spo2_low_count=spo2_low_arr,
         steps_month=steps_month_arr,
         recent_sleep=recent_sleep,
+        vo2_trend=vo2,
     )
 
     return {
@@ -546,7 +574,7 @@ def _extract_profile(root, raw):
     """
     from datetime import date as _date
 
-    profile = {'age': None, 'sex': None, 'height_cm': None, 'weight_kg': None, 'bmi': None}
+    profile = {'age': None, 'sex': None, 'height_cm': None, 'weight_kg': None, 'bmi': None, 'name': None}
 
     me = root.find('Me') if root is not None else None
     if me is not None:
@@ -592,13 +620,65 @@ def _extract_profile(root, raw):
         h = profile['height_cm'] / 100
         profile['bmi'] = round(profile['weight_kg'] / (h * h), 1)
 
+    # ── Name extraction ──────────────────────────────────────────────────────
+    # Scan all source names in the already-filtered raw dict (excluded sources
+    # have already been removed at collection time). Match the possessive
+    # pattern "Name's iPhone/Apple Watch/iPad" and pick the most frequent hit.
+    name_candidates: Counter = Counter()
+    for record_list in raw.values():
+        for _date_str, _val, src in record_list:
+            m = _NAME_FROM_SOURCE_RE.match(src)
+            if m:
+                candidate = m.group(1).strip()
+                if 1 <= len(candidate) <= 30:
+                    name_candidates[candidate] += 1
+
+    if name_candidates:
+        profile['name'] = name_candidates.most_common(1)[0][0]
+
     return profile
 
 
 # ── FINDINGS GENERATION ───────────────────────────────────────────────────────
 
-def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
-                       spo2_min_month, spo2_low_count, steps_month, recent_sleep):
+# ACSM VO₂ Max norms (mL/kg/min), 11th Ed. 2022
+# Structure: {sex: {age_band_upper: {category: (low, high)}}}
+_ACSM_VO2_NORMS = {
+    'male': {
+        29: {'very_poor': (0, 32), 'poor': (33, 36), 'fair': (37, 41), 'good': (42, 45), 'excellent': (46, 52), 'superior': (53, 999)},
+        39: {'very_poor': (0, 30), 'poor': (31, 34), 'fair': (35, 38), 'good': (39, 43), 'excellent': (44, 50), 'superior': (51, 999)},
+        49: {'very_poor': (0, 29), 'poor': (30, 33), 'fair': (34, 37), 'good': (38, 42), 'excellent': (43, 48), 'superior': (49, 999)},
+        59: {'very_poor': (0, 25), 'poor': (26, 30), 'fair': (31, 34), 'good': (35, 39), 'excellent': (40, 45), 'superior': (46, 999)},
+        69: {'very_poor': (0, 22), 'poor': (23, 26), 'fair': (27, 31), 'good': (32, 36), 'excellent': (37, 41), 'superior': (42, 999)},
+        999: {'very_poor': (0, 19), 'poor': (20, 23), 'fair': (24, 27), 'good': (28, 31), 'excellent': (32, 37), 'superior': (38, 999)},
+    },
+    'female': {
+        29: {'very_poor': (0, 27), 'poor': (28, 31), 'fair': (32, 35), 'good': (36, 40), 'excellent': (41, 45), 'superior': (46, 999)},
+        39: {'very_poor': (0, 26), 'poor': (27, 30), 'fair': (31, 34), 'good': (35, 38), 'excellent': (39, 44), 'superior': (45, 999)},
+        49: {'very_poor': (0, 24), 'poor': (25, 28), 'fair': (29, 32), 'good': (33, 36), 'excellent': (37, 41), 'superior': (42, 999)},
+        59: {'very_poor': (0, 20), 'poor': (21, 24), 'fair': (25, 28), 'good': (29, 32), 'excellent': (33, 37), 'superior': (38, 999)},
+        69: {'very_poor': (0, 17), 'poor': (18, 21), 'fair': (22, 25), 'good': (26, 29), 'excellent': (30, 35), 'superior': (36, 999)},
+        999: {'very_poor': (0, 15), 'poor': (16, 18), 'fair': (19, 22), 'good': (23, 26), 'excellent': (27, 31), 'superior': (32, 999)},
+    },
+}
+
+def _vo2_category(vo2_val, age, sex):
+    """Return (category_str, severity_str) for a VO₂ Max value given age and sex."""
+    sex_key = 'female' if sex == 'female' else 'male'
+    norms = _ACSM_VO2_NORMS[sex_key]
+    band = next(k for k in sorted(norms.keys()) if age <= k)
+    for cat, (lo, hi) in norms[band].items():
+        if lo <= vo2_val <= hi:
+            sev = 'good' if cat in ('good', 'excellent', 'superior') else \
+                  'moderate' if cat == 'fair' else 'elevated'
+            label = cat.replace('_', ' ').title()
+            return label, sev
+    return 'Unknown', 'moderate'
+
+
+def _generate_findings(months, profile, rhr_avg, hrv_avg, hrv_daily,
+                       spo2_avg_month, spo2_min_month, spo2_low_count,
+                       steps_month, recent_sleep, vo2_trend=None):
     """
     Apply clinical thresholds to compiled data arrays and return a ranked
     list of findings ordered by severity (critical → elevated → moderate → good).
@@ -618,7 +698,7 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
     total_low_95 = sum(c for c in spo2_low_count if c)
     min_spo2_ever = min((v for v in spo2_min_month if v is not None), default=None)
 
-    if total_low_95 >= 100:
+    if total_low_95 >= 100 or (min_spo2_ever is not None and min_spo2_ever < 88):
         spo2_severity = 'critical'
     elif total_low_95 >= 20:
         spo2_severity = 'elevated'
@@ -635,13 +715,15 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
         nonzero = [(m, c) for m, c in zip(months, spo2_low_count) if c > 0]
         if len(nonzero) >= 2 and nonzero[-1][1] > nonzero[0][1]:
             desc += (
-                f". The count has been rising month over month "
+                f". This count has been rising month over month "
                 f"({nonzero[0][1]} in {abbr_month(nonzero[0][0])} \u2192 "
                 f"{nonzero[-1][1]} at peak)"
             )
         desc += (
-            ". This pattern — especially if occurring during sleep — is "
-            "a clinical screening signal for <strong>obstructive sleep apnea</strong>."
+            ". These drops are most clinically significant during sleep, where they are "
+            "the primary screening signal for <strong>obstructive sleep apnea (OSA)</strong>. "
+            "Positional therapy \u2014 avoiding back-sleeping \u2014 reduces OSA severity "
+            "in 40\u201360% of cases and is a practical first step before a clinical test."
         )
         findings.append({
             'key': 'spo2_drops',
@@ -650,51 +732,90 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
             'stat_value': str(total_low_95),
             'stat_unit': 'episodes <95%',
             'description': desc,
-            'source': 'AASM sleep apnea screening \u00b7 SpO\u2082 <88% threshold',
+            'source': 'AASM 2023 \u00b7 SpO\u2082 <88% nadir threshold \u00b7 Nocturnal desaturation screening',
         })
 
-    # ── 2. HRV decline ───────────────────────────────────────────────────────
-    hrv_nonull = [(m, v) for m, v in zip(months, hrv_avg) if v is not None]
-    if len(hrv_nonull) >= 2:
-        recent = hrv_nonull[-3:]
-        hrv_start, hrv_end = recent[0][1], recent[-1][1]
-        pct_change = (hrv_end - hrv_start) / hrv_start * 100
+    # ── 2. HRV trend (rolling 28-day baseline vs 28-day recent) ─────────────
+    # Uses daily readings directly rather than monthly averages.
+    # Baseline: days 29–90 before the latest HRV date.
+    # Recent:   last 28 calendar days of HRV data.
+    # Both windows require ≥5 readings; otherwise no finding is generated.
+    _HRV_WINDOW_DAYS   = 28
+    _HRV_BASELINE_DAYS = 90   # baseline window start (days before latest)
+    _HRV_TREND_MIN_N   = 5    # minimum readings in each window
 
-        age = profile.get('age') or 25
-        sex = profile.get('sex') or 'male'
+    age = profile.get('age') or 25
+    sex = profile.get('sex') or 'male'
 
-        if hrv_end < 35:
-            hrv_severity = 'critical'
-        elif pct_change <= -10:
-            hrv_severity = 'elevated'
-        elif hrv_end < 50:
-            hrv_severity = 'moderate'
-        else:
-            hrv_severity = None
+    if hrv_daily:
+        latest_hrv_date = datetime.strptime(max(hrv_daily.keys()), '%Y-%m-%d')
+        recent_cutoff   = latest_hrv_date - timedelta(days=_HRV_WINDOW_DAYS)
+        baseline_cutoff = latest_hrv_date - timedelta(days=_HRV_BASELINE_DAYS)
 
-        if hrv_severity:
-            period = f"{abbr_month(recent[0][0])} \u2192 {abbr_month(recent[-1][0])}"
-            desc = (
-                f"Your morning HRV dropped from <strong>{hrv_start:.1f}ms</strong> to "
-                f"<strong>{hrv_end:.1f}ms</strong> \u2014 a {abs(pct_change):.0f}% decline. "
-                f"For a {age}-year-old {sex}, the expected range is 60\u201380ms "
-                f"(Nunan et al.\u00a02010). A sustained downward trend typically signals "
-                f"<strong>accumulated stress, poor recovery, or an underlying condition</strong> "
-                f"putting strain on your autonomic nervous system."
-            )
-            findings.append({
-                'key': 'hrv_decline',
-                'severity': hrv_severity,
-                'title': f'HRV declining',
-                'stat_value': f'{pct_change:+.0f}%',
-                'stat_unit': period,
-                'description': desc,
-                'source': 'Shaffer & Ginsberg\u00a02017 \u00b7 Nunan et al.\u00a02010 \u00b7 Morning SDNN (2\u20139\u00a0AM)',
-            })
+        recent_vals   = [v for d, v in hrv_daily.items()
+                         if datetime.strptime(d, '%Y-%m-%d') > recent_cutoff]
+        baseline_vals = [v for d, v in hrv_daily.items()
+                         if baseline_cutoff <= datetime.strptime(d, '%Y-%m-%d') <= recent_cutoff]
+
+        if len(recent_vals) >= _HRV_TREND_MIN_N and len(baseline_vals) >= _HRV_TREND_MIN_N:
+            hrv_recent   = round(statistics.mean(recent_vals), 1)
+            hrv_baseline = round(statistics.mean(baseline_vals), 1)
+            pct_change   = (hrv_recent - hrv_baseline) / hrv_baseline * 100
+
+            if hrv_recent < 35:
+                hrv_severity = 'critical'
+            elif pct_change <= -10:
+                hrv_severity = 'elevated'
+            elif hrv_recent < 50:
+                hrv_severity = 'moderate'
+            else:
+                hrv_severity = None
+
+            if hrv_severity:
+                desc = (
+                    f"Your morning HRV (measured 2\u20139\u00a0AM, the clinically validated window) "
+                    f"has averaged <strong>{hrv_recent:.1f}\u00a0ms</strong> over the past 28 days, "
+                    f"down from a 28\u2013day baseline of <strong>{hrv_baseline:.1f}\u00a0ms</strong> "
+                    f"\u2014 a {abs(pct_change):.0f}% decline "
+                    f"(based on {len(recent_vals)} recent and {len(baseline_vals)} baseline readings). "
+                    f"For a {age}-year-old {sex}, the expected range is 60\u201380\u00a0ms "
+                    f"(Nunan et al.\u00a02010). HRV begins declining 24\u201372\u00a0hours before "
+                    f"subjective symptoms of illness or burnout appear, making it an early warning signal. "
+                    f"Alcohol suppresses overnight HRV by 20\u201330% even with 1\u20132 drinks \u2014 "
+                    f"a 7-day alcohol-free period is the fastest way to test if it\u2019s a factor."
+                )
+                findings.append({
+                    'key': 'hrv_decline',
+                    'severity': hrv_severity,
+                    'title': 'HRV declining',
+                    'stat_value': f'{pct_change:+.0f}%',
+                    'stat_unit': f'28-day trend ({len(recent_vals)} readings)',
+                    'description': desc,
+                    'source': 'Shaffer & Ginsberg\u00a02017 \u00b7 Nunan et al.\u00a02010 \u00b7 Morning SDNN (2\u20139\u00a0AM) \u00b7 ESC/NASPE Task Force 1996',
+                })
+            elif hrv_recent >= 60 and pct_change >= 0:
+                desc = (
+                    f"Your morning HRV has averaged <strong>{hrv_recent:.1f}\u00a0ms</strong> "
+                    f"over the past 28 days \u2014 stable or improving from a baseline of "
+                    f"{hrv_baseline:.1f}\u00a0ms, and within the healthy 60\u201380\u00a0ms range "
+                    f"for a {age}-year-old {sex} (Nunan et al.\u00a02010). "
+                    f"Strong HRV reflects a well-balanced autonomic nervous system and good recovery capacity. "
+                    f"It is one of the best indicators that your body is handling stress and training load effectively."
+                )
+                findings.append({
+                    'key': 'hrv_good',
+                    'severity': 'good',
+                    'title': 'HRV looking healthy',
+                    'stat_value': f'{hrv_recent:.1f}',
+                    'stat_unit': f'ms SDNN (28-day avg, {len(recent_vals)} readings)',
+                    'description': desc,
+                    'source': 'Shaffer & Ginsberg\u00a02017 \u00b7 Nunan et al.\u00a02010 \u00b7 ESC/NASPE Task Force 1996',
+                })
 
     # ── 3. Sleep insufficiency ───────────────────────────────────────────────
+    _SLEEP_MIN_NIGHTS = 14  # need at least 2 weeks to call a sleep pattern
     sleep_totals = recent_sleep.get('total', []) if recent_sleep else []
-    if sleep_totals:
+    if sleep_totals and len(sleep_totals) >= _SLEEP_MIN_NIGHTS:
         n_nights = len(sleep_totals)
         n_under_7 = sum(1 for h in sleep_totals if h < 7)
         n_under_6 = sum(1 for h in sleep_totals if h < 6)
@@ -715,11 +836,17 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
                 f"were under 7 hours"
             )
             if n_under_6:
-                desc += f", with {n_under_6} nights under 6 hours"
+                desc += (
+                    f", with <strong>{n_under_6} nights under 6 hours</strong> "
+                    f"(short nights disproportionately cut REM sleep, which is concentrated "
+                    f"in the final 2 hours)"
+                )
             desc += (
                 f". Your average is {avg_sleep:.1f}\u00a0h/night. "
-                f"Chronic sleep debt compounds recovery and worsens HRV. "
-                f"The CDC and AAS recommend 7+ hours on a consistent schedule."
+                f"Chronically sleeping under 7 hours is associated with a 12% increase in "
+                f"all-cause mortality (Liu et al., <em>Sleep</em>, 2017) and compounds HRV suppression. "
+                f"A consistent <strong>wake time within 30 minutes, 7 days/week</strong>, "
+                f"is more effective than a fixed bedtime for improving sleep architecture."
             )
             findings.append({
                 'key': 'sleep_insufficiency',
@@ -728,7 +855,7 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
                 'stat_value': f'{min_sleep:.1f}h',
                 'stat_unit': 'lowest recent night',
                 'description': desc,
-                'source': 'CDC adult sleep recommendation \u00b7 AAS guidelines',
+                'source': 'CDC \u00b7 AAS guidelines \u00b7 Liu et al., Sleep, 2017 \u00b7 AASM sleep staging consensus',
             })
 
     # ── 4. RHR — elevated or good ────────────────────────────────────────────
@@ -738,10 +865,21 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
         avg_rhr = sum(recent_rhr_vals) / len(recent_rhr_vals)
 
         if avg_rhr > 70:
+            # Detect trend direction over the 3-month window
+            rhr_3m = [v for _, v in rhr_nonull[-3:]]
+            if len(rhr_3m) >= 2 and rhr_3m[-1] > rhr_3m[0] + 2:
+                trend_note = f" It has been <strong>rising</strong> over this period ({rhr_3m[0]:.0f}\u00a0\u2192\u00a0{rhr_3m[-1]:.0f}\u00a0bpm), which amplifies the signal."
+            elif len(rhr_3m) >= 2 and rhr_3m[-1] < rhr_3m[0] - 2:
+                trend_note = f" It has been <strong>declining</strong> ({rhr_3m[0]:.0f}\u00a0\u2192\u00a0{rhr_3m[-1]:.0f}\u00a0bpm) \u2014 a positive direction, keep going."
+            else:
+                trend_note = " It has been <strong>flat</strong> over this period, suggesting a stable baseline worth addressing."
             desc = (
                 f"Your resting heart rate has averaged <strong>{avg_rhr:.0f}\u00a0bpm</strong> "
-                f"over the last 3 months. The Framingham Heart Study identifies sustained "
-                f"RHR above 70\u00a0bpm as an elevated cardiovascular risk marker."
+                f"over the last 3 months.{trend_note} "
+                f"The Framingham Heart Study identifies sustained RHR above 70\u00a0bpm as an "
+                f"elevated cardiovascular risk marker. "
+                f"150\u00a0min/week of moderate aerobic exercise reduces RHR by 5\u20138\u00a0bpm "
+                f"within 8 weeks (Cornelissen & Smart, 2013)."
             )
             findings.append({
                 'key': 'rhr_elevated',
@@ -750,14 +888,17 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
                 'stat_value': f'{avg_rhr:.0f}',
                 'stat_unit': 'avg RHR bpm',
                 'description': desc,
-                'source': 'Framingham Heart Study \u00b7 Sustained RHR >70\u00a0bpm',
+                'source': 'Framingham Heart Study \u00b7 Cornelissen & Smart, JAHA 2013 \u00b7 Sustained RHR >70\u00a0bpm',
             })
         elif avg_rhr < 65:
             age = profile.get('age') or 25
             desc = (
                 f"Your resting heart rate of <strong>{avg_rhr:.0f}\u00a0bpm</strong> "
                 f"is in the athletic range for a {age}-year-old, indicating strong "
-                f"cardiovascular fitness."
+                f"cardiovascular fitness. A low RHR is strongly correlated with high VO\u2082\u00a0Max "
+                f"and is one of the most reliable markers of long-term cardiovascular health \u2014 "
+                f"the HUNT Study (n=29,000+) found each 10\u00a0bpm reduction in RHR associated "
+                f"with 18% lower cardiovascular mortality."
             )
             findings.append({
                 'key': 'rhr_good',
@@ -766,7 +907,7 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
                 'stat_value': f'{avg_rhr:.0f}',
                 'stat_unit': 'avg RHR bpm',
                 'description': desc,
-                'source': 'Framingham Heart Study',
+                'source': 'Framingham Heart Study \u00b7 HUNT Study (Nauman et al., 2011)',
             })
 
     # ── 5. Activity trend ────────────────────────────────────────────────────
@@ -780,10 +921,13 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
         if pct_from_peak <= -20:
             desc = (
                 f"Your step count peaked at <strong>{peak_steps:,}</strong> in "
-                f"{abbr_month(peak_month)} but has declined to "
+                f"{abbr_month(peak_month)} and has declined to "
                 f"<strong>{latest_steps:,}</strong> last month \u2014 "
                 f"a {abs(pct_from_peak):.0f}% drop. "
-                f"The WHO recommends 150+ minutes of moderate activity per week."
+                f"The WHO 2020 guidelines recommend 150\u2013300 minutes of moderate activity "
+                f"per week. If time is limited, concentrating activity into 1\u20132 days "
+                f"(the \u2018weekend warrior\u2019 pattern) still confers ~30% cardiovascular "
+                f"mortality reduction vs. being sedentary (O\u2019Donovan et al., 2017)."
             )
             findings.append({
                 'key': 'activity_decline',
@@ -792,8 +936,40 @@ def _generate_findings(months, profile, rhr_avg, hrv_avg, spo2_avg_month,
                 'stat_value': f'{latest_steps:,}',
                 'stat_unit': 'steps last month',
                 'description': desc,
-                'source': 'WHO physical activity guidelines \u00b7 2020',
+                'source': 'WHO Physical Activity Guidelines 2020 \u00b7 O\u2019Donovan et al., JAMA Internal Med 2017',
             })
+
+    # ── 6. VO₂ Max ───────────────────────────────────────────────────────────
+    age = profile.get('age')
+    sex = profile.get('sex')
+    if vo2_trend and len(vo2_trend) >= 3 and age and sex:
+        latest_vo2 = vo2_trend[-1][1]
+        cat_label, vo2_sev = _vo2_category(latest_vo2, age, sex)
+        if vo2_sev == 'good':
+            desc = (
+                f"Your estimated VO\u2082\u00a0Max of <strong>{latest_vo2:.1f}\u00a0mL/kg/min</strong> "
+                f"places you in the <strong>{cat_label}</strong> range for a {age}-year-old {sex} "
+                f"(ACSM 2022). VO\u2082\u00a0Max is the single strongest predictor of long-term health \u2014 "
+                f"each 3.5\u00a0mL/kg/min improvement is associated with a 13% reduction in "
+                f"cardiovascular mortality (Ross et al., Mayo Clinic Proceedings, 2016)."
+            )
+        else:
+            desc = (
+                f"Your estimated VO\u2082\u00a0Max of <strong>{latest_vo2:.1f}\u00a0mL/kg/min</strong> "
+                f"is in the <strong>{cat_label}</strong> range for a {age}-year-old {sex} "
+                f"(ACSM 2022). The good news: VO\u2082\u00a0Max responds strongly to training. "
+                f"High-intensity interval training (HIIT) produces 8\u201313% improvement in "
+                f"8\u00a0weeks. Even 150\u00a0min/week of brisk walking begins improving it within 6\u00a0weeks."
+            )
+        findings.append({
+            'key': 'vo2_max',
+            'severity': vo2_sev,
+            'title': 'Cardiorespiratory fitness (VO\u2082\u00a0Max)',
+            'stat_value': f'{latest_vo2:.1f}',
+            'stat_unit': 'mL/kg/min (est.)',
+            'description': desc,
+            'source': 'ACSM Guidelines 11th Ed 2022 \u00b7 Ross et al., Mayo Clinic Proc 2016 \u00b7 Mandsager et al., JAMA Network Open 2018',
+        })
 
     # Sort by severity
     _order = {'critical': 0, 'elevated': 1, 'moderate': 2, 'good': 3}

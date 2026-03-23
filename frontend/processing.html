@@ -540,7 +540,7 @@ async function run() {
   while (!apiResult && !apiError) {
     await delay(300);
     // Pulse the status text while waiting
-    const dots = '.'.repeat(((Date.now() / 600) | 0) % 4);
+    const dots = '.'.repeat(Math.floor(Date.now() / 600) % 4);
     progressStatus.textContent = 'Analysis complete. Building your report' + dots;
   }
 
@@ -559,7 +559,7 @@ async function run() {
 
   progressStatus.textContent = 'Done! Loading your results…';
   await delay(700);
-  window.location.href = 'results.html';
+  window.location.href = 'verdict.html';
 }
 
 window.addEventListener('load', () => setTimeout(run, 400));

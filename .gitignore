@@ -33,3 +33,9 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/
+
+# Misc
+vitascan.txt.txt

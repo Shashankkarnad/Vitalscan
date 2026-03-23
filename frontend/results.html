@@ -399,10 +399,13 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     const elevated = FINDS.filter(f => f.severity === 'elevated');
     const flagged  = critical.length + elevated.length;
 
-    // Nav meta
+    // Nav meta — include name if available
     if (MONTHS.length > 0) {
       const full = m => { const p = m.split('-'); return `${MNAMES[+p[1]]} ${p[0]}`; };
-      el('navMeta').textContent = `${full(MONTHS[0])} – ${full(MONTHS[MONTHS.length-1])}`;
+      const dateRange = `${full(MONTHS[0])} – ${full(MONTHS[MONTHS.length-1])}`;
+      el('navMeta').textContent = PROFILE.name
+        ? `${PROFILE.name}'s report · ${dateRange}`
+        : dateRange;
     }
 
     // Badge
@@ -414,12 +417,13 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     // Data meta
     el('dataMeta').textContent = `${MONTHS.length} months · ${(DATA.hrv_dates||[]).length} HRV days`;
 
-    // Headline
+    // Headline — personalise with name if available
     const hl = el('headline');
+    const namePrefix = PROFILE.name ? `${PROFILE.name}, ` : '';
     if (flagged > 0) {
-      hl.innerHTML = `Your data flagged <em>${flagged} thing${flagged !== 1 ? 's' : ''}</em> that need${flagged === 1 ? 's' : ''} attention`;
+      hl.innerHTML = `${namePrefix}your data flagged <em>${flagged} thing${flagged !== 1 ? 's' : ''}</em> that need${flagged === 1 ? 's' : ''} attention`;
     } else {
-      hl.innerHTML = `Your health data <em>looks good</em>`;
+      hl.innerHTML = `${namePrefix}your health data <em>looks good</em>`;
     }
 
     // Summary
@@ -457,6 +461,8 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     rhr_elevated:       `<svg viewBox="0 0 18 18" fill="none"><path d="M3 7.5C3 5.5 4.5 4 6.5 4c1.2 0 2.1.6 2.5 1.4C9.4 4.6 10.3 4 11.5 4 13.5 4 15 5.5 15 7.5c0 4-6 7.5-6 7.5S3 11.5 3 7.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
     rhr_good:           `<svg viewBox="0 0 18 18" fill="none"><path d="M3 7.5C3 5.5 4.5 4 6.5 4c1.2 0 2.1.6 2.5 1.4C9.4 4.6 10.3 4 11.5 4 13.5 4 15 5.5 15 7.5c0 4-6 7.5-6 7.5S3 11.5 3 7.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 8.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     activity_decline:   `<svg viewBox="0 0 18 18" fill="none"><path d="M4 14l4-8 4 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    hrv_good:           `<svg viewBox="0 0 18 18" fill="none"><path d="M2 9h3l2-5 3 10 2-7 2 2h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    vo2_max:            `<svg viewBox="0 0 18 18" fill="none"><path d="M4 13c0-4 3-8 5-8s5 4 5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6.5 13c0-2 1.5-4 2.5-4s2.5 2 2.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".5"/></svg>`,
   };
   const SEV_COLORS = { critical:'#f43f5e', elevated:'#fb923c', moderate:'#f59e0b', good:'#34d399' };
   const SEV_LABELS = { critical:'Critical', elevated:'Elevated', moderate:'Moderate', good:'Good' };
