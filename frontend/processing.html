@@ -4,32 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VitalScan — Analyzing</title>
-<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #05080f;
-  --bg2:     #090d18;
-  --surface: #0e1420;
-  --surface2:#131a27;
-  --border:  #1a2436;
-  --border2: #223048;
-  --text:    #c5d8f0;
-  --muted:   #3d5a7a;
-  --dim:     #7a9ab8;
-  --white:   #e8f3ff;
-  --blue:    #3b9eff;
-  --cyan:    #22d3ee;
-  --green:   #34d399;
-  --yellow:  #f59e0b;
-  --red:     #f43f5e;
-  --grad:    linear-gradient(135deg, #3b9eff, #22d3ee);
+  --bg:      #FAFBFC;
+  --bg2:     #F4F5F7;
+  --surface: #FFFFFF;
+  --surface2:#F8F9FA;
+  --border:  #E4E7EB;
+  --border2: #CBD2D9;
+  --text:    #1A1D23;
+  --text2:   #374151;
+  --muted:   #9AA5B4;
+  --dim:     #616E7C;
+  --white:   #FFFFFF;
+
+  --teal:    #3ABCB1;
+  --coral:   #D97B6C;
+  --violet:  #7C6FAD;
+
+  --green:   #2A9D5C;
+  --yellow:  #C4A030;
+  --orange:  #C27B2E;
+  --red:     #C4404A;
+  --purple:  #7C6FAD;
+  --blue:    #3ABCB1;
+  --cyan:    #3ABCB1;
+  --grad:    linear-gradient(135deg, #3ABCB1, #4A9EE0);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Cabinet Grotesk', sans-serif;
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -38,32 +46,20 @@ body {
   overflow: hidden;
 }
 
-/* noise */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0; opacity: .4;
-}
-
-.orb { position: fixed; border-radius: 50%; filter: blur(130px); pointer-events: none; z-index: 0; }
-.orb1 { width: 700px; height: 700px; background: rgba(59,158,255,.05); top: -200px; left: -200px; }
-.orb2 { width: 500px; height: 500px; background: rgba(34,211,238,.04); bottom: -150px; right: -100px; }
-
 /* ── NAV ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; padding: 0 32px; height: 60px;
-  background: rgba(5,8,15,.88); backdrop-filter: blur(20px);
+  background: #FFFFFF;
   border-bottom: 1px solid var(--border);
 }
 .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .nav-logo-mark {
-  width: 28px; height: 28px; background: var(--grad);
+  width: 28px; height: 28px; background: #1A1D23;
   border-radius: 8px; display: flex; align-items: center; justify-content: center;
 }
 .nav-logo-mark svg { width: 16px; height: 16px; }
-.nav-logo-text { font-size: 15px; font-weight: 800; color: var(--white); letter-spacing: -.02em; }
+.nav-logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
 
 /* ── MAIN CONTAINER ── */
 main {
@@ -84,7 +80,7 @@ main {
 .pulse-ring {
   position: absolute; inset: 0;
   border-radius: 50%;
-  border: 1.5px solid rgba(59,158,255,.3);
+  border: 1.5px solid rgba(58,188,177,.25);
   animation: ringPulse 2s ease-out infinite;
 }
 .pulse-ring:nth-child(2) { animation-delay: .6s; }
@@ -92,31 +88,27 @@ main {
 
 .pulse-core {
   position: absolute; inset: 16px;
-  background: var(--grad);
+  background: #1A1D23;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 24px rgba(59,158,255,.25);
 }
 .pulse-core svg { width: 22px; height: 22px; }
 
 /* ── HEADLINE ── */
 .headline {
   font-size: clamp(22px, 4vw, 28px);
-  font-weight: 900;
-  color: var(--white);
-  letter-spacing: -.03em;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.02em;
   text-align: center;
   margin-bottom: 8px;
   line-height: 1.15;
 }
 .headline em {
-  font-family: 'Instrument Serif', serif;
   font-style: italic;
-  font-weight: 400;
-  background: var(--grad);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 700;
+  color: var(--teal);
+  -webkit-text-fill-color: unset;
 }
 
 .sub {
@@ -135,7 +127,7 @@ main {
 .progress-bar-track {
   width: 100%;
   height: 3px;
-  background: var(--border2);
+  background: var(--border);
   border-radius: 99px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -143,7 +135,7 @@ main {
 
 .progress-bar-fill {
   height: 100%;
-  background: var(--grad);
+  background: var(--teal);
   border-radius: 99px;
   width: 0%;
   transition: width .6s cubic-bezier(.4, 0, .2, 1);
@@ -157,7 +149,7 @@ main {
 
 .progress-status {
   font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   color: var(--dim);
   font-weight: 400;
   min-height: 18px;
@@ -165,8 +157,8 @@ main {
 
 .progress-pct {
   font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--blue);
+  font-family: 'Inter', sans-serif;
+  color: var(--teal);
   font-weight: 500;
 }
 
@@ -178,7 +170,7 @@ main {
   gap: 0;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -192,7 +184,7 @@ main {
   transition: background .3s;
 }
 .milestone:last-child { border-bottom: none; }
-.milestone.active { background: var(--surface2); }
+.milestone.active { background: var(--bg2); }
 
 .ms-dot {
   width: 22px; height: 22px; min-width: 22px;
@@ -202,8 +194,8 @@ main {
   transition: all .3s;
 }
 
-.milestone.done   .ms-dot { background: rgba(52,211,153,.12); border-color: var(--green); }
-.milestone.active .ms-dot { background: rgba(59,158,255,.12); border-color: var(--blue); animation: spinDot 1.2s linear infinite; }
+.milestone.done   .ms-dot { background: rgba(42,157,92,.1); border-color: var(--green); }
+.milestone.active .ms-dot { background: rgba(58,188,177,.1); border-color: var(--teal); animation: spinDot 1.2s linear infinite; }
 
 .ms-dot svg { width: 11px; height: 11px; }
 
@@ -215,11 +207,11 @@ main {
   transition: color .3s;
 }
 .milestone.done   .ms-title { color: var(--green); }
-.milestone.active .ms-title { color: var(--white); }
+.milestone.active .ms-title { color: var(--text); }
 
 .ms-detail {
   font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   color: var(--muted);
   margin-top: 2px;
   min-height: 15px;
@@ -231,7 +223,7 @@ main {
 
 .ms-time {
   font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   color: var(--muted);
   opacity: 0;
   transition: opacity .3s;
@@ -243,7 +235,7 @@ main {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 16px 18px;
   display: flex;
   align-items: flex-start;
@@ -264,11 +256,11 @@ main {
 
 .fact-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   margin-bottom: 4px;
 }
 .fact-text {
@@ -290,9 +282,6 @@ main {
 </style>
 </head>
 <body>
-
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
 
 <nav>
   <a href="#" class="nav-logo">
@@ -343,8 +332,8 @@ main {
   <div class="fact-card" id="factCard">
     <div class="fact-icon">
       <svg viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5.5" stroke="#3b9eff" stroke-width="1.2"/>
-        <path d="M7 6v4M7 4.5v.5" stroke="#3b9eff" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="7" cy="7" r="5.5" stroke="#3ABCB1" stroke-width="1.2"/>
+        <path d="M7 6v4M7 4.5v.5" stroke="#3ABCB1" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
     </div>
     <div>
@@ -463,11 +452,11 @@ function getFile() {
 // ── Error display ─────────────────────────────────────────────────────────────
 function showError(msg) {
   progressStatus.textContent = 'Analysis failed.';
-  progressFill.style.background = '#f43f5e';
+  progressFill.style.background = '#C4404A';
   document.querySelector('.headline').textContent = 'Something went wrong';
   document.querySelector('.sub').innerHTML =
-    `<span style="color:#f43f5e">${msg}</span><br><br>
-     <a href="upload.html" style="color:#3b9eff;text-decoration:none">← Try again</a>`;
+    `<span style="color:#C4404A">${msg}</span><br><br>
+     <a href="upload.html" style="color:#3ABCB1;text-decoration:none">← Try again</a>`;
 }
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────

@@ -5,67 +5,117 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VitalScan — Your Results</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #05080f;
-  --bg2:     #090d18;
-  --surface: #0e1420;
-  --surface2:#131a27;
-  --border:  #1a2436;
-  --border2: #223048;
-  --text:    #c5d8f0;
-  --muted:   #3d5a7a;
-  --dim:     #7a9ab8;
-  --white:   #e8f3ff;
-  --blue:    #3b9eff;
-  --cyan:    #22d3ee;
-  --green:   #34d399;
-  --yellow:  #f59e0b;
-  --orange:  #fb923c;
-  --red:     #f43f5e;
-  --purple:  #a78bfa;
-  --grad:    linear-gradient(135deg, #3b9eff, #22d3ee);
+  --bg:      #FAFBFC;
+  --bg2:     #F4F5F7;
+  --surface: #FFFFFF;
+  --surface2:#F8F9FA;
+  --border:  #E4E7EB;
+  --border2: #CBD2D9;
+  --text:    #1A1D23;
+  --text2:   #374151;
+  --muted:   #9AA5B4;
+  --dim:     #616E7C;
+  --white:   #FFFFFF;
+
+  --teal:    #3ABCB1;
+  --coral:   #D97B6C;
+  --violet:  #7C6FAD;
+
+  --green:   #2A9D5C;
+  --yellow:  #C4A030;
+  --orange:  #C27B2E;
+  --red:     #C4404A;
+  --purple:  #7C6FAD;
+  --blue:    #3ABCB1;
+  --cyan:    #3ABCB1;
+  --grad:    linear-gradient(135deg, #3ABCB1, #4A9EE0);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: 'Cabinet Grotesk', sans-serif; min-height: 100vh; overflow-x: hidden; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0; opacity: .4;
+/* ── APP SHELL ── */
+.app-shell { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 216px;
+  min-width: 216px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
 }
 
-.orb { position: fixed; border-radius: 50%; filter: blur(130px); pointer-events: none; z-index: 0; }
-.orb1 { width: 600px; height: 600px; background: rgba(59,158,255,.05); top: -100px; left: -200px; }
-.orb2 { width: 500px; height: 500px; background: rgba(34,211,238,.04); bottom: -100px; right: -100px; }
-
-/* ── NAV ── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px; height: 60px;
-  background: rgba(5,8,15,.88); backdrop-filter: blur(20px);
+.sidebar-header {
+  padding: 20px 16px 16px;
   border-bottom: 1px solid var(--border);
 }
-.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-logo-mark { width: 28px; height: 28px; background: var(--grad); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-.nav-logo-mark svg { width: 16px; height: 16px; }
-.nav-logo-text { font-size: 15px; font-weight: 800; color: var(--white); letter-spacing: -.02em; }
-.nav-right { display: flex; align-items: center; gap: 16px; }
-.nav-meta { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
-.nav-new {
-  font-size: 12px; color: var(--dim); text-decoration: none;
-  padding: 5px 12px; border: 1px solid var(--border2); border-radius: 6px;
-  transition: all .2s; white-space: nowrap;
-}
-.nav-new:hover { color: var(--white); border-color: var(--blue); }
 
-/* ── MAIN ── */
-main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 88px 24px 80px; }
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.logo-mark {
+  width: 28px; height: 28px;
+  background: #1A1D23;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark svg { width: 15px; height: 15px; }
+.logo-text { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.snav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+}
+.snav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.snav-item:hover { background: var(--bg2); color: var(--text); }
+.snav-item.active { background: var(--bg2); color: var(--text); }
+
+.sidebar-footer {
+  padding: 10px 10px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── MAIN CONTENT ── */
+.main-content {
+  margin-left: 216px;
+  flex: 1;
+  padding: 40px 40px 80px;
+  max-width: 960px;
+}
+
+/* ── SCAN META ── */
+.scan-meta { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
 
 /* ── VERDICT HEADER ── */
 .verdict-header { margin-bottom: 28px; animation: fadeUp .5s ease both; }
@@ -75,28 +125,28 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 12px; border-radius: 99px;
   font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
 }
 .status-badge::before {
   content: ''; width: 6px; height: 6px; border-radius: 50%;
   background: currentColor; animation: pulse 1.8s ease-in-out infinite;
 }
-.status-badge.critical { background: rgba(244,63,94,.1); border: 1px solid rgba(244,63,94,.25); color: var(--red); }
-.status-badge.warn     { background: rgba(251,146,60,.1); border: 1px solid rgba(251,146,60,.25); color: var(--orange); }
-.status-badge.good     { background: rgba(52,211,153,.1);  border: 1px solid rgba(52,211,153,.25);  color: var(--green); }
+.status-badge.critical { background: rgba(196,64,74,.08); border: 1px solid rgba(196,64,74,.2); color: var(--red); }
+.status-badge.warn     { background: rgba(194,123,46,.08); border: 1px solid rgba(194,123,46,.2); color: var(--orange); }
+.status-badge.good     { background: rgba(42,157,92,.08);  border: 1px solid rgba(42,157,92,.2);  color: var(--green); }
 
-.data-meta { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+.data-meta { font-size: 12px; font-family: 'Inter', sans-serif; color: var(--muted); }
 
 .verdict-headline {
-  font-size: clamp(24px, 5vw, 34px); font-weight: 900;
-  color: var(--white); letter-spacing: -.03em; line-height: 1.15; margin-bottom: 14px;
+  font-size: clamp(24px, 5vw, 34px); font-weight: 700;
+  color: var(--text); letter-spacing: -.02em; line-height: 1.15; margin-bottom: 14px;
 }
-.verdict-headline em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+.verdict-headline em { font-style: italic; font-weight: 700; color: var(--teal); }
 
 .verdict-summary {
   font-size: 14px; color: var(--dim); line-height: 1.7;
   padding: 14px 18px;
-  background: var(--surface); border: 1px solid var(--border);
+  background: var(--bg2); border: 1px solid var(--border);
   border-left: 3px solid var(--orange); border-radius: 0 10px 10px 0;
 }
 .verdict-summary strong { color: var(--text); font-weight: 600; }
@@ -106,64 +156,76 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
 /* ── DATA CONTEXT ── */
 .data-context { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 36px; animation: fadeUp .5s .1s ease both; }
 .dc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-.dc-val { font-size: 20px; font-weight: 800; color: var(--white); font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em; margin-bottom: 2px; }
-.dc-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-family: 'JetBrains Mono', monospace; }
+.dc-val { font-size: 20px; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif; letter-spacing: -.02em; margin-bottom: 2px; }
+.dc-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-family: 'Inter', sans-serif; }
 
 /* ── SECTION LABEL ── */
-.section-label { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 14px; }
+.section-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: 'Inter', sans-serif; margin-bottom: 14px; }
 
 /* ── FINDING CARDS ── */
 .findings-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 52px; animation: fadeUp .5s .2s ease both; }
 .finding-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color .2s, background .2s; }
-.finding-card:hover { border-color: var(--border2); background: var(--surface2); }
-.finding-card.critical { border-left: 3px solid var(--red); }
-.finding-card.elevated { border-left: 3px solid var(--orange); }
-.finding-card.moderate { border-left: 3px solid var(--yellow); }
-.finding-card.good     { border-left: 3px solid var(--green); }
+.finding-card:hover { background: var(--bg2); }
+.finding-card.critical { border-left: 2px solid var(--red); }
+.finding-card.elevated { border-left: 2px solid var(--orange); }
+.finding-card.moderate { border-left: 2px solid var(--yellow); }
+.finding-card.good     { border-left: 2px solid var(--green); }
 
 .fc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .fc-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
 .fc-icon { width: 36px; height: 36px; min-width: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
-.finding-card.critical .fc-icon { background: rgba(244,63,94,.1); }
-.finding-card.elevated .fc-icon { background: rgba(251,146,60,.1); }
-.finding-card.moderate .fc-icon { background: rgba(245,158,11,.1); }
-.finding-card.good     .fc-icon { background: rgba(52,211,153,.1); }
+.finding-card.critical .fc-icon { background: rgba(196,64,74,.07); }
+.finding-card.elevated .fc-icon { background: rgba(194,123,46,.07); }
+.finding-card.moderate .fc-icon { background: rgba(196,160,48,.07); }
+.finding-card.good     .fc-icon { background: rgba(42,157,92,.07); }
 .fc-icon svg { width: 18px; height: 18px; }
 .fc-title-wrap {}
-.fc-title { font-size: 15px; font-weight: 800; color: var(--white); letter-spacing: -.01em; margin-bottom: 4px; }
-.severity-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-.severity-pill.critical { background: rgba(244,63,94,.12); color: var(--red); }
-.severity-pill.elevated { background: rgba(251,146,60,.12); color: var(--orange); }
-.severity-pill.moderate { background: rgba(245,158,11,.12); color: var(--yellow); }
-.severity-pill.good     { background: rgba(52,211,153,.12); color: var(--green); }
+.fc-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -.01em; margin-bottom: 4px; }
+.severity-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-family: 'Inter', sans-serif; }
+.severity-pill.critical { background: rgba(196,64,74,.08); color: var(--red); }
+.severity-pill.elevated { background: rgba(194,123,46,.08); color: var(--orange); }
+.severity-pill.moderate { background: rgba(196,160,48,.08); color: var(--yellow); }
+.severity-pill.good     { background: rgba(42,157,92,.08);  color: var(--green); }
 .fc-stat { text-align: right; flex-shrink: 0; }
-.fc-stat-val { font-size: 22px; font-weight: 900; font-family: 'JetBrains Mono', monospace; letter-spacing: -.03em; line-height: 1; margin-bottom: 2px; }
-.fc-stat-unit { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
+.fc-stat-val { font-size: 22px; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: -.03em; line-height: 1; margin-bottom: 2px; }
+.fc-stat-unit { font-size: 10px; color: var(--muted); font-family: 'Inter', sans-serif; text-align: right; }
 .fc-desc { font-size: 13px; color: var(--dim); line-height: 1.6; margin-bottom: 10px; }
 .fc-desc strong { color: var(--text); font-weight: 600; }
-.fc-source { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: .04em; }
+.fc-source { font-size: 10px; font-family: 'Inter', sans-serif; color: var(--muted); letter-spacing: .04em; }
 
 /* ── CHART SECTIONS ── */
 .chart-section { margin-bottom: 56px; padding-top: 40px; border-top: 1px solid var(--border); animation: fadeUp .5s .3s ease both; }
-.cs-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--blue); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; }
-.cs-title { font-size: 24px; font-weight: 800; color: var(--white); letter-spacing: -.02em; margin-bottom: 6px; line-height: 1.15; }
-.cs-title em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
-.cs-desc { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 20px; max-width: 680px; }
+.cs-eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; color: var(--teal); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+.cs-title { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -.02em; margin-bottom: 6px; line-height: 1.15; }
+.cs-title em { font-style: italic; font-weight: 700; color: var(--teal); }
+.cs-desc { font-size: 13px; color: var(--dim); line-height: 1.55; margin-bottom: 20px; max-width: 680px; }
 
 /* ── STAT ROW ── */
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 18px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-.stat-card-val { font-size: 17px; font-weight: 800; color: var(--white); font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em; margin-bottom: 3px; }
-.stat-card-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-family: 'JetBrains Mono', monospace; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; }
+.stat-card-val { font-size: 17px; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif; letter-spacing: -.02em; margin-bottom: 3px; }
+.stat-card-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-family: 'Inter', sans-serif; }
 
 /* ── CHART GRID ── */
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .chart-grid + .chart-grid { margin-top: 12px; }
 .chart-grid.single { grid-template-columns: 1fr; }
-.chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.chart-box-label { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+.chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.chart-box-label { font-size: 10px; font-family: 'Inter', sans-serif; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; font-weight: 500; }
 .chart-wrap { height: 200px; position: relative; }
 .chart-wrap.tall { height: 240px; }
+
+/* ── INSIGHT BLOCKS ── */
+.insight-block { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.insight-note { padding: 14px 16px; background: var(--bg2); border-radius: 8px; border-left: 2px solid var(--border2); }
+.insight-note.warn     { border-left-color: var(--orange); }
+.insight-note.critical { border-left-color: var(--red); }
+.insight-note.good     { border-left-color: var(--green); }
+.insight-note.info     { border-left-color: var(--teal); }
+.insight-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.insight-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.insight-body { font-size: 13px; color: var(--dim); line-height: 1.65; }
+.insight-body strong { color: var(--text2); font-weight: 600; }
 
 /* ── DISCLAIMER ── */
 .disclaimer { font-size: 11px; color: var(--muted); line-height: 1.6; text-align: center; padding-top: 24px; border-top: 1px solid var(--border); margin-top: 16px; }
@@ -174,180 +236,218 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
 
 /* ── RESPONSIVE ── */
 @media (max-width: 640px) {
-  nav { padding: 0 20px; }
-  main { padding: 80px 16px 60px; }
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; padding: 24px 16px 60px; }
   .data-context { grid-template-columns: repeat(2, 1fr); }
   .chart-grid { grid-template-columns: 1fr; }
   .fc-stat-val { font-size: 18px; }
-  .nav-meta { display: none; }
 }
 </style>
 </head>
 <body>
 
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
-
-<!-- NAV -->
-<nav>
-  <a href="upload.html" class="nav-logo">
-    <div class="nav-logo-mark">
-      <svg viewBox="0 0 16 16" fill="none">
-        <path d="M8 2C8 2 4 5.5 4 9a4 4 0 0 0 8 0C12 5.5 8 2 8 2Z" fill="white" opacity=".9"/>
-        <path d="M5.5 9.5C5.5 8 6.5 7 8 7" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
-      </svg>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="upload.html" class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M8 2C8 2 4 5.5 4 9a4 4 0 0 0 8 0C12 5.5 8 2 8 2Z" fill="white" opacity=".9"/>
+            <path d="M5.5 9.5C5.5 8 6.5 7 8 7" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+          </svg>
+        </div>
+        <span class="logo-text">VitalScan</span>
+      </a>
     </div>
-    <span class="nav-logo-text">VitalScan</span>
-  </a>
-  <div class="nav-right">
-    <div class="nav-meta" id="navMeta"></div>
-    <a href="upload.html" class="nav-new">+ New analysis</a>
-  </div>
-</nav>
-
-<main>
-
-  <!-- HEADER -->
-  <div class="verdict-header">
-    <div class="verdict-status-row">
-      <div class="status-badge warn" id="statusBadge">Analyzing…</div>
-      <div class="data-meta" id="dataMeta"></div>
+    <nav class="sidebar-nav">
+      <a href="#" class="snav-item active">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="10" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="10" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#secSpo2" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M6 9h1.5l1-2.5 2 5 1-2.5H14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Blood Oxygen</span>
+      </a>
+      <a href="#secSleep" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M14 10A6 6 0 1 1 8 4a4 4 0 0 0 6 6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <span>Sleep</span>
+      </a>
+      <a href="#secHrv" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><polyline points="2,9 5,9 6.5,4 8,14 9.5,6 11,11 12.5,9 16,9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>HRV</span>
+      </a>
+      <a href="#secRhr" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M9 15s-6-4.35-6-8a6 6 0 0 1 12 0c0 3.65-6 8-6 8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <span>Heart Rate</span>
+      </a>
+      <a href="#secSteps" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M3 14l4-8 4 5 3-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Activity</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="verdict.html" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M9 2l1.5 4.5H15l-3.75 2.72L12.7 14 9 11.27 5.3 14l1.45-4.78L3 6.5h4.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <span>Findings</span>
+      </a>
+      <a href="upload.html" class="snav-item">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M9 3v9M5 7l4-4 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span>New scan</span>
+      </a>
     </div>
-    <h1 class="verdict-headline" id="headline">Your results</h1>
-    <div class="verdict-summary" id="verdictSummary"></div>
-  </div>
+  </aside>
 
-  <!-- DATA CONTEXT -->
-  <div class="data-context">
-    <div class="dc-card"><div class="dc-val" id="dcMonths">--</div><div class="dc-label">Months</div></div>
-    <div class="dc-card"><div class="dc-val" id="dcHrv">--</div><div class="dc-label">HRV days</div></div>
-    <div class="dc-card"><div class="dc-val" id="dcSleep">--</div><div class="dc-label">Sleep nights</div></div>
-    <div class="dc-card"><div class="dc-val" id="dcSpo2">--</div><div class="dc-label">SpO₂ episodes</div></div>
-  </div>
+  <main class="main-content">
 
-  <!-- FINDINGS -->
-  <div class="section-label">Findings · ranked by severity</div>
-  <div class="findings-list" id="findingsList"></div>
+    <div id="navMeta" class="scan-meta"></div>
 
-  <!-- DETAILED BREAKDOWN -->
-  <div class="section-label">Detailed breakdown</div>
-
-  <!-- ── SpO2 ── -->
-  <section class="chart-section" id="secSpo2">
-    <div class="cs-eyebrow" id="spo2Eyebrow">Blood Oxygen</div>
-    <h2 class="cs-title">SpO₂ <em>deep dive</em></h2>
-    <p class="cs-desc">Blood oxygen saturation — how much of your haemoglobin is carrying oxygen. Drops below 88% during sleep are the primary clinical screening signal for obstructive sleep apnea (AASM).</p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-card-val" id="spo2Total">--</div><div class="stat-card-label">Episodes &lt;95%</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="spo2Min">--</div><div class="stat-card-label">Lowest reading</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="spo2Worst">--</div><div class="stat-card-label">Worst month</div></div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-box">
-        <div class="chart-box-label">Episodes &lt;95% per month</div>
-        <div class="chart-wrap"><canvas id="spo2LowChart"></canvas></div>
+    <!-- HEADER -->
+    <div class="verdict-header">
+      <div class="verdict-status-row">
+        <div class="status-badge warn" id="statusBadge">Analyzing…</div>
+        <div class="data-meta" id="dataMeta"></div>
       </div>
-      <div class="chart-box">
-        <div class="chart-box-label">Avg and min SpO₂ per month</div>
-        <div class="chart-wrap"><canvas id="spo2MinMaxChart"></canvas></div>
-      </div>
+      <h1 class="verdict-headline" id="headline">Your results</h1>
+      <div class="verdict-summary" id="verdictSummary"></div>
     </div>
-  </section>
 
-  <!-- ── SLEEP ── -->
-  <section class="chart-section" id="secSleep">
-    <div class="cs-eyebrow" id="sleepEyebrow">Sleep Analysis</div>
-    <h2 class="cs-title">Sleep <em>architecture</em></h2>
-    <p class="cs-desc">Stage breakdown and duration trends across recent nights. Deep sleep consolidates memory and repairs tissue. REM supports emotional regulation. Both require consistent 7+ hour nights to accumulate properly.</p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-card-val" id="sleepAvg">--</div><div class="stat-card-label">Avg per night</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="sleepUnder7">--</div><div class="stat-card-label">Nights &lt;7h</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="sleepDeep">--</div><div class="stat-card-label">Avg deep</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="sleepRem">--</div><div class="stat-card-label">Avg REM</div></div>
+    <!-- DATA CONTEXT -->
+    <div class="data-context">
+      <div class="dc-card"><div class="dc-val" id="dcMonths">--</div><div class="dc-label">Months</div></div>
+      <div class="dc-card"><div class="dc-val" id="dcHrv">--</div><div class="dc-label">HRV days</div></div>
+      <div class="dc-card"><div class="dc-val" id="dcSleep">--</div><div class="dc-label">Sleep nights</div></div>
+      <div class="dc-card"><div class="dc-val" id="dcSpo2">--</div><div class="dc-label">SpO₂ episodes</div></div>
     </div>
-    <div class="chart-grid single">
-      <div class="chart-box">
-        <div class="chart-box-label">Sleep stages per night (recent history)</div>
-        <div class="chart-wrap tall"><canvas id="sleepStackChart"></canvas></div>
-      </div>
-    </div>
-    <div class="chart-grid" style="margin-top:12px" id="sleepMonthGrid">
-      <div class="chart-box">
-        <div class="chart-box-label">Monthly avg · deep + REM (min/night)</div>
-        <div class="chart-wrap"><canvas id="sleepMonthChart"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <div class="chart-box-label">Awake time per night (min)</div>
-        <div class="chart-wrap"><canvas id="wakeChart"></canvas></div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ── HRV ── -->
-  <section class="chart-section" id="secHrv">
-    <div class="cs-eyebrow" id="hrvEyebrow">Heart Rate Variability</div>
-    <h2 class="cs-title">HRV <em>trend</em></h2>
-    <p class="cs-desc">SDNN measured during the morning window (2–9 AM) — the clinically validated approach per Shaffer &amp; Ginsberg 2017. HRV reflects autonomic nervous system balance. A sustained decline often precedes illness or burnout.</p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-card-val" id="hrvAvg">--</div><div class="stat-card-label">Overall avg</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="hrvLatest">--</div><div class="stat-card-label">Latest month</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="hrvTrend">--</div><div class="stat-card-label">Month-on-month</div></div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-box">
-        <div class="chart-box-label">Daily HRV (morning SDNN)</div>
-        <div class="chart-wrap"><canvas id="hrvChart"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <div class="chart-box-label">Monthly average</div>
-        <div class="chart-wrap"><canvas id="hrvMonthChart"></canvas></div>
-      </div>
-    </div>
-  </section>
+    <!-- FINDINGS -->
+    <div class="section-label">Findings · ranked by severity</div>
+    <div class="findings-list" id="findingsList"></div>
 
-  <!-- ── RHR ── -->
-  <section class="chart-section" id="secRhr">
-    <div class="cs-eyebrow" id="rhrEyebrow">Resting Heart Rate</div>
-    <h2 class="cs-title">RHR <em>baseline</em></h2>
-    <p class="cs-desc">Monthly average resting heart rate. The Framingham Heart Study identifies sustained RHR above 70 bpm as an elevated cardiovascular risk marker. A declining RHR over months indicates improving cardiovascular fitness.</p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-card-val" id="rhrAvg">--</div><div class="stat-card-label">Overall avg</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="rhrLatest">--</div><div class="stat-card-label">Latest month</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="rhrTrend">--</div><div class="stat-card-label">Month-on-month</div></div>
-    </div>
-    <div class="chart-grid single">
-      <div class="chart-box">
-        <div class="chart-box-label">Monthly resting heart rate</div>
-        <div class="chart-wrap"><canvas id="rhrChart"></canvas></div>
+    <!-- DETAILED BREAKDOWN -->
+    <div class="section-label">Detailed breakdown</div>
+
+    <!-- ── SpO2 ── -->
+    <section class="chart-section" id="secSpo2">
+      <div class="cs-eyebrow" id="spo2Eyebrow">Blood Oxygen</div>
+      <h2 class="cs-title">SpO₂ <em>deep dive</em></h2>
+      <p class="cs-desc">Blood oxygen saturation — how much of your haemoglobin is carrying oxygen. Drops below 88% during sleep are the primary clinical screening signal for obstructive sleep apnea (AASM).</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-card-val" id="spo2Total">--</div><div class="stat-card-label">Episodes &lt;95%</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="spo2Min">--</div><div class="stat-card-label">Lowest reading</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="spo2Worst">--</div><div class="stat-card-label">Worst month</div></div>
       </div>
-    </div>
-  </section>
-
-  <!-- ── STEPS ── -->
-  <section class="chart-section" id="secSteps">
-    <div class="cs-eyebrow" id="stepsEyebrow">Activity</div>
-    <h2 class="cs-title">Steps <em>trend</em></h2>
-    <p class="cs-desc">Monthly step totals after minute-level deduplication across all sources. WHO recommends 150+ minutes of moderate activity per week — roughly 7,000–10,000 steps/day.</p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-card-val" id="stepsLatest">--</div><div class="stat-card-label">Last month</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="stepsPeak">--</div><div class="stat-card-label">Peak month</div></div>
-      <div class="stat-card"><div class="stat-card-val" id="stepsDelta">--</div><div class="stat-card-label">vs Peak</div></div>
-    </div>
-    <div class="chart-grid single">
-      <div class="chart-box">
-        <div class="chart-box-label">Monthly step count</div>
-        <div class="chart-wrap"><canvas id="stepsChart"></canvas></div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <div class="chart-box-label">Episodes &lt;95% per month</div>
+          <div class="chart-wrap"><canvas id="spo2LowChart"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-box-label">Avg and min SpO₂ per month</div>
+          <div class="chart-wrap"><canvas id="spo2MinMaxChart"></canvas></div>
+        </div>
       </div>
+      <div class="insight-block" id="insightSpo2"></div>
+    </section>
+
+    <!-- ── SLEEP ── -->
+    <section class="chart-section" id="secSleep">
+      <div class="cs-eyebrow" id="sleepEyebrow">Sleep Analysis</div>
+      <h2 class="cs-title">Sleep <em>architecture</em></h2>
+      <p class="cs-desc">Stage breakdown and duration trends across recent nights. Deep sleep consolidates memory and repairs tissue. REM supports emotional regulation. Both require consistent 7+ hour nights to accumulate properly.</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-card-val" id="sleepAvg">--</div><div class="stat-card-label">Avg per night</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="sleepUnder7">--</div><div class="stat-card-label">Nights &lt;7h</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="sleepDeep">--</div><div class="stat-card-label">Avg deep</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="sleepRem">--</div><div class="stat-card-label">Avg REM</div></div>
+      </div>
+      <div class="chart-grid single">
+        <div class="chart-box">
+          <div class="chart-box-label">Sleep stages per night (recent history)</div>
+          <div class="chart-wrap tall"><canvas id="sleepStackChart"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid" style="margin-top:12px" id="sleepMonthGrid">
+        <div class="chart-box">
+          <div class="chart-box-label">Monthly avg · deep + REM (min/night)</div>
+          <div class="chart-wrap"><canvas id="sleepMonthChart"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-box-label">Awake time per night (min)</div>
+          <div class="chart-wrap"><canvas id="wakeChart"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-block" id="insightSleep"></div>
+    </section>
+
+    <!-- ── HRV ── -->
+    <section class="chart-section" id="secHrv">
+      <div class="cs-eyebrow" id="hrvEyebrow">Heart Rate Variability</div>
+      <h2 class="cs-title">HRV <em>trend</em></h2>
+      <p class="cs-desc">SDNN measured during the morning window (2–9 AM) — the clinically validated approach per Shaffer &amp; Ginsberg 2017. HRV reflects autonomic nervous system balance. A sustained decline often precedes illness or burnout.</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-card-val" id="hrvAvg">--</div><div class="stat-card-label">Overall avg</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="hrvLatest">--</div><div class="stat-card-label">Latest month</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="hrvTrend">--</div><div class="stat-card-label">Month-on-month</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <div class="chart-box-label">Daily HRV (morning SDNN)</div>
+          <div class="chart-wrap"><canvas id="hrvChart"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-box-label">Monthly average</div>
+          <div class="chart-wrap"><canvas id="hrvMonthChart"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-block" id="insightHrv"></div>
+    </section>
+
+    <!-- ── RHR ── -->
+    <section class="chart-section" id="secRhr">
+      <div class="cs-eyebrow" id="rhrEyebrow">Resting Heart Rate</div>
+      <h2 class="cs-title">RHR <em>baseline</em></h2>
+      <p class="cs-desc">Monthly average resting heart rate. The Framingham Heart Study identifies sustained RHR above 70 bpm as an elevated cardiovascular risk marker. A declining RHR over months indicates improving cardiovascular fitness.</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-card-val" id="rhrAvg">--</div><div class="stat-card-label">Overall avg</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="rhrLatest">--</div><div class="stat-card-label">Latest month</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="rhrTrend">--</div><div class="stat-card-label">Month-on-month</div></div>
+      </div>
+      <div class="chart-grid single">
+        <div class="chart-box">
+          <div class="chart-box-label">Monthly resting heart rate</div>
+          <div class="chart-wrap"><canvas id="rhrChart"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-block" id="insightRhr"></div>
+    </section>
+
+    <!-- ── STEPS ── -->
+    <section class="chart-section" id="secSteps">
+      <div class="cs-eyebrow" id="stepsEyebrow">Activity</div>
+      <h2 class="cs-title">Steps <em>trend</em></h2>
+      <p class="cs-desc">Monthly step totals after minute-level deduplication across all sources. WHO recommends 150+ minutes of moderate activity per week — roughly 7,000–10,000 steps/day.</p>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-card-val" id="stepsLatest">--</div><div class="stat-card-label">Last month</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="stepsPeak">--</div><div class="stat-card-label">Peak month</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="stepsDelta">--</div><div class="stat-card-label">vs Peak</div></div>
+      </div>
+      <div class="chart-grid single">
+        <div class="chart-box">
+          <div class="chart-box-label">Monthly step count</div>
+          <div class="chart-wrap"><canvas id="stepsChart"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-block" id="insightSteps"></div>
+    </section>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer">
+      VitalScan detects patterns in your data using published clinical guidelines. It does not diagnose medical conditions.
+      All findings should be discussed with a qualified healthcare provider. Data processed in memory — never stored.
     </div>
-  </section>
 
-  <!-- DISCLAIMER -->
-  <div class="disclaimer">
-    VitalScan detects patterns in your data using published clinical guidelines. It does not diagnose medical conditions.
-    All findings should be discussed with a qualified healthcare provider. Data processed in memory — never stored.
-  </div>
-
-</main>
+  </main>
+</div>
 
 <script>
 (function () {
@@ -380,16 +480,28 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0e1420', borderColor: '#1a2436', borderWidth: 1,
-        titleColor: '#e8f3ff', bodyColor: '#7a9ab8',
-        titleFont: { family: 'JetBrains Mono', size: 11 },
-        bodyFont:  { family: 'JetBrains Mono', size: 11 },
-        padding: 10, cornerRadius: 6,
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E4E7EB',
+        borderWidth: 1,
+        titleColor: '#1A1D23',
+        bodyColor: '#616E7C',
+        titleFont: { family: 'Inter', size: 11 },
+        bodyFont:  { family: 'Inter', size: 11 },
+        padding: 10,
+        cornerRadius: 6,
       },
     },
     scales: {
-      x: { grid: { color: 'rgba(26,36,54,0.6)' }, border: { color: 'rgba(26,36,54,0.6)' }, ticks: { color: '#3d5a7a', font: { family: 'JetBrains Mono', size: 10 } } },
-      y: { grid: { color: 'rgba(26,36,54,0.6)' }, border: { color: 'rgba(26,36,54,0.6)' }, ticks: { color: '#3d5a7a', font: { family: 'JetBrains Mono', size: 10 } } },
+      x: {
+        grid: { color: 'rgba(228,231,235,0.7)', drawTicks: false },
+        border: { display: false },
+        ticks: { color: '#9AA5B4', font: { family: 'Inter', size: 10 } },
+      },
+      y: {
+        grid: { color: 'rgba(228,231,235,0.7)', drawTicks: false },
+        border: { display: false },
+        ticks: { color: '#9AA5B4', font: { family: 'Inter', size: 10 } },
+      },
     },
   };
 
@@ -464,7 +576,7 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     hrv_good:           `<svg viewBox="0 0 18 18" fill="none"><path d="M2 9h3l2-5 3 10 2-7 2 2h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     vo2_max:            `<svg viewBox="0 0 18 18" fill="none"><path d="M4 13c0-4 3-8 5-8s5 4 5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6.5 13c0-2 1.5-4 2.5-4s2.5 2 2.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".5"/></svg>`,
   };
-  const SEV_COLORS = { critical:'#f43f5e', elevated:'#fb923c', moderate:'#f59e0b', good:'#34d399' };
+  const SEV_COLORS = { critical:'#C4404A', elevated:'#C27B2E', moderate:'#C4A030', good:'#2A9D5C' };
   const SEV_LABELS = { critical:'Critical', elevated:'Elevated', moderate:'Moderate', good:'Good' };
 
   function renderFindings() {
@@ -474,7 +586,7 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
       return;
     }
     FINDS.forEach(f => {
-      const color = SEV_COLORS[f.severity] || '#7a9ab8';
+      const color = SEV_COLORS[f.severity] || '#9AA5B4';
       const icon  = ICONS[f.key] || ICONS.rhr_elevated;
       const card  = document.createElement('div');
       card.className = `finding-card ${f.severity}`;
@@ -524,8 +636,8 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
       data: {
         labels: MSHORT,
         datasets: [{ data: low,
-          backgroundColor: low.map(v => v > 100 ? 'rgba(244,63,94,0.7)' : v > 50 ? 'rgba(251,146,60,0.65)' : 'rgba(245,158,11,0.55)'),
-          borderColor:     low.map(v => v > 100 ? '#f43f5e' : v > 50 ? '#fb923c' : '#f59e0b'),
+          backgroundColor: low.map(v => v > 100 ? 'rgba(196,64,74,0.7)' : v > 50 ? 'rgba(194,123,46,0.65)' : 'rgba(196,160,48,0.55)'),
+          borderColor:     low.map(v => v > 100 ? '#C4404A' : v > 50 ? '#C27B2E' : '#C4A030'),
           borderWidth: 1, borderRadius: 4,
         }],
       },
@@ -534,18 +646,20 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
       }}},
     });
 
+    insightSpo2(total, minEver, low, MSHORT);
+
     // Line: avg + min
     new Chart(el('spo2MinMaxChart'), {
       type: 'line',
       data: {
         labels: MSHORT,
         datasets: [
-          { label:'Avg SpO₂', data: avg_, borderColor:'#3b9eff', backgroundColor:'rgba(59,158,255,0.06)', tension:0.4, pointRadius:4, fill:true },
-          { label:'Min SpO₂', data: min_, borderColor:'#f43f5e', backgroundColor:'rgba(244,63,94,0.04)',  tension:0.4, pointRadius:4, fill:true, borderDash:[4,3] },
+          { label:'Avg SpO₂', data: avg_, borderColor:'#3ABCB1', backgroundColor:'rgba(58,188,177,0.06)', tension:0.4, pointRadius:4, fill:true },
+          { label:'Min SpO₂', data: min_, borderColor:'#C4404A', backgroundColor:'rgba(196,64,74,0.04)',  tension:0.4, pointRadius:4, fill:true, borderDash:[4,3] },
         ],
       },
       options: { ...CD,
-        plugins: { ...CD.plugins, legend: { display:true, labels:{ color:'#3d5a7a', font:{ family:'JetBrains Mono', size:10 }, boxWidth:18 } },
+        plugins: { ...CD.plugins, legend: { display:true, labels:{ color:'#9AA5B4', font:{ family:'Inter', size:10 }, boxWidth:18 } },
           tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${f1(ctx.raw)}%` } },
         },
         scales: { ...CD.scales, y: { ...CD.scales.y, min: 75, max: 100, ticks: { ...CD.scales.y.ticks, callback: v => v+'%' } } },
@@ -583,14 +697,14 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
       data: {
         labels: dates,
         datasets: [
-          { label:'Deep', data: deep.map(v=>v/60), backgroundColor:'rgba(59,158,255,0.75)', borderRadius:0 },
-          { label:'REM',  data: rem.map(v=>v/60),  backgroundColor:'rgba(167,139,250,0.65)', borderRadius:0 },
-          { label:'Core', data: core,               backgroundColor:'rgba(34,211,238,0.3)',   borderRadius:0 },
+          { label:'Deep', data: deep.map(v=>v/60), backgroundColor:'#7C6FAD', borderRadius:0 },
+          { label:'REM',  data: rem.map(v=>v/60),  backgroundColor:'rgba(124,111,173,.7)', borderRadius:0 },
+          { label:'Core', data: core,               backgroundColor:'rgba(124,111,173,.4)', borderRadius:0 },
         ],
       },
       options: { ...CD,
         plugins: { ...CD.plugins,
-          legend: { display:true, labels:{ color:'#3d5a7a', font:{ family:'JetBrains Mono', size:10 }, boxWidth:14 } },
+          legend: { display:true, labels:{ color:'#9AA5B4', font:{ family:'Inter', size:10 }, boxWidth:14 } },
           tooltip: { ...CD.plugins.tooltip, callbacks: {
             label: ctx => ` ${ctx.dataset.label}: ${f1(ctx.raw)}h`,
             footer: items => `Total: ${f1(total[items[0].dataIndex])}h`,
@@ -598,7 +712,7 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
         },
         scales: {
           x: { stacked:true, ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxTicksLimit:14, maxRotation:45 } },
-          y: { stacked:true, ...CD.scales.y, title: { display:true, text:'Hours', color:'#3d5a7a', font:{ size:10, family:'JetBrains Mono' } } },
+          y: { stacked:true, ...CD.scales.y, title: { display:true, text:'Hours', color:'#9AA5B4', font:{ size:10, family:'Inter' } } },
         },
       },
     });
@@ -613,16 +727,16 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
         data: {
           labels: mIdx.map(i => MSHORT[i]),
           datasets: [
-            { label:'Deep', data: mIdx.map(i => deepM[i]), backgroundColor:'rgba(59,158,255,0.7)', borderRadius:3 },
-            { label:'REM',  data: mIdx.map(i => remM[i]),  backgroundColor:'rgba(167,139,250,0.65)', borderRadius:3 },
+            { label:'Deep', data: mIdx.map(i => deepM[i]), backgroundColor:'#7C6FAD', borderRadius:3 },
+            { label:'REM',  data: mIdx.map(i => remM[i]),  backgroundColor:'rgba(124,111,173,.7)', borderRadius:3 },
           ],
         },
         options: { ...CD,
           plugins: { ...CD.plugins,
-            legend: { display:true, labels:{ color:'#3d5a7a', font:{ family:'JetBrains Mono', size:10 }, boxWidth:14 } },
+            legend: { display:true, labels:{ color:'#9AA5B4', font:{ family:'Inter', size:10 }, boxWidth:14 } },
             tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${f0(ctx.raw)} min/night` } },
           },
-          scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'Min/night', color:'#3d5a7a', font:{ size:10 } } } },
+          scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'Min/night', color:'#9AA5B4', font:{ size:10 } } } },
         },
       });
     } else {
@@ -630,20 +744,22 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
       return;
     }
 
+    insightSleep(avgTotal, under7, dates.length, avgDeepM, avgRemM);
+
     // Awake chart
     new Chart(el('wakeChart'), {
       type: 'bar',
       data: {
         labels: dates,
         datasets: [{ data: awake,
-          backgroundColor: awake.map(v => v > 60 ? 'rgba(244,63,94,0.65)' : v > 20 ? 'rgba(251,146,60,0.5)' : 'rgba(34,211,238,0.35)'),
+          backgroundColor: awake.map(v => v > 60 ? 'rgba(196,64,74,0.65)' : v > 20 ? 'rgba(194,123,46,0.5)' : 'rgba(155,165,180,0.3)'),
           borderRadius: 2,
         }],
       },
       options: { ...CD, plugins: { ...CD.plugins, tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${f0(ctx.raw)} min awake` } } },
         scales: {
           x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxTicksLimit:10, maxRotation:45 } },
-          y: { ...CD.scales.y, title: { display:true, text:'Min awake', color:'#3d5a7a', font:{ size:10 } } },
+          y: { ...CD.scales.y, title: { display:true, text:'Min awake', color:'#9AA5B4', font:{ size:10 } } },
         },
       },
     });
@@ -669,23 +785,25 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     el('hrvLatest').textContent = f1(latestHrv) + ' ms';
     const trendEl = el('hrvTrend');
     trendEl.textContent = trend != null ? (trend > 0 ? '+' : '') + trend.toFixed(0) + '%' : '--';
-    trendEl.style.color = trend == null ? '' : trend < -10 ? '#fb923c' : trend > 0 ? '#34d399' : '';
+    trendEl.style.color = trend == null ? '' : trend < -10 ? '#C27B2E' : trend > 0 ? '#2A9D5C' : '';
 
-    // Daily line
+    // Daily line — coral for HRV
     new Chart(el('hrvChart'), {
       type: 'line',
       data: {
         labels: dates,
-        datasets: [{ data: values, borderColor:'rgba(59,158,255,0.8)', backgroundColor:'rgba(59,158,255,0.05)', pointRadius:2, tension:0.25, fill:true }],
+        datasets: [{ data: values, borderColor:'#D97B6C', backgroundColor:'rgba(217,123,108,.1)', pointRadius:2, tension:0.25, fill:true }],
       },
       options: { ...CD,
         plugins: { ...CD.plugins, tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${f1(ctx.raw)} ms SDNN` } } },
         scales: {
           x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxTicksLimit:8, maxRotation:30 } },
-          y: { ...CD.scales.y, title: { display:true, text:'ms SDNN', color:'#3d5a7a', font:{ size:10, family:'JetBrains Mono' } } },
+          y: { ...CD.scales.y, title: { display:true, text:'ms SDNN', color:'#9AA5B4', font:{ size:10, family:'Inter' } } },
         },
       },
     });
+
+    insightHrv(overall, latestHrv, prevHrv, trend);
 
     // Monthly
     const mIdx = MSHORT.map((_,i) => nn(monthly[i]) ? i : -1).filter(i=>i>=0);
@@ -694,11 +812,11 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
         type: 'line',
         data: {
           labels: mIdx.map(i => MSHORT[i]),
-          datasets: [{ data: mIdx.map(i => monthly[i]), borderColor:'#3b9eff', backgroundColor:'rgba(59,158,255,0.06)', tension:0.4, pointRadius:5, fill:true, pointBackgroundColor:'#3b9eff' }],
+          datasets: [{ data: mIdx.map(i => monthly[i]), borderColor:'#D97B6C', backgroundColor:'rgba(217,123,108,.1)', tension:0.4, pointRadius:5, fill:true, pointBackgroundColor:'#D97B6C' }],
         },
         options: { ...CD,
           plugins: { ...CD.plugins, tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${f1(ctx.raw)} ms` } } },
-          scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'Avg ms/month', color:'#3d5a7a', font:{ size:10 } } } },
+          scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'Avg ms/month', color:'#9AA5B4', font:{ size:10 } } } },
         },
       });
     } else {
@@ -723,17 +841,19 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     el('rhrLatest').textContent   = f0(latest)  + ' bpm';
     const trendEl = el('rhrTrend');
     trendEl.textContent = trend != null ? (trend > 0 ? '+' : '') + trend.toFixed(0) + '%' : '--';
-    trendEl.style.color = trend == null ? '' : trend > 5 ? '#fb923c' : trend < -5 ? '#34d399' : '';
+    trendEl.style.color = trend == null ? '' : trend > 5 ? '#C27B2E' : trend < -5 ? '#2A9D5C' : '';
+
+    insightRhr(overall, latest, trend);
 
     new Chart(el('rhrChart'), {
       type: 'line',
       data: {
         labels: mIdx.map(i => MSHORT[i]),
-        datasets: [{ data: vals, borderColor:'#f43f5e', backgroundColor:'rgba(244,63,94,0.06)', tension:0.4, pointRadius:5, fill:true, pointBackgroundColor:'#f43f5e' }],
+        datasets: [{ data: vals, borderColor:'#3ABCB1', backgroundColor:'rgba(58,188,177,0.06)', tension:0.4, pointRadius:5, fill:true, pointBackgroundColor:'#3ABCB1' }],
       },
       options: { ...CD,
         plugins: { ...CD.plugins, tooltip: { ...CD.plugins.tooltip, callbacks: { label: ctx => ` ${f1(ctx.raw)} bpm` } } },
-        scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'bpm', color:'#3d5a7a', font:{ size:10 } } } },
+        scales: { ...CD.scales, y: { ...CD.scales.y, title: { display:true, text:'bpm', color:'#9AA5B4', font:{ size:10 } } } },
       },
     });
   }
@@ -756,15 +876,17 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
     el('stepsPeak').textContent   = `${fmtK(peak)} (${peakMo})`;
     const deltaEl = el('stepsDelta');
     deltaEl.textContent = (delta > 0 ? '+' : '') + delta.toFixed(0) + '%';
-    deltaEl.style.color = delta < -20 ? '#fb923c' : delta > 0 ? '#34d399' : '';
+    deltaEl.style.color = delta < -20 ? '#C27B2E' : delta > 0 ? '#2A9D5C' : '';
+
+    insightSteps(latest, peak, delta, peakMo);
 
     new Chart(el('stepsChart'), {
       type: 'bar',
       data: {
         labels: mIdx.map(i => MSHORT[i]),
         datasets: [{ data: vals,
-          backgroundColor: vals.map(v => v === peak ? 'rgba(59,158,255,0.75)' : 'rgba(59,158,255,0.35)'),
-          borderColor:     vals.map(v => v === peak ? '#3b9eff' : 'rgba(59,158,255,0.3)'),
+          backgroundColor: vals.map(v => v === peak ? 'rgba(58,188,177,0.75)' : 'rgba(58,188,177,0.35)'),
+          borderColor:     vals.map(v => v === peak ? '#3ABCB1' : 'rgba(58,188,177,0.3)'),
           borderWidth: 1, borderRadius: 4,
         }],
       },
@@ -773,6 +895,141 @@ main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding
         scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => fmtK(v) } } },
       },
     });
+  }
+
+  // ── INSIGHT HELPERS ───────────────────────────────────────────────────────
+  function note(severity, eyebrow, title, body) {
+    return `<div class="insight-note ${severity}">
+      <div class="insight-eyebrow">${eyebrow}</div>
+      <div class="insight-title">${title}</div>
+      <div class="insight-body">${body}</div>
+    </div>`;
+  }
+
+  function insightSpo2(total, minEver, low, mshort) {
+    const html = [];
+    if (total > 0) {
+      const severity = total > 40 ? 'critical' : total > 10 ? 'warn' : 'info';
+      const worstIdx = low.indexOf(Math.max(...low));
+      const worstLabel = mshort[worstIdx] ? ` — worst month was ${mshort[worstIdx]} with ${low[worstIdx]} episodes` : '';
+      html.push(note(severity, 'What this means',
+        total > 20
+          ? 'Recurring low oxygen episodes — a known sleep apnea screening signal'
+          : 'Occasional oxygen dips detected',
+        total > 20
+          ? `Blood oxygen dropping below 88% is the clinical threshold the AASM uses to screen for obstructive sleep apnea (OSA). You've had <strong>${total} episodes below 95%</strong>, with a recorded low of <strong>${minEver != null ? minEver.toFixed(0) + '%' : 'unknown'}</strong>${worstLabel}. In OSA, the airway repeatedly collapses during sleep, causing oxygen to fall — often without you waking or remembering it. This pattern, particularly if occurring overnight, warrants a conversation with your doctor.`
+          : `You've had <strong>${total} episodes where SpO₂ dipped below 95%</strong>, with a recorded low of <strong>${minEver != null ? minEver.toFixed(0) + '%' : 'unknown'}</strong>. Isolated dips can occur from movement or sensor positioning, but a pattern of readings below 90% is worth discussing with your doctor.`
+      ));
+      html.push(note('info', 'Interpreting averages',
+        'Average SpO₂ can look healthy while lows are clinically significant',
+        'Your monthly average SpO₂ likely sits in the normal range (95–99%) — but <strong>averages hide the dangerous troughs</strong>. What matters clinically is the minimum value and frequency of low episodes, not the mean. A single night of repeated desaturations below 88% is more medically significant than a slightly depressed monthly average.'
+      ));
+    }
+    const block = el('insightSpo2');
+    if (block) block.innerHTML = html.join('');
+  }
+
+  function insightSleep(avgTotal, under7, total, avgDeepM, avgRemM) {
+    if (!nn(avgTotal)) return;
+    const html = [];
+    const avgH = avgTotal.toFixed(1);
+    const sev = avgTotal < 6 ? 'critical' : avgTotal < 7 ? 'warn' : 'good';
+    const label = avgTotal < 6 ? 'Significantly below recommended sleep duration'
+                : avgTotal < 7 ? 'Below the 7-hour threshold recommended for adults'
+                : 'Sleep duration is within the healthy range';
+    html.push(note(sev, 'Duration',
+      label,
+      avgTotal < 7
+        ? `You're averaging <strong>${avgH}h per night</strong> across ${total} tracked nights, with <strong>${under7} nights below 7 hours</strong>. The AASM and WHO both recommend 7–9 hours for adults. Chronic short sleep — even by 30–60 minutes — is independently linked to elevated cardiovascular risk, impaired glucose regulation, and weakened immune response. Sleep debt also makes existing conditions like sleep apnea harder to detect subjectively, as fatigue becomes the new baseline.`
+        : `You're averaging <strong>${avgH}h per night</strong> — within the 7–9 hour range recommended by the AASM and WHO. Consistent sleep duration is one of the strongest predictors of long-term health. Aim to maintain this, as variability (even with an adequate average) can disrupt circadian rhythm and reduce sleep quality.`
+    ));
+    if (nn(avgDeepM) && nn(avgRemM)) {
+      html.push(note('info', 'Sleep stages',
+        'Deep sleep and REM both require adequate total sleep to accumulate',
+        `Your average deep sleep is <strong>${Math.round(avgDeepM)} min/night</strong> and REM is <strong>${Math.round(avgRemM)} min/night</strong>. Deep sleep (slow-wave) consolidates memory, triggers growth hormone release, and is your most physically restorative stage. REM supports emotional regulation and cognitive processing. Both are compressed when total sleep is short — getting 7+ hours consistently is the prerequisite for adequate time in each stage.`
+      ));
+    }
+    const block = el('insightSleep');
+    if (block) block.innerHTML = html.join('');
+  }
+
+  function insightHrv(overall, latestHrv, prevHrv, trend) {
+    if (!nn(overall)) return;
+    const html = [];
+    const sev = overall >= 50 ? 'good' : overall >= 30 ? 'info' : 'warn';
+    html.push(note(sev, 'What HRV measures',
+      overall >= 50 ? 'HRV is in a healthy range — good autonomic balance' : 'HRV is on the lower side — worth monitoring',
+      `Your overall morning HRV averages <strong>${f1(overall)} ms SDNN</strong>. HRV measures the variation in time between heartbeats — counterintuitively, more variation is better. It reflects how flexibly your autonomic nervous system responds to demands. Higher HRV is associated with better cardiovascular fitness, stress resilience, and recovery capacity. Lower HRV is linked to chronic stress, poor sleep, illness, or overtraining.`
+    ));
+    if (nn(trend)) {
+      const trendSev = trend < -15 ? 'warn' : trend < -5 ? 'info' : 'good';
+      const trendSign = trend > 0 ? '+' : '';
+      html.push(note(trendSev, 'Month-on-month trend',
+        trend < -10
+          ? `HRV declined ${Math.abs(trend.toFixed(0))}% — your body may be under accumulated strain`
+          : trend > 5
+          ? `HRV improved ${trendSign}${trend.toFixed(0)}% — a positive recovery signal`
+          : 'HRV is stable month-on-month',
+        trend < -5
+          ? `Your latest monthly HRV of <strong>${f1(latestHrv)} ms</strong> is down <strong>${Math.abs(trend.toFixed(0))}%</strong> from the previous month (<strong>${f1(prevHrv)} ms</strong>). A sustained HRV decline tracks with chronic stress, accumulated sleep debt, illness, or excessive training load. Watch for compounding signals — if sleep duration is also declining in the same period, these two readings reinforce each other as indicators of systemic strain.`
+          : `Your latest monthly HRV of <strong>${f1(latestHrv)} ms</strong> represents a <strong>${trendSign}${trend.toFixed(0)}%</strong> change from the previous month (<strong>${f1(prevHrv)} ms</strong>). This is a stable or improving trend — continue monitoring over the coming months to establish your personal baseline.`
+      ));
+    }
+    const block = el('insightHrv');
+    if (block) block.innerHTML = html.join('');
+  }
+
+  function insightRhr(overall, latest, trend) {
+    if (!nn(overall)) return;
+    const html = [];
+    const sev = overall <= 60 ? 'good' : overall <= 70 ? 'info' : 'warn';
+    html.push(note(sev, 'Resting heart rate context',
+      overall <= 70
+        ? `RHR of ${f0(overall)} bpm — ${overall <= 60 ? 'athletic range, strong cardiovascular baseline' : 'within the healthy range'}`
+        : `RHR of ${f0(overall)} bpm — above the 70 bpm threshold associated with elevated cardiovascular risk`,
+      overall <= 70
+        ? `Your average resting heart rate of <strong>${f0(overall)} bpm</strong> is in the ${overall <= 60 ? 'athletic-to-normal' : 'healthy'} range. The Framingham Heart Study identifies sustained RHR above 70 bpm as an elevated cardiovascular risk marker. A lower RHR reflects stronger heart muscle efficiency — each beat pumps more blood, requiring fewer beats at rest. Your step counts and activity data suggest this is fitness-driven.`
+        : `Your average resting heart rate of <strong>${f0(overall)} bpm</strong> sits above the 70 bpm threshold that the Framingham Heart Study associates with elevated cardiovascular risk. Consistent aerobic exercise is the most reliable way to lower RHR over months. Even 20–30 minutes of moderate cardio 3–4 times per week produces measurable improvements within 8–12 weeks.`
+    ));
+    if (nn(trend)) {
+      const trendSev = trend > 8 ? 'warn' : trend < -5 ? 'good' : 'info';
+      const trendSign = trend > 0 ? '+' : '';
+      html.push(note(trendSev, 'Trend',
+        trend > 8 ? 'Rising RHR — worth watching over the next few weeks'
+        : trend < -5 ? 'Declining RHR — a positive indicator of improving cardiovascular fitness'
+        : 'RHR is stable',
+        trend > 5
+          ? `Your most recent month's RHR of <strong>${f0(latest)} bpm</strong> is <strong>${trendSign}${trend.toFixed(0)}%</strong> above the previous month. An isolated RHR spike can be explained by illness, dehydration, increased stress, or poor sleep. If it persists for 2–3 weeks without a clear cause, it's worth mentioning to your doctor.`
+          : `Your most recent month shows RHR <strong>${trendSign}${trend.toFixed(0)}%</strong> vs the previous month — a ${trend < 0 ? 'positive downward' : 'stable'} trend. A declining RHR over months is one of the clearest indicators of improving cardiovascular fitness.`
+      ));
+    }
+    const block = el('insightRhr');
+    if (block) block.innerHTML = html.join('');
+  }
+
+  function insightSteps(latest, peak, delta, peakMo) {
+    if (!nn(latest)) return;
+    const html = [];
+    const dailyApprox = Math.round(latest / 30 / 1000);
+    const sev = latest >= 210000 ? 'good' : latest >= 150000 ? 'info' : 'warn';
+    html.push(note(sev, 'Activity level',
+      latest >= 210000 ? `Strong activity — approximately ${dailyApprox}K steps/day`
+      : latest >= 150000 ? `Moderate activity — approximately ${dailyApprox}K steps/day`
+      : `Activity below recommended levels — approximately ${dailyApprox}K steps/day`,
+      latest >= 210000
+        ? `Your most recent month shows <strong>${fmtK(latest)} steps</strong> — roughly <strong>${dailyApprox},000 steps/day</strong>. This is comfortably above the 7,000–10,000 steps/day range associated with meaningful reductions in all-cause mortality risk in large population studies. Consistent physical activity at this level also supports lower RHR, better HRV, and improved sleep quality.`
+        : latest >= 150000
+        ? `You're logging approximately <strong>${dailyApprox},000 steps/day</strong> — approaching the 7,000–10,000 steps/day range the WHO associates with meaningful cardiovascular and metabolic benefits. Even modest increases (an extra 2,000 steps/day) have been shown in studies to reduce cardiovascular risk.`
+        : `Your current step count corresponds to roughly <strong>${dailyApprox},000 steps/day</strong> — below the 7,000–10,000 steps/day range commonly associated with health benefits. Regular movement doesn't require structured workouts: walking, cycling, or even standing breaks throughout the day all contribute to this total.`
+    ));
+    if (nn(delta) && delta < -15) {
+      html.push(note('warn', 'Activity trend',
+        `Steps are down ${Math.abs(delta.toFixed(0))}% from your peak month`,
+        `Your peak month reached <strong>${fmtK(peak)} steps</strong> (${peakMo}), and you're currently <strong>${Math.abs(delta.toFixed(0))}% below that</strong>. A sustained decline in activity is worth noting, particularly if it coincides with declining sleep quality or HRV — all three together can indicate a shift in lifestyle load or energy levels. Compare the periods to see if anything else changed.`
+      ));
+    }
+    const block = el('insightSteps');
+    if (block) block.innerHTML = html.join('');
   }
 
   // ── RUN ───────────────────────────────────────────────────────────────────
