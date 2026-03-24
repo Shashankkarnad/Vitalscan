@@ -218,41 +218,45 @@ main {
   max-width: 560px;
   animation: fadeUp .5s .2s ease both;
   position: relative;
+  z-index: 1;
 }
 
-/* ── AURA ANIMATION ── */
-.dropzone-wrap::before,
-.dropzone-wrap::after {
-  content: '';
-  position: absolute;
+/* ── AURA BLOBS ── */
+.aura-blob {
+  position: fixed;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  filter: blur(48px);
+  filter: blur(80px);
 }
-.dropzone-wrap::before {
-  width: 340px; height: 260px;
-  background: radial-gradient(ellipse, rgba(13,148,136,.18) 0%, transparent 70%);
-  top: -60px; left: -80px;
-  animation: auraA 8s ease-in-out infinite alternate;
+.aura-blob-1 {
+  width: 480px; height: 380px;
+  background: radial-gradient(ellipse, rgba(13,148,136,.22) 0%, transparent 65%);
+  top: 20vh; left: calc(50% - 340px);
+  animation: auraA 9s ease-in-out infinite alternate;
 }
-.dropzone-wrap::after {
-  width: 300px; height: 300px;
-  background: radial-gradient(ellipse, rgba(124,58,237,.12) 0%, transparent 70%);
-  bottom: -60px; right: -60px;
-  animation: auraB 10s ease-in-out infinite alternate;
+.aura-blob-2 {
+  width: 420px; height: 420px;
+  background: radial-gradient(ellipse, rgba(124,58,237,.16) 0%, transparent 65%);
+  top: 30vh; left: calc(50% + 20px);
+  animation: auraB 11s ease-in-out infinite alternate;
 }
-.dropzone { position: relative; z-index: 1; }
+.aura-blob-3 {
+  width: 300px; height: 240px;
+  background: radial-gradient(ellipse, rgba(234,88,12,.1) 0%, transparent 65%);
+  top: 60vh; left: calc(50% - 120px);
+  animation: auraA 13s ease-in-out infinite alternate-reverse;
+}
 
 @keyframes auraA {
-  0%   { transform: translate(0, 0) scale(1); opacity: .7; }
-  50%  { transform: translate(30px, 20px) scale(1.08); opacity: 1; }
-  100% { transform: translate(10px, 40px) scale(.96); opacity: .8; }
+  0%   { transform: translate(0, 0) scale(1); opacity: .8; }
+  50%  { transform: translate(40px, 25px) scale(1.1); opacity: 1; }
+  100% { transform: translate(15px, 50px) scale(.95); opacity: .75; }
 }
 @keyframes auraB {
-  0%   { transform: translate(0, 0) scale(1); opacity: .6; }
-  50%  { transform: translate(-20px, -15px) scale(1.1); opacity: .9; }
-  100% { transform: translate(-35px, 10px) scale(.95); opacity: .7; }
+  0%   { transform: translate(0, 0) scale(1); opacity: .7; }
+  50%  { transform: translate(-30px, -20px) scale(1.12); opacity: .95; }
+  100% { transform: translate(-45px, 15px) scale(.93); opacity: .8; }
 }
 
 .dropzone {
@@ -485,6 +489,11 @@ main {
     Back
   </a>
 </nav>
+
+<!-- AURA BLOBS -->
+<div class="aura-blob aura-blob-1"></div>
+<div class="aura-blob aura-blob-2"></div>
+<div class="aura-blob aura-blob-3"></div>
 
 <!-- MAIN -->
 <main>
