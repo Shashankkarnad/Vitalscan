@@ -226,37 +226,40 @@ main {
   position: fixed;
   border-radius: 50%;
   pointer-events: none;
-  z-index: 0;
-  filter: blur(80px);
+  z-index: 2;
+  filter: blur(55px);
+  will-change: transform, opacity;
 }
 .aura-blob-1 {
-  width: 480px; height: 380px;
-  background: radial-gradient(ellipse, rgba(13,148,136,.22) 0%, transparent 65%);
-  top: 20vh; left: calc(50% - 340px);
-  animation: auraA 9s ease-in-out infinite alternate;
+  width: 380px; height: 300px;
+  background: radial-gradient(ellipse, rgba(13,148,136,.35) 0%, transparent 70%);
+  top: 18vh; left: calc(50% - 320px);
+  animation: blobA 6s ease-in-out infinite alternate;
 }
 .aura-blob-2 {
-  width: 420px; height: 420px;
-  background: radial-gradient(ellipse, rgba(124,58,237,.16) 0%, transparent 65%);
-  top: 30vh; left: calc(50% + 20px);
-  animation: auraB 11s ease-in-out infinite alternate;
+  width: 340px; height: 340px;
+  background: radial-gradient(ellipse, rgba(124,58,237,.28) 0%, transparent 70%);
+  top: 28vh; left: calc(50% + 40px);
+  animation: blobB 7s ease-in-out infinite alternate;
 }
 .aura-blob-3 {
-  width: 300px; height: 240px;
-  background: radial-gradient(ellipse, rgba(234,88,12,.1) 0%, transparent 65%);
-  top: 60vh; left: calc(50% - 120px);
-  animation: auraA 13s ease-in-out infinite alternate-reverse;
+  width: 260px; height: 200px;
+  background: radial-gradient(ellipse, rgba(232,85,62,.22) 0%, transparent 70%);
+  top: 62vh; left: calc(50% - 100px);
+  animation: blobC 5s ease-in-out infinite alternate;
 }
 
-@keyframes auraA {
-  0%   { transform: translate(0, 0) scale(1); opacity: .8; }
-  50%  { transform: translate(40px, 25px) scale(1.1); opacity: 1; }
-  100% { transform: translate(15px, 50px) scale(.95); opacity: .75; }
+@keyframes blobA {
+  0%   { transform: translate(0, 0) scale(1);    opacity: .4; }
+  100% { transform: translate(160px, 120px) scale(1.25); opacity: 1; }
 }
-@keyframes auraB {
-  0%   { transform: translate(0, 0) scale(1); opacity: .7; }
-  50%  { transform: translate(-30px, -20px) scale(1.12); opacity: .95; }
-  100% { transform: translate(-45px, 15px) scale(.93); opacity: .8; }
+@keyframes blobB {
+  0%   { transform: translate(0, 0) scale(1.1);  opacity: .5; }
+  100% { transform: translate(-140px, -100px) scale(.8); opacity: 1; }
+}
+@keyframes blobC {
+  0%   { transform: translate(0, 0) scale(.9);   opacity: .3; }
+  100% { transform: translate(100px, -80px) scale(1.3); opacity: .9; }
 }
 
 .dropzone {
