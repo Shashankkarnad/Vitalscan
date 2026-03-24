@@ -13,24 +13,24 @@
   --surface2:#F8F9FA;
   --border:  #E4E7EB;
   --border2: #CBD2D9;
-  --text:    #1A1D23;
+  --text:    #111827;
   --text2:   #374151;
   --muted:   #9AA5B4;
   --dim:     #616E7C;
   --white:   #FFFFFF;
 
-  --teal:    #3ABCB1;
+  --teal:    #0D9488;
   --coral:   #D97B6C;
   --violet:  #7C6FAD;
 
-  --green:   #2A9D5C;
+  --green:   #059669;
   --yellow:  #C4A030;
-  --orange:  #C27B2E;
-  --red:     #C4404A;
+  --orange:  #EA580C;
+  --red:     #DC2626;
   --purple:  #7C6FAD;
-  --blue:    #3ABCB1;
-  --cyan:    #3ABCB1;
-  --grad:    linear-gradient(135deg, #3ABCB1, #4A9EE0);
+  --blue:    #0D9488;
+  --cyan:    #0D9488;
+  --grad:    linear-gradient(135deg, #0D9488, #4A9EE0);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,7 +55,7 @@ nav {
 }
 .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .nav-logo-mark {
-  width: 28px; height: 28px; background: #1A1D23;
+  width: 28px; height: 28px; background: #111827;
   border-radius: 8px; display: flex; align-items: center; justify-content: center;
 }
 .nav-logo-mark svg { width: 16px; height: 16px; }
@@ -80,7 +80,7 @@ main {
 .pulse-ring {
   position: absolute; inset: 0;
   border-radius: 50%;
-  border: 1.5px solid rgba(58,188,177,.25);
+  border: 1.5px solid rgba(13,148,136,.25);
   animation: ringPulse 2s ease-out infinite;
 }
 .pulse-ring:nth-child(2) { animation-delay: .6s; }
@@ -88,7 +88,7 @@ main {
 
 .pulse-core {
   position: absolute; inset: 16px;
-  background: #1A1D23;
+  background: #111827;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
 }
@@ -195,7 +195,7 @@ main {
 }
 
 .milestone.done   .ms-dot { background: rgba(42,157,92,.1); border-color: var(--green); }
-.milestone.active .ms-dot { background: rgba(58,188,177,.1); border-color: var(--teal); animation: spinDot 1.2s linear infinite; }
+.milestone.active .ms-dot { background: rgba(13,148,136,.1); border-color: var(--teal); animation: spinDot 1.2s linear infinite; }
 
 .ms-dot svg { width: 11px; height: 11px; }
 
@@ -332,8 +332,8 @@ main {
   <div class="fact-card" id="factCard">
     <div class="fact-icon">
       <svg viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5.5" stroke="#3ABCB1" stroke-width="1.2"/>
-        <path d="M7 6v4M7 4.5v.5" stroke="#3ABCB1" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="7" cy="7" r="5.5" stroke="#0D9488" stroke-width="1.2"/>
+        <path d="M7 6v4M7 4.5v.5" stroke="#0D9488" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
     </div>
     <div>
@@ -452,11 +452,11 @@ function getFile() {
 // ── Error display ─────────────────────────────────────────────────────────────
 function showError(msg) {
   progressStatus.textContent = 'Analysis failed.';
-  progressFill.style.background = '#C4404A';
+  progressFill.style.background = '#DC2626';
   document.querySelector('.headline').textContent = 'Something went wrong';
   document.querySelector('.sub').innerHTML =
-    `<span style="color:#C4404A">${msg}</span><br><br>
-     <a href="upload.html" style="color:#3ABCB1;text-decoration:none">← Try again</a>`;
+    `<span style="color:#DC2626">${msg}</span><br><br>
+     <a href="upload.html" style="color:#0D9488;text-decoration:none">← Try again</a>`;
 }
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────

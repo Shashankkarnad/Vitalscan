@@ -19,18 +19,18 @@
   --dim:     #616E7C;
   --white:   #FFFFFF;
 
-  --teal:    #3ABCB1;
-  --coral:   #D97B6C;
-  --violet:  #7C6FAD;
+  --teal:    #0D9488;
+  --coral:   #E8553E;
+  --violet:  #7C3AED;
 
-  --green:   #2A9D5C;
-  --yellow:  #C4A030;
-  --orange:  #C27B2E;
-  --red:     #C4404A;
-  --purple:  #7C6FAD;
-  --blue:    #3ABCB1;
-  --cyan:    #3ABCB1;
-  --grad:    linear-gradient(135deg, #3ABCB1, #4A9EE0);
+  --green:   #059669;
+  --yellow:  #D97706;
+  --orange:  #EA580C;
+  --red:     #DC2626;
+  --purple:  #7C3AED;
+  --blue:    #0D9488;
+  --cyan:    #0D9488;
+  --grad:    linear-gradient(135deg, #0D9488, #4A9EE0);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -115,7 +115,14 @@ body {
 .main-content {
   margin-left: 216px;
   flex: 1;
-  padding: 40px 40px 80px;
+  min-width: 0;
+  padding: 40px 48px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.main-content > * {
+  width: 100%;
   max-width: 720px;
 }
 
@@ -142,8 +149,8 @@ body {
   font-family: 'Inter', sans-serif;
 }
 .status-badge.warn {
-  background: rgba(194,123,46,.08);
-  border: 1px solid rgba(194,123,46,.2);
+  background: rgba(234,88,12,.08);
+  border: 1px solid rgba(234,88,12,.2);
   color: var(--orange);
 }
 .status-badge.warn::before {
@@ -154,8 +161,8 @@ body {
   animation: pulse 1.8s ease-in-out infinite;
 }
 .status-badge.critical {
-  background: rgba(196,64,74,.08);
-  border: 1px solid rgba(196,64,74,.2);
+  background: rgba(220,38,38,.08);
+  border: 1px solid rgba(220,38,38,.2);
   color: var(--red);
 }
 .status-badge.critical::before {
@@ -166,8 +173,8 @@ body {
   animation: pulse 1.8s ease-in-out infinite;
 }
 .status-badge.good {
-  background: rgba(42,157,92,.08);
-  border: 1px solid rgba(42,157,92,.2);
+  background: rgba(5,150,105,.08);
+  border: 1px solid rgba(5,150,105,.2);
   color: var(--green);
 }
 
@@ -184,11 +191,7 @@ body {
   line-height: 1.15;
   margin-bottom: 14px;
 }
-.verdict-headline em {
-  font-style: italic;
-  font-weight: 700;
-  color: var(--teal);
-}
+.verdict-headline em { font-style: normal; color: inherit; }
 
 .verdict-summary {
   font-size: 15px;
@@ -278,10 +281,10 @@ body {
   display: flex; align-items: center; justify-content: center;
   margin-top: 1px;
 }
-.finding-card.critical .fc-icon { background: rgba(196,64,74,.07);  color: var(--red); }
-.finding-card.elevated .fc-icon { background: rgba(194,123,46,.07); color: var(--orange); }
-.finding-card.moderate .fc-icon { background: rgba(196,160,48,.07); color: var(--yellow); }
-.finding-card.good     .fc-icon { background: rgba(42,157,92,.07);  color: var(--green); }
+.finding-card.critical .fc-icon { background: rgba(220,38,38,.07);  color: var(--red); }
+.finding-card.elevated .fc-icon { background: rgba(234,88,12,.07); color: var(--orange); }
+.finding-card.moderate .fc-icon { background: rgba(217,119,6,.07); color: var(--yellow); }
+.finding-card.good     .fc-icon { background: rgba(5,150,105,.07);  color: var(--green); }
 .fc-icon svg { width: 18px; height: 18px; }
 
 .fc-title-wrap {}
@@ -299,10 +302,10 @@ body {
   letter-spacing: .08em; text-transform: uppercase;
   font-family: 'Inter', sans-serif;
 }
-.severity-pill.critical { background: rgba(196,64,74,.08); color: var(--red); }
-.severity-pill.elevated { background: rgba(194,123,46,.08); color: var(--orange); }
-.severity-pill.moderate { background: rgba(196,160,48,.08); color: var(--yellow); }
-.severity-pill.good     { background: rgba(42,157,92,.08);  color: var(--green); }
+.severity-pill.critical { background: rgba(220,38,38,.08); color: var(--red); }
+.severity-pill.elevated { background: rgba(234,88,12,.08); color: var(--orange); }
+.severity-pill.moderate { background: rgba(217,119,6,.08); color: var(--yellow); }
+.severity-pill.good     { background: rgba(5,150,105,.08);  color: var(--green); }
 
 .fc-stat {
   text-align: right;
@@ -453,8 +456,8 @@ body {
 }
 .doctor-icon {
   width: 40px; height: 40px; min-width: 40px;
-  background: rgba(124,111,173,.07);
-  border: 1px solid rgba(124,111,173,.2);
+  background: rgba(124,58,237,.07);
+  border: 1px solid rgba(124,58,237,.2);
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
 }
@@ -473,8 +476,8 @@ body {
 }
 .doctor-badge {
   margin-left: auto; flex-shrink: 0;
-  background: rgba(124,111,173,.1);
-  border: 1px solid rgba(124,111,173,.2);
+  background: rgba(124,58,237,.1);
+  border: 1px solid rgba(124,58,237,.2);
   border-radius: 6px; padding: 4px 10px;
   font-size: 11px; font-weight: 700;
   color: var(--violet); font-family: 'Inter', sans-serif;
@@ -489,8 +492,8 @@ body {
   border-radius: 8px;
   border: 1px solid;
 }
-.alert-banner.critical { background: rgba(196,64,74,.05); border-color: rgba(196,64,74,.2); }
-.alert-banner.warn     { background: rgba(194,123,46,.05); border-color: rgba(194,123,46,.2); }
+.alert-banner.critical { background: rgba(220,38,38,.05); border-color: rgba(220,38,38,.2); }
+.alert-banner.warn     { background: rgba(234,88,12,.05); border-color: rgba(234,88,12,.2); }
 .ab-dot {
   width: 8px; height: 8px; min-width: 8px; border-radius: 50%;
   margin-top: 5px;
@@ -544,10 +547,10 @@ body {
   padding: 2px 8px; border-radius: 4px;
   letter-spacing: .04em; text-transform: uppercase;
 }
-.metric-tile.good .mt-badge     { background: rgba(42,157,92,.08);   color: var(--green); }
-.metric-tile.ok .mt-badge       { background: rgba(196,160,48,.08);  color: var(--yellow); }
-.metric-tile.warn .mt-badge     { background: rgba(194,123,46,.08);  color: var(--orange); }
-.metric-tile.critical .mt-badge { background: rgba(196,64,74,.08);   color: var(--red); }
+.metric-tile.good .mt-badge     { background: rgba(5,150,105,.08);   color: var(--green); }
+.metric-tile.ok .mt-badge       { background: rgba(217,119,6,.08);  color: var(--yellow); }
+.metric-tile.warn .mt-badge     { background: rgba(234,88,12,.08);  color: var(--orange); }
+.metric-tile.critical .mt-badge { background: rgba(220,38,38,.08);   color: var(--red); }
 
 /* ── DISCLAIMER ── */
 .disclaimer {
@@ -872,8 +875,8 @@ body {
     <div class="doctor-teaser">
       <div class="doctor-icon">
         <svg viewBox="0 0 20 20" fill="none">
-          <rect x="4" y="2" width="12" height="16" rx="2" stroke="#7C6FAD" stroke-width="1.3"/>
-          <path d="M7 7h6M7 10h6M7 13h4" stroke="#7C6FAD" stroke-width="1.3" stroke-linecap="round"/>
+          <rect x="4" y="2" width="12" height="16" rx="2" stroke="#7C3AED" stroke-width="1.3"/>
+          <path d="M7 7h6M7 10h6M7 13h4" stroke="#7C3AED" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
       </div>
       <div style="flex:1">

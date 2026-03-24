@@ -13,24 +13,24 @@
   --surface2:#F8F9FA;
   --border:  #E4E7EB;
   --border2: #CBD2D9;
-  --text:    #1A1D23;
+  --text:    #111827;
   --text2:   #374151;
   --muted:   #9AA5B4;
   --dim:     #616E7C;
   --white:   #FFFFFF;
 
-  --teal:    #3ABCB1;
+  --teal:    #0D9488;
   --coral:   #D97B6C;
   --violet:  #7C6FAD;
 
-  --green:   #2A9D5C;
+  --green:   #059669;
   --yellow:  #C4A030;
   --orange:  #C27B2E;
   --red:     #C4404A;
   --purple:  #7C6FAD;
-  --blue:    #3ABCB1;
-  --cyan:    #3ABCB1;
-  --grad:    linear-gradient(135deg, #3ABCB1, #4A9EE0);
+  --blue:    #0D9488;
+  --cyan:    #0D9488;
+  --grad:    linear-gradient(135deg, #0D9488, #4A9EE0);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -69,7 +69,7 @@ nav {
 .nav-logo-mark {
   width: 28px;
   height: 28px;
-  background: #1A1D23;
+  background: #111827;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -125,11 +125,7 @@ main {
   margin-bottom: 14px;
 }
 
-.page-header h1 em {
-  font-style: italic;
-  font-weight: 700;
-  color: var(--teal);
-}
+.page-header h1 em { font-style: normal; color: inherit; }
 
 .page-header p {
   font-size: 16px;
@@ -221,6 +217,42 @@ main {
   width: 100%;
   max-width: 560px;
   animation: fadeUp .5s .2s ease both;
+  position: relative;
+}
+
+/* ── AURA ANIMATION ── */
+.dropzone-wrap::before,
+.dropzone-wrap::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(48px);
+}
+.dropzone-wrap::before {
+  width: 340px; height: 260px;
+  background: radial-gradient(ellipse, rgba(13,148,136,.18) 0%, transparent 70%);
+  top: -60px; left: -80px;
+  animation: auraA 8s ease-in-out infinite alternate;
+}
+.dropzone-wrap::after {
+  width: 300px; height: 300px;
+  background: radial-gradient(ellipse, rgba(124,58,237,.12) 0%, transparent 70%);
+  bottom: -60px; right: -60px;
+  animation: auraB 10s ease-in-out infinite alternate;
+}
+.dropzone { position: relative; z-index: 1; }
+
+@keyframes auraA {
+  0%   { transform: translate(0, 0) scale(1); opacity: .7; }
+  50%  { transform: translate(30px, 20px) scale(1.08); opacity: 1; }
+  100% { transform: translate(10px, 40px) scale(.96); opacity: .8; }
+}
+@keyframes auraB {
+  0%   { transform: translate(0, 0) scale(1); opacity: .6; }
+  50%  { transform: translate(-20px, -15px) scale(1.1); opacity: .9; }
+  100% { transform: translate(-35px, 10px) scale(.95); opacity: .7; }
 }
 
 .dropzone {
@@ -238,13 +270,13 @@ main {
 .dropzone:hover,
 .dropzone.drag-over {
   border-color: var(--teal);
-  background: rgba(58,188,177,.04);
+  background: rgba(13,148,136,.04);
 }
 
 .dropzone.has-file {
   border-color: var(--teal);
   border-style: solid;
-  background: rgba(58,188,177,.04);
+  background: rgba(13,148,136,.04);
 }
 
 .dropzone input[type="file"] {
@@ -276,7 +308,7 @@ main {
 
 .dropzone.has-file .dz-icon {
   border-color: var(--teal);
-  background: rgba(58,188,177,.08);
+  background: rgba(13,148,136,.08);
 }
 
 .dz-icon svg { width: 24px; height: 24px; }
@@ -301,8 +333,8 @@ main {
   gap: 8px;
   margin-top: 16px;
   padding: 10px 16px;
-  background: rgba(58,188,177,.06);
-  border: 1px solid rgba(58,188,177,.2);
+  background: rgba(13,148,136,.06);
+  border: 1px solid rgba(13,148,136,.2);
   border-radius: 8px;
 }
 
@@ -334,8 +366,8 @@ main {
   justify-content: center;
   gap: 20px;
   padding: 16px 24px;
-  background: rgba(58,188,177,.05);
-  border: 1px solid rgba(58,188,177,.15);
+  background: rgba(13,148,136,.05);
+  border: 1px solid rgba(13,148,136,.15);
   border-radius: 12px;
   margin-top: 16px;
   animation: fadeUp .5s .3s ease both;
@@ -368,7 +400,7 @@ main {
 .btn-analyze {
   width: 100%;
   padding: 16px;
-  background: #1A1D23;
+  background: #111827;
   border: none;
   border-radius: 8px;
   font-family: 'Inter', sans-serif;
@@ -499,12 +531,12 @@ main {
       <div class="dz-icon" id="dzIcon">
         <!-- default: upload icon -->
         <svg id="iconUpload" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3v13M7 8l5-5 5 5" stroke="#3ABCB1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="#3ABCB1" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M12 3v13M7 8l5-5 5 5" stroke="#0D9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="#0D9488" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
         <!-- success: check icon (hidden by default) -->
         <svg id="iconCheck" viewBox="0 0 24 24" fill="none" style="display:none">
-          <path d="M5 13l4 4L19 7" stroke="#3ABCB1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 13l4 4L19 7" stroke="#0D9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
 
@@ -513,8 +545,8 @@ main {
 
       <div class="dz-filename" id="dzFilename">
         <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px;flex-shrink:0">
-          <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="#3ABCB1" stroke-width="1.2"/>
-          <path d="M5 5h6M5 8h4" stroke="#3ABCB1" stroke-width="1.2" stroke-linecap="round"/>
+          <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="#0D9488" stroke-width="1.2"/>
+          <path d="M5 5h6M5 8h4" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round"/>
         </svg>
         <span class="dz-filename-text" id="dzFilenameText"></span>
         <span class="dz-filesize" id="dzFilesize"></span>
@@ -526,24 +558,24 @@ main {
   <div class="privacy-strip">
     <div class="privacy-item">
       <svg viewBox="0 0 14 14" fill="none">
-        <path d="M7 1L2 3.5v3.5C2 9.8 4.2 12.3 7 13c2.8-.7 5-3.2 5-6V3.5L7 1Z" stroke="#3ABCB1" stroke-width="1.2" stroke-linejoin="round"/>
-        <path d="M5 7l1.5 1.5L9 5.5" stroke="#3ABCB1" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 1L2 3.5v3.5C2 9.8 4.2 12.3 7 13c2.8-.7 5-3.2 5-6V3.5L7 1Z" stroke="#0D9488" stroke-width="1.2" stroke-linejoin="round"/>
+        <path d="M5 7l1.5 1.5L9 5.5" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       Processed in memory only
     </div>
     <div class="privacy-divider"></div>
     <div class="privacy-item">
       <svg viewBox="0 0 14 14" fill="none">
-        <rect x="2" y="6" width="10" height="7" rx="1.5" stroke="#3ABCB1" stroke-width="1.2"/>
-        <path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" stroke="#3ABCB1" stroke-width="1.2" stroke-linecap="round"/>
+        <rect x="2" y="6" width="10" height="7" rx="1.5" stroke="#0D9488" stroke-width="1.2"/>
+        <path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
       Raw data never stored
     </div>
     <div class="privacy-divider"></div>
     <div class="privacy-item">
       <svg viewBox="0 0 14 14" fill="none">
-        <path d="M2 7a5 5 0 1 0 10 0A5 5 0 0 0 2 7Z" stroke="#3ABCB1" stroke-width="1.2"/>
-        <path d="M9 5L5.5 8.5M5.5 5L9 8.5" stroke="#3ABCB1" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M2 7a5 5 0 1 0 10 0A5 5 0 0 0 2 7Z" stroke="#0D9488" stroke-width="1.2"/>
+        <path d="M9 5L5.5 8.5M5.5 5L9 8.5" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
       Deleted after analysis
     </div>
