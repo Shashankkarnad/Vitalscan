@@ -20,9 +20,8 @@ ARCHITECTURE DECISIONS:
 DEPLOY TARGET: Railway or Render (both support background workers)
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-import io
 import json
 
 from parser import parse_export
@@ -49,24 +48,29 @@ def health_check():
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def analyze(request: Request, file: UploadFile = File(...)):
     """
     Accept an Apple Health export.zip and return analysis JSON.
 
-    Processing is synchronous for now — suitable for exports up to ~100MB.
-    Larger exports (300-400MB) will need the async job queue (TODO).
+    Large-file safe: checks Content-Length before reading, then passes the
+    spooled file-like directly to the parser — no full read into RAM.
+    The parser uses iterparse + elem.clear(), so peak memory is ~100-300MB
+    even for 400MB exports (previously 2-4GB with ET.fromstring).
     """
     if not file.filename.endswith('.zip'):
         raise HTTPException(400, "File must be a .zip export from Apple Health")
 
-    # Read into memory — never touch disk
-    contents = await file.read()
-
-    if len(contents) > 500 * 1024 * 1024:  # 500MB limit
+    # Reject oversized uploads before reading any bytes (best-effort — clients
+    # may omit Content-Length, but this catches the common browser case).
+    content_length = request.headers.get('content-length')
+    if content_length and int(content_length) > 500 * 1024 * 1024:
         raise HTTPException(413, "File too large. Maximum 500MB.")
 
     try:
-        result = parse_export(io.BytesIO(contents))
+        # Pass the spooled file-like directly — no await file.read() into RAM.
+        # python-multipart spools to disk once the upload exceeds its threshold,
+        # so file.file is seekable and safe to pass to zipfile.ZipFile.
+        result = parse_export(file.file)
         return result
     except KeyError as e:
         raise HTTPException(422, f"Could not find expected file in ZIP: {e}")

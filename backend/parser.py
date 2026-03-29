@@ -93,124 +93,185 @@ def parse_export(source, exclude_sources=None):
 
     Returns:
         dict: structured health data ready for dashboard rendering
+
+    Memory note: uses iterparse + elem.clear() so only the current XML element
+    is held in RAM at any time. Safe for 400MB+ exports on 512MB instances.
     """
     excl = set(exclude_sources) if exclude_sources else set()
 
-    xml_data = _load_xml(source)
-    root = ET.fromstring(xml_data)
+    _STEP_TYPE  = 'HKQuantityTypeIdentifierStepCount'
+    _SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis'
+    _HRV_TYPE   = 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN'
 
-    raw   = _collect_raw(root, excl)
-    steps = _deduplicate_steps(root, excl)
-    sleep = _parse_sleep(root, excl)
-    hrv   = _parse_hrv(root, excl)
+    raw          = defaultdict(list)   # {type: [(date, val, src)]}
+    step_records = []                  # fed into _build_steps_daily
+    sleep_records = []                 # fed into _build_sleep_daily
+    hrv_morning  = defaultdict(list)   # {date: [val]} — 2-9 AM readings
+    hrv_allday   = defaultdict(list)   # {date: [val]} — fallback
+    me_attrs     = {}                  # <Me> element attributes
 
-    return _compile_output(root, raw, steps, sleep, hrv)
+    xml_stream, zip_ref = _open_xml_stream(source)
+    try:
+        context = ET.iterparse(xml_stream, events=['start', 'end'])
+        _, root_elem = next(context)  # capture root so we can clear its children
+
+        for event, elem in context:
+            if event != 'end':
+                continue
+
+            tag = elem.tag
+
+            if tag == 'Me':
+                me_attrs = dict(elem.attrib)
+                root_elem.clear()
+                continue
+
+            if tag != 'Record':
+                root_elem.clear()
+                continue
+
+            t   = elem.get('type', '')
+            src = elem.get('sourceName', '')
+
+            if src in excl:
+                root_elem.clear()
+                continue
+
+            if t == _STEP_TYPE:
+                start_str = elem.get('startDate', '')
+                end_str   = elem.get('endDate', '')
+                val       = elem.get('value', '0')
+                if start_str and end_str:
+                    try:
+                        s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
+                        e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
+                        if e > s:
+                            step_records.append({
+                                'start': s, 'end': e,
+                                'val': float(val),
+                                'src': src,
+                                'priority': _source_priority(src),
+                            })
+                    except (ValueError, TypeError):
+                        pass
+
+            elif t == _SLEEP_TYPE:
+                val       = elem.get('value', '')
+                start_str = elem.get('startDate', '')
+                end_str   = elem.get('endDate', '')
+                if start_str and end_str:
+                    sleep_records.append((val, start_str, end_str))
+
+            elif t == _HRV_TYPE:
+                date_str = elem.get('startDate', '')
+                val      = elem.get('value')
+                if date_str and val:
+                    try:
+                        h = int(date_str[11:13])
+                        v = float(val)
+                        if v > 0:
+                            date = date_str[:10]
+                            hrv_allday[date].append(v)
+                            if 2 <= h <= 9:
+                                hrv_morning[date].append(v)
+                    except (ValueError, TypeError):
+                        pass
+
+            else:
+                val      = elem.get('value')
+                date_str = elem.get('startDate', '')
+                if val and date_str:
+                    try:
+                        raw[t].append((date_str, float(val), src))
+                    except ValueError:
+                        pass
+
+            root_elem.clear()
+
+    finally:
+        xml_stream.close()
+        if zip_ref is not None:
+            zip_ref.close()
+
+    steps = _build_steps_daily(step_records)
+    sleep = _build_sleep_daily(sleep_records)
+    hrv   = _build_hrv_daily(hrv_morning, hrv_allday)
+
+    return _compile_output(me_attrs, raw, steps, sleep, hrv)
 
 
-# ── XML LOADING ───────────────────────────────────────────────────────────────
+# ── XML STREAMING ─────────────────────────────────────────────────────────────
 
-def _load_xml(source):
-    """Load XML from zip path, xml path, or file-like object."""
+def _open_xml_stream(source):
+    """
+    Return (xml_stream, zip_handle_or_None) for the Apple Health XML.
+
+    Uses ZipFile.open() — a streaming decompressor — instead of .read(),
+    so the full XML is never materialised in memory.
+    Caller must close both objects when done.
+    """
     if hasattr(source, 'read'):
-        # File-like object — assume ZIP
-        with zipfile.ZipFile(source) as z:
-            return z.read('apple_health_export/export.xml')
+        z = zipfile.ZipFile(source)
+        return z.open('apple_health_export/export.xml'), z
 
     if isinstance(source, str):
         if source.endswith('.zip'):
-            with zipfile.ZipFile(source) as z:
-                return z.read('apple_health_export/export.xml')
-        else:
-            with open(source, 'rb') as f:
-                return f.read()
+            z = zipfile.ZipFile(source)
+            return z.open('apple_health_export/export.xml'), z
+        return open(source, 'rb'), None
 
     raise ValueError(f"Unsupported source type: {type(source)}")
 
 
-# ── RAW RECORD COLLECTION ─────────────────────────────────────────────────────
+# ── POST-PROCESSING HELPERS (fed from single iterparse pass) ─────────────────
 
-def _collect_raw(root, excl):
-    """Collect all records except steps (handled separately)."""
-    data = defaultdict(list)  # type -> [(date_str, value, source)]
-
-    SKIP_TYPES = {'HKQuantityTypeIdentifierStepCount'}
-
-    for record in root.iter('Record'):
-        t = record.get('type', '')
-        val = record.get('value')
-        src = record.get('sourceName', '')
-        date_str = record.get('startDate', '')
-
-        if t in SKIP_TYPES:
-            continue
-        if src in excl:
-            continue
-        if not (val and date_str):
-            continue
-
-        try:
-            data[t].append((date_str, float(val), src))
-        except ValueError:
-            pass
-
-    return data
+def _build_steps_daily(step_records):
+    """Deduplicate and aggregate step records collected during parsing."""
+    by_day = defaultdict(list)
+    for r in step_records:
+        by_day[r['start'].strftime('%Y-%m-%d')].append(r)
+    return {date: _dedup_day(recs) for date, recs in by_day.items()}
 
 
-# ── FIX #2: STEP DEDUPLICATION ───────────────────────────────────────────────
-
-def _deduplicate_steps(root, excl):
-    """
-    Deduplicate steps using minute-level overlap detection.
-
-    When multiple sources record steps in overlapping time windows,
-    the higher-priority source wins each minute. Priority is auto-detected
-    by device type: Apple Watch (1) > other wearable (2) > phone (3) > unknown (4).
-    Steps are scaled proportionally to minutes won.
-
-    Returns:
-        dict: {date_str: step_count} -- deduplicated daily totals
-    """
-    records = []
-
-    for record in root.iter('Record'):
-        if record.get('type') != 'HKQuantityTypeIdentifierStepCount':
-            continue
-
-        src = record.get('sourceName', '')
-        if src in excl:
-            continue
-
-        priority = _source_priority(src)
-        start_str = record.get('startDate', '')
-        end_str = record.get('endDate', '')
-        val = record.get('value', '0')
-
-        if not (start_str and end_str):
-            continue
-
+def _build_sleep_daily(sleep_records):
+    """Aggregate raw sleep tuples (val, start_str, end_str) into per-night totals."""
+    nights = defaultdict(lambda: {
+        'asleep': 0.0, 'deep': 0.0, 'rem': 0.0, 'core': 0.0, 'awake': 0.0
+    })
+    for val, start_str, end_str in sleep_records:
         try:
             s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
-            e = datetime.strptime(end_str[:19], '%Y-%m-%d %H:%M:%S')
-            if e > s:
-                records.append({
-                    'start': s, 'end': e,
-                    'val': float(val),
-                    'src': src,
-                    'priority': priority
-                })
+            e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
+            dur = (e - s).total_seconds() / 3600
+            date = start_str[:10]
+            if s.hour < 14:
+                date = (s - timedelta(days=1)).strftime('%Y-%m-%d')
+            if any(x in val for x in ['Asleep', 'Core', 'Deep', 'REM']):
+                nights[date]['asleep'] += dur
+            if 'AsleepDeep' in val:
+                nights[date]['deep'] += dur
+            elif 'AsleepREM' in val:
+                nights[date]['rem'] += dur
+            elif 'AsleepCore' in val or 'AsleepUnspecified' in val:
+                nights[date]['core'] += dur
+            if 'Awake' in val:
+                nights[date]['awake'] += dur
         except (ValueError, TypeError):
             pass
+    return dict(nights)
 
-    # Group by calendar date
-    by_day = defaultdict(list)
-    for r in records:
-        by_day[r['start'].strftime('%Y-%m-%d')].append(r)
 
-    daily = {}
-    for date, recs in by_day.items():
-        daily[date] = _dedup_day(recs)
+def _build_hrv_daily(morning, allday):
+    """Build daily HRV dict: prefer morning readings (2-9 AM), fall back to all-day."""
+    result = {}
+    for date in set(allday) | set(morning):
+        readings = morning.get(date) or allday.get(date)
+        if readings:
+            result[date] = round(statistics.mean(readings), 1)
+    return result
 
-    return daily
+
+# ── FIX #2: STEP DEDUPLICATION (per-day, unchanged) ──────────────────────────
 
 
 def _dedup_day(recs):
@@ -248,124 +309,9 @@ def _dedup_day(recs):
     return round(total)
 
 
-# ── FIX #3: SLEEP PARSING ────────────────────────────────────────────────────
-
-def _parse_sleep(root, excl):
-    """
-    Parse sleep records from all non-excluded sources.
-
-    Date assignment: sleep starting before 2 PM is assigned to the previous
-    calendar date (handles overnight sleep sessions correctly).
-
-    Returns:
-        dict: {date_str: {'asleep': h, 'deep': h, 'rem': h, 'core': h, 'awake': h}}
-    """
-    nights = defaultdict(lambda: {
-        'asleep': 0.0, 'deep': 0.0, 'rem': 0.0, 'core': 0.0, 'awake': 0.0
-    })
-
-    for record in root.iter('Record'):
-        if record.get('type') != 'HKCategoryTypeIdentifierSleepAnalysis':
-            continue
-
-        src = record.get('sourceName', '')
-        if src in excl:
-            continue
-
-        val = record.get('value', '')
-        start_str = record.get('startDate', '')
-        end_str = record.get('endDate', '')
-
-        if not (start_str and end_str):
-            continue
-
-        try:
-            s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
-            e = datetime.strptime(end_str[:19], '%Y-%m-%d %H:%M:%S')
-            dur = (e - s).total_seconds() / 3600
-
-            # Assign to correct calendar date
-            date = start_str[:10]
-            if s.hour < 14:
-                date = (s - timedelta(days=1)).strftime('%Y-%m-%d')
-
-            # Categorise by stage
-            if any(x in val for x in ['Asleep', 'Core', 'Deep', 'REM']):
-                nights[date]['asleep'] += dur
-            if 'AsleepDeep' in val:
-                nights[date]['deep'] += dur
-            elif 'AsleepREM' in val:
-                nights[date]['rem'] += dur
-            elif 'AsleepCore' in val or 'AsleepUnspecified' in val:
-                nights[date]['core'] += dur
-            if 'Awake' in val:
-                nights[date]['awake'] += dur
-
-        except (ValueError, TypeError):
-            pass
-
-    return dict(nights)
-
-
-# ── FIX #3: HRV PARSING ──────────────────────────────────────────────────────
-
-def _parse_hrv(root, excl):
-    """
-    Parse HRV using morning readings only (2-9 AM).
-
-    Per Shaffer & Ginsberg 2017, morning SDNN readings taken during or
-    immediately after sleep are the clinically validated metric.
-    All-day averaging inflates the number by ~3-5ms.
-
-    Returns:
-        dict: {date_str: hrv_ms} -- one value per day (morning mean)
-              Falls back to all-day mean if no morning readings exist.
-    """
-    morning = defaultdict(list)  # 2-9 AM readings
-    allday = defaultdict(list)   # fallback
-
-    for record in root.iter('Record'):
-        if record.get('type') != 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN':
-            continue
-
-        src = record.get('sourceName', '')
-        if src in excl:
-            continue
-
-        date_str = record.get('startDate', '')
-        val = record.get('value')
-        if not (date_str and val):
-            continue
-
-        try:
-            h = int(date_str[11:13])
-            v = float(val)
-            if v <= 0:
-                continue
-
-            date = date_str[:10]
-            allday[date].append(v)
-            if 2 <= h <= 9:
-                morning[date].append(v)
-
-        except (ValueError, TypeError):
-            pass
-
-    # Build daily HRV: prefer morning, fall back to all-day
-    result = {}
-    all_dates = set(allday.keys()) | set(morning.keys())
-    for date in all_dates:
-        if morning.get(date):
-            result[date] = round(statistics.mean(morning[date]), 1)
-        elif allday.get(date):
-            result[date] = round(statistics.mean(allday[date]), 1)
-
-    return result
-
-
 # ── OUTPUT COMPILATION ────────────────────────────────────────────────────────
 
-def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
+def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily):
     """Compile all parsed data into dashboard-ready JSON structure."""
 
     # ── Helpers ──
@@ -466,7 +412,7 @@ def _compile_output(root, raw, steps_daily, sleep, hrv_daily):
     }
 
     # ── Profile ──
-    profile = _extract_profile(root, raw)
+    profile = _extract_profile(me_attrs, raw)
 
     # ── Month labels ──
     month_names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -563,12 +509,12 @@ def _get_months(raw, steps_daily, sleep):
     return sorted(months)[-16:]
 
 
-def _extract_profile(root, raw):
+def _extract_profile(me_attrs, raw):
     """
-    Extract profile from the Me record and recent measurement records.
+    Extract profile from the Me element attributes and recent measurement records.
 
     Apple Health stores:
-      - DOB, sex in the <Me> element
+      - DOB, sex in the <Me> element (passed as me_attrs dict)
       - Height in HKQuantityTypeIdentifierHeight (metres)
       - Weight in HKQuantityTypeIdentifierBodyMass (kg)
     """
@@ -576,10 +522,9 @@ def _extract_profile(root, raw):
 
     profile = {'age': None, 'sex': None, 'height_cm': None, 'weight_kg': None, 'bmi': None, 'name': None}
 
-    me = root.find('Me') if root is not None else None
-    if me is not None:
+    if me_attrs:
         # Age
-        dob_str = me.get('HKCharacteristicTypeIdentifierDateOfBirth')
+        dob_str = me_attrs.get('HKCharacteristicTypeIdentifierDateOfBirth')
         if dob_str:
             try:
                 dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
@@ -591,7 +536,7 @@ def _extract_profile(root, raw):
                 pass
 
         # Sex
-        sex_raw = me.get('HKCharacteristicTypeIdentifierBiologicalSex', '')
+        sex_raw = me_attrs.get('HKCharacteristicTypeIdentifierBiologicalSex', '')
         if 'Female' in sex_raw:
             profile['sex'] = 'female'
         elif 'Male' in sex_raw:

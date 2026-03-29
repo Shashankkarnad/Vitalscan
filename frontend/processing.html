@@ -481,7 +481,9 @@ async function run() {
     const fd = new FormData();
     fd.append('file', file, file.name || 'export.zip');
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 90000); // 90s timeout
+    // Scale timeout with file size: 90s base + 0.5s per MB, capped at 10 min.
+    const timeoutMs = Math.min(90000 + (file.size / (1024 * 1024)) * 500, 600000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     return fetch(API_URL, { method: 'POST', body: fd, signal: controller.signal })
       .then(res => {
         clearTimeout(timer);
