@@ -4,6 +4,45 @@ Decisions made during Claude.ai sessions. Append new decisions here as the proje
 
 ---
 
+## Session 2 — Mar 30 2026
+
+### Infrastructure: migrated backend from Cloud Run → Railway
+
+Backend is now deployed at `https://vitalscan-production.up.railway.app`.
+Frontend (Vercel) updated to call Railway for both `/health` ping and `/analyze`.
+
+### Fix: large file handling (400MB+ exports no longer OOM)
+
+Three bugs fixed:
+
+**1. parser.py — full DOM load (root cause)**
+- Old: `z.read('export.xml')` + `ET.fromstring()` loaded entire XML into a DOM tree. For a 400MB ZIP, decompressed XML is ~600MB and the DOM is 1–3GB on top of that. Crashed any server instance with <2GB RAM.
+- New: `zipfile.ZipFile.open()` (streaming decompressor) + `ET.iterparse()` + `root_elem.clear()` after each element. Only the current XML element is held in RAM. Peak memory drops from 2–4GB → ~100–300MB.
+- Also merged the old 4-pass approach (`_collect_raw`, `_deduplicate_steps`, `_parse_sleep`, `_parse_hrv`) into a single iterparse pass.
+
+**2. main.py — read before size check**
+- Old: `await file.read()` loaded the full ZIP into RAM before checking the 500MB limit.
+- New: Check `Content-Length` header first. Pass `file.file` (spooled temp file) directly to parser — no full read into RAM.
+
+**3. processing.html — hardcoded 90s timeout**
+- Old: AbortController hardcoded to 90s. Large files take 2–5 min; frontend killed the request.
+- New: Scales with file size — `90s base + 0.5s per MB`, capped at 10 min.
+
+### Decision: AI Q&A deferred
+
+Discussed adding an AI to answer questions about the report. Decided against for now:
+- Core funnel (verdict screen + paywall) not built yet — AI Q&A is premature.
+- Health-anxious persona wants structured answers, not a chatbox.
+- Open-ended Q&A increases medical liability vs structured findings.
+- Adds per-query API cost — conflicts with one-time $29 model.
+- Revisit as a scoped premium feature after verdict screen ships.
+
+### Next up
+1. Verdict screen — free tier gating (top 3 findings, rest paywalled)
+2. Doctor letter — $29 premium differentiator
+
+---
+
 ## Session 1 — Feb 27 2026
 
 ### User persona
