@@ -197,7 +197,7 @@ def parse_export(source, exclude_sources=None):
     sleep = _build_sleep_daily(sleep_records)
     hrv   = _build_hrv_daily(hrv_morning, hrv_allday)
 
-    return _compile_output(me_attrs, raw, steps, sleep, hrv)
+    return _compile_output(me_attrs, raw, steps, sleep, hrv, sleep_records)
 
 
 # ── XML STREAMING ─────────────────────────────────────────────────────────────
@@ -261,6 +261,35 @@ def _build_sleep_daily(sleep_records):
     return dict(nights)
 
 
+def _build_sleep_timeline(sleep_records):
+    """Build per-night ordered stage intervals for the hypnogram (last 14 nights)."""
+    timeline = defaultdict(list)
+    for val, start_str, end_str in sleep_records:
+        try:
+            s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
+            e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
+            date = start_str[:10]
+            if s.hour < 14:
+                date = (s - timedelta(days=1)).strftime('%Y-%m-%d')
+            stage = (
+                'deep'  if 'AsleepDeep' in val else
+                'rem'   if 'AsleepREM'  in val else
+                'core'  if ('AsleepCore' in val or 'AsleepUnspecified' in val) else
+                'awake' if 'Awake'      in val else
+                None
+            )
+            if stage:
+                timeline[date].append({'start': start_str, 'end': end_str, 'stage': stage})
+        except (ValueError, TypeError):
+            pass
+    # Keep last 14 nights, sort each night's segments by start time
+    sorted_dates = sorted(timeline.keys())[-14:]
+    return {
+        d: sorted(timeline[d], key=lambda x: x['start'])
+        for d in sorted_dates
+    }
+
+
 def _build_hrv_daily(morning, allday):
     """Build daily HRV dict: prefer morning readings (2-9 AM), fall back to all-day."""
     result = {}
@@ -311,7 +340,7 @@ def _dedup_day(recs):
 
 # ── OUTPUT COMPILATION ────────────────────────────────────────────────────────
 
-def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily):
+def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=None):
     """Compile all parsed data into dashboard-ready JSON structure."""
 
     # ── Helpers ──
@@ -408,6 +437,7 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily):
         'total':  [round(sleep[d]['asleep'], 1) for d in recent_dates],
         'deep':   [round(sleep[d]['deep'] * 60) for d in recent_dates],
         'rem':    [round(sleep[d]['rem'] * 60) for d in recent_dates],
+        'core':   [round(sleep[d]['core'] * 60) for d in recent_dates],
         'awake':  [round(sleep[d]['awake'] * 60) for d in recent_dates],
     }
 
@@ -478,6 +508,10 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily):
             round(safe_mean(sleep_month[m]['rem'])) if sleep_month.get(m) and sleep_month[m]['rem'] else None
             for m in all_months
         ],
+        'sleep_core_month': [
+            round(safe_mean(sleep_month[m]['core'])) if sleep_month.get(m) and sleep_month[m]['core'] else None
+            for m in all_months
+        ],
         'hr_by_hour':   [safe_mean(hr_hour.get(h, [])) for h in range(24)],
         'hrv_dates':    sorted(hrv_daily.keys()),
         'hrv_values':   [hrv_daily[d] for d in sorted(hrv_daily.keys())],
@@ -492,6 +526,7 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily):
             d: {k: round(v, 2) for k, v in n.items()}
             for d, n in sleep.items() if n['asleep'] > 1
         },
+        'sleep_timeline': _build_sleep_timeline(sleep_records or []),
         'findings': findings,
     }
 
