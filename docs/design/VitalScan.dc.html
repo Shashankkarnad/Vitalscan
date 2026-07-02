@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    html,body{margin:0;padding:0;background:#0a0a10;}
+    ::selection{background:rgba(108,140,255,.35);}
+    @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+    @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+  </style>
+</helmet>
+<div style="min-height:100vh; background:#0a0a10; color:#e8eaf2; font-family:'IBM Plex Sans',sans-serif; position:relative; overflow-x:hidden; -webkit-font-smoothing:antialiased;">
+
+  <div style="position:relative; z-index:1; max-width:1060px; margin:0 auto; padding:0 24px 64px;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding-top:26px; gap:16px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:baseline; gap:14px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:19px; letter-spacing:.01em;">VitalScan</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.18em; color:rgba(232,234,242,.36); text-transform:uppercase;">Groundskeeper&rsquo;s log</div>
+      </div>
+      <div style="display:flex; gap:4px;">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+          <button onClick="{{ n.go }}" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; padding:8px 14px; border-radius:9px; cursor:pointer; border:1px solid {{ n.bd }}; background:{{ n.bg }}; color:{{ n.col }}; transition:color .15s ease, background .15s ease;" style-hover="color:#e8eaf2;">{{ n.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Home — weekly note" style="padding-top:76px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(232,234,242,.42); animation:rise .5s cubic-bezier(.2,.7,.3,1) both;">{{ weekLabel }}</div>
+        <h1 style="font-family:'Space Grotesk','IBM Plex Sans',sans-serif; font-weight:300; font-size:52px; line-height:1.12; letter-spacing:-0.015em; max-width:840px; margin:18px 0 0; text-wrap:pretty; animation:rise .55s cubic-bezier(.2,.7,.3,1) .06s both;">{{ verdict }}</h1>
+        <p style="font-size:16.5px; color:rgba(232,234,242,.6); max-width:660px; margin:16px 0 0; line-height:1.55; text-wrap:pretty; animation:rise .55s cubic-bezier(.2,.7,.3,1) .12s both;">{{ verdictSub }}</p>
+
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.18em; color:rgba(232,234,242,.4); margin-top:44px; animation:rise .5s cubic-bezier(.2,.7,.3,1) .16s both;">SYSTEMS</div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:14px;">
+          <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="4">
+            <div style="border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:18px 18px 16px; animation:rise .5s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ cat.delay }}; transition:border-color .15s ease;" style-hover="border-color:rgba(255,255,255,.18);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.15em; color:rgba(232,234,242,.45);">{{ cat.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; padding:3px 8px; border-radius:999px; color:{{ cat.statusCol }}; border:1px solid {{ cat.statusBd }}; background:{{ cat.statusBg }}; text-transform:uppercase; white-space:nowrap;">{{ cat.statusWord }}</span>
+              </div>
+              <svg viewBox="0 0 {{ cat.mini.w }} {{ cat.mini.h }}" preserveAspectRatio="none" width="100%" height="38" style="display:block; margin-top:12px; overflow:visible;">
+                <path d="{{ cat.mini.band }}" fill="{{ cat.mini.bandFill }}"></path>
+                <path d="{{ cat.mini.line }}" fill="none" stroke="{{ cat.mini.col }}" stroke-width="2.2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ cat.metrics }}" as="m" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+                    <span style="font-size:12.5px; color:rgba(232,234,242,.6);">{{ m.name }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#e8eaf2;">{{ m.cur }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ hasFindings }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.18em; color:rgba(232,234,242,.4); margin-top:40px; animation:rise .5s cubic-bezier(.2,.7,.3,1) .2s both;">FINDINGS</div>
+        </sc-if>
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:14px;">
+          <sc-for list="{{ findings }}" as="f" hint-placeholder-count="2">
+            <div style="border-radius:18px; border:1px solid {{ f.bd }}; background:rgba(255,255,255,.03); box-shadow:{{ f.shadow }}; padding:24px 28px; animation:rise .55s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ f.delay }};">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.14em; padding:4px 11px; border-radius:999px; color:{{ f.col }}; border:1px solid {{ f.badgeBd }}; background:{{ f.badgeBg }};">{{ f.level }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; color:rgba(232,234,242,.38);">{{ f.date }}</span>
+              </div>
+              <h2 style="font-size:19px; font-weight:600; margin:16px 0 0; letter-spacing:-.01em;">{{ f.title }}</h2>
+              <p style="font-size:15px; line-height:1.6; color:rgba(232,234,242,.66); margin:10px 0 0; max-width:760px; text-wrap:pretty;">{{ f.body }}</p>
+              <button onClick="{{ f.toggle }}" style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(232,234,242,.5); background:none; border:none; padding:0; margin-top:16px; cursor:pointer; transition:color .15s ease;" style-hover="color:#e8eaf2;">{{ f.toggleLabel }}</button>
+              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:18px; border-top:1px solid rgba(255,255,255,.08); padding-top:18px;">
+                  <svg width="{{ f.c.w }}" height="{{ f.c.h }}" style="display:block; max-width:100%;">
+                    <path d="{{ f.c.band }}" fill="{{ f.c.bandFill }}"></path>
+                    <sc-if value="{{ f.c.hasGap }}" hint-placeholder-val="{{ false }}">
+                      <rect x="{{ f.c.gapX }}" y="{{ f.c.gapY }}" width="{{ f.c.gapW }}" height="{{ f.c.gapH }}" fill="rgba(255,255,255,.035)"></rect>
+                      <text x="{{ f.c.gapCx }}" y="{{ f.c.gapTy }}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9.5" letter-spacing="2" fill="rgba(232,234,242,.4)">NO DATA</text>
+                    </sc-if>
+                    <sc-if value="{{ f.c.hasRef }}" hint-placeholder-val="{{ false }}">
+                      <line x1="{{ f.c.refX0 }}" x2="{{ f.c.refX1 }}" y1="{{ f.c.refY }}" y2="{{ f.c.refY }}" stroke="rgba(255,255,255,.22)" stroke-dasharray="3 4" stroke-width="1"></line>
+                    </sc-if>
+                    <path d="{{ f.c.line }}" fill="none" stroke="{{ f.c.col }}" stroke-width="1.8" stroke-linejoin="round"></path>
+                    <sc-for list="{{ f.c.dots }}" as="dt" hint-placeholder-count="0">
+                      <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="3.4" fill="{{ f.c.col }}" stroke="#0a0a10" stroke-width="1.4"></circle>
+                    </sc-for>
+                    <text x="6" y="{{ f.c.yHiY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ f.c.yHiTx }}</text>
+                    <text x="6" y="{{ f.c.yLoY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ f.c.yLoTx }}</text>
+                    <sc-for list="{{ f.c.ticks }}" as="tk" hint-placeholder-count="3">
+                      <text x="{{ tk.x }}" y="{{ f.c.tickY }}" font-family="IBM Plex Mono" font-size="9.5" letter-spacing="1" fill="rgba(232,234,242,.3)">{{ tk.label }}</text>
+                    </sc-for>
+                  </svg>
+                  <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:14px 18px; margin-top:14px;">
+                    <sc-for list="{{ f.lines }}" as="ln" hint-placeholder-count="4">
+                      <div style="display:grid; grid-template-columns:150px 1fr; gap:12px; padding:3px 0;">
+                        <div style="color:rgba(232,234,242,.38);">{{ ln.k }}</div>
+                        <div style="color:rgba(232,234,242,.72);">{{ ln.v }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:42px; padding-top:22px; border-top:1px solid rgba(255,255,255,.07); display:flex; align-items:baseline; gap:14px; animation:rise .55s cubic-bezier(.2,.7,.3,1) .4s both;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.16em; color:#34d6c0; white-space:nowrap;">STEADY</span>
+          <span style="font-size:14.5px; line-height:1.6; color:rgba(232,234,242,.55);">{{ steady }}</span>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(232,234,242,.32); margin-top:14px; animation:rise .55s cubic-bezier(.2,.7,.3,1) .46s both;">{{ nextNote }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Dashboard" style="padding-top:64px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(232,234,242,.42); animation:rise .5s cubic-bezier(.2,.7,.3,1) both;">Dashboard &middot; last 90 days</div>
+        <h1 style="font-family:'Space Grotesk','IBM Plex Sans',sans-serif; font-weight:300; font-size:36px; line-height:1.15; letter-spacing:-0.01em; margin:16px 0 0; animation:rise .55s cubic-bezier(.2,.7,.3,1) .06s both;">{{ dashTitle }}</h1>
+
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:32px;">
+          <sc-for list="{{ dashTiles }}" as="t" hint-placeholder-count="7">
+            <button onClick="{{ t.go }}" style="text-align:left; display:block; width:100%; font-family:'IBM Plex Sans',sans-serif; color:#e8eaf2; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:16px 16px 14px; cursor:pointer; animation:rise .5s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ t.delay }}; transition:border-color .15s ease, background .15s ease;" style-hover="border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.05);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.14em; color:rgba(232,234,242,.45); text-transform:uppercase;">{{ t.name }}</span>
+                <span style="width:6px; height:6px; border-radius:50%; background:{{ t.statusHex }};"></span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:6px; margin-top:12px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; letter-spacing:-.01em;">{{ t.cur }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(232,234,242,.45);">{{ t.unit }}</span>
+              </div>
+              <svg viewBox="0 0 {{ t.c.w }} {{ t.c.h }}" preserveAspectRatio="none" width="100%" height="40" style="display:block; margin-top:12px; overflow:visible;">
+                <path d="{{ t.c.band }}" fill="{{ t.c.bandFill }}"></path>
+                <path d="{{ t.c.line }}" fill="none" stroke="{{ t.c.col }}" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:12px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:{{ t.statusHex }};">{{ t.statusWord }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:rgba(232,234,242,.4);">{{ t.zTxt }}</span>
+              </div>
+            </button>
+          </sc-for>
+          <button onClick="{{ goTrust }}" style="text-align:left; display:block; width:100%; font-family:'IBM Plex Sans',sans-serif; color:#e8eaf2; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:16px 16px 14px; cursor:pointer; animation:rise .5s cubic-bezier(.2,.7,.3,1) .4s both; transition:border-color .15s ease, background .15s ease;" style-hover="border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.05);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.14em; color:rgba(232,234,242,.45); text-transform:uppercase;">Instruments</span>
+              <span style="width:6px; height:6px; border-radius:50%; background:#ff5b46;"></span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:15px;">
+              <sc-for list="{{ dashSources }}" as="s" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <span style="font-size:12.5px; color:rgba(232,234,242,.7);">{{ s.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; padding:2px 7px; border-radius:999px; color:{{ s.col }}; border:1px solid {{ s.bd }};">{{ s.grade }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#ff5b46;">1 pair distrusted</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:rgba(232,234,242,.4);">graded monthly</span>
+            </div>
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.55fr 1fr; gap:14px; margin-top:14px;">
+          <div style="border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:20px 24px; animation:rise .55s cubic-bezier(.2,.7,.3,1) .48s both;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#ff5b46;"></span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(232,234,242,.55);">Resting heart rate</span>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.12em; color:rgba(232,234,242,.32);">90 DAYS</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:10px; margin-top:12px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#e8eaf2;">{{ hero.cur }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:rgba(232,234,242,.45);">bpm</span>
+              <span style="font-size:13px; color:rgba(232,234,242,.45); margin-left:8px;">your normal 53&ndash;68 bpm</span>
+            </div>
+            <svg viewBox="0 0 {{ hero.c.w }} {{ hero.c.h }}" width="100%" style="display:block; margin-top:10px;">
+              <path d="{{ hero.c.band }}" fill="{{ hero.c.bandFill }}"></path>
+              <sc-for list="{{ hero.c.annos }}" as="an" hint-placeholder-count="2">
+                <rect x="{{ an.x0 }}" y="{{ an.y0 }}" width="{{ an.w }}" height="{{ an.h }}" fill="rgba(255,255,255,.04)"></rect>
+                <text x="{{ an.cx }}" y="{{ an.ty }}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" letter-spacing="2" fill="rgba(232,234,242,.42)">{{ an.label }}</text>
+              </sc-for>
+              <sc-if value="{{ hero.c.hasZepp }}" hint-placeholder-val="{{ false }}">
+                <path d="{{ hero.c.zepp }}" fill="none" stroke="{{ hero.c.zeppCol }}" stroke-width="1.2" stroke-dasharray="2 5"></path>
+              </sc-if>
+              <path d="{{ hero.c.line }}" fill="none" stroke="{{ hero.c.col }}" stroke-width="1.8" stroke-linejoin="round"></path>
+              <sc-for list="{{ hero.c.dots }}" as="dt" hint-placeholder-count="0">
+                <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="3.2" fill="{{ hero.c.col }}" stroke="#0a0a10" stroke-width="1.4"></circle>
+              </sc-for>
+              <text x="6" y="{{ hero.c.yHiY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ hero.c.yHiTx }}</text>
+              <text x="6" y="{{ hero.c.yLoY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ hero.c.yLoTx }}</text>
+              <sc-for list="{{ hero.c.ticks }}" as="tk" hint-placeholder-count="3">
+                <text x="{{ tk.x }}" y="{{ hero.c.tickY }}" font-family="IBM Plex Mono" font-size="9.5" letter-spacing="1" fill="rgba(232,234,242,.3)">{{ tk.label }}</text>
+              </sc-for>
+            </svg>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(232,234,242,.42); margin-top:10px; line-height:1.5;">Dashed faint series = Zepp Band &mdash; distrusted, excluded from your baseline.</div>
+          </div>
+          <div style="border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:20px 24px 14px; animation:rise .55s cubic-bezier(.2,.7,.3,1) .54s both; display:flex; flex-direction:column;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(232,234,242,.55);">Recent decisions</div>
+            <div style="display:flex; flex-direction:column; margin-top:9px; flex:1;">
+              <sc-for list="{{ dashLog }}" as="e" hint-placeholder-count="4">
+                <div style="padding:11px 0; border-top:1px solid rgba(255,255,255,.06); display:flex; flex-direction:column; gap:6px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:rgba(232,234,242,.38);">{{ e.date }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.1em; padding:2px 8px; border-radius:999px; color:{{ e.bcol }}; border:1px solid {{ e.badgeBd }}; background:{{ e.badgeBg }};">{{ e.badge }}</span>
+                  </div>
+                  <div style="font-size:13px; color:rgba(232,234,242,.78); line-height:1.45; text-wrap:pretty;">{{ e.title }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <button onClick="{{ goAudit }}" style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(232,234,242,.5); background:none; border:none; border-top:1px solid rgba(255,255,255,.06); padding:14px 0 6px; text-align:left; cursor:pointer; transition:color .15s ease;" style-hover="color:#e8eaf2;">Open audit log &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEvidence }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Evidence — timelines" style="padding-top:64px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(232,234,242,.42); animation:rise .5s cubic-bezier(.2,.7,.3,1) both;">Evidence · last 90 days</div>
+        <h1 style="font-family:'Space Grotesk','IBM Plex Sans',sans-serif; font-weight:300; font-size:36px; line-height:1.15; letter-spacing:-0.01em; margin:16px 0 0; animation:rise .55s cubic-bezier(.2,.7,.3,1) .06s both;">Seven signals against your own band.</h1>
+        <p style="font-size:15.5px; color:rgba(232,234,242,.58); max-width:640px; margin:12px 0 0; line-height:1.55; animation:rise .55s cubic-bezier(.2,.7,.3,1) .12s both;">The shaded band is your personal normal — rolling 60-day median &plusmn; 2 robust SD, not a population chart. Points outside it are the only points that matter.</p>
+
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:36px;">
+          <sc-for list="{{ charts }}" as="m" hint-placeholder-count="7">
+            <div style="border-radius:18px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:22px 26px; animation:rise .55s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ m.delay }}; transition:border-color .15s ease;" style-hover="border-color:rgba(255,255,255,.18);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:{{ m.col }};"></span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(232,234,242,.55);">{{ m.name }}</span>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.12em; color:rgba(232,234,242,.32);">90 DAYS</span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:10px; margin-top:12px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#e8eaf2;">{{ m.cur }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:rgba(232,234,242,.45);">{{ m.unit }}</span>
+                <span style="font-size:13px; color:rgba(232,234,242,.45); margin-left:8px;">{{ m.band }}</span>
+              </div>
+              <svg width="{{ m.c.w }}" height="{{ m.c.h }}" style="display:block; max-width:100%; margin-top:10px;">
+                <path d="{{ m.c.band }}" fill="{{ m.c.bandFill }}"></path>
+                <sc-for list="{{ m.c.annos }}" as="an" hint-placeholder-count="0">
+                  <rect x="{{ an.x0 }}" y="{{ an.y0 }}" width="{{ an.w }}" height="{{ an.h }}" fill="rgba(255,255,255,.04)"></rect>
+                  <text x="{{ an.cx }}" y="{{ an.ty }}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" letter-spacing="2" fill="rgba(232,234,242,.42)">{{ an.label }}</text>
+                </sc-for>
+                <sc-if value="{{ m.c.hasGap }}" hint-placeholder-val="{{ false }}">
+                  <rect x="{{ m.c.gapX }}" y="{{ m.c.gapY }}" width="{{ m.c.gapW }}" height="{{ m.c.gapH }}" fill="rgba(255,255,255,.035)"></rect>
+                  <text x="{{ m.c.gapCx }}" y="{{ m.c.gapTy }}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9.5" letter-spacing="2" fill="rgba(232,234,242,.4)">NO DATA &middot; 10 D</text>
+                </sc-if>
+                <sc-if value="{{ m.c.hasRef }}" hint-placeholder-val="{{ false }}">
+                  <line x1="{{ m.c.refX0 }}" x2="{{ m.c.refX1 }}" y1="{{ m.c.refY }}" y2="{{ m.c.refY }}" stroke="rgba(255,255,255,.22)" stroke-dasharray="3 4" stroke-width="1"></line>
+                  <text x="{{ m.c.refX1 }}" y="{{ m.c.refTy }}" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="rgba(232,234,242,.4)">{{ m.c.refTx }}</text>
+                </sc-if>
+                <sc-if value="{{ m.c.hasZepp }}" hint-placeholder-val="{{ false }}">
+                  <path d="{{ m.c.zepp }}" fill="none" stroke="{{ m.c.zeppCol }}" stroke-width="1.2" stroke-dasharray="2 5"></path>
+                </sc-if>
+                <path d="{{ m.c.line }}" fill="none" stroke="{{ m.c.col }}" stroke-width="1.8" stroke-linejoin="round"></path>
+                <sc-for list="{{ m.c.dots }}" as="dt" hint-placeholder-count="0">
+                  <circle cx="{{ dt.x }}" cy="{{ dt.y }}" r="3.4" fill="{{ m.c.col }}" stroke="#0a0a10" stroke-width="1.4"></circle>
+                </sc-for>
+                <text x="6" y="{{ m.c.yHiY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ m.c.yHiTx }}</text>
+                <text x="6" y="{{ m.c.yLoY }}" font-family="IBM Plex Mono" font-size="10" fill="rgba(232,234,242,.35)">{{ m.c.yLoTx }}</text>
+                <sc-for list="{{ m.c.ticks }}" as="tk" hint-placeholder-count="3">
+                  <text x="{{ tk.x }}" y="{{ m.c.tickY }}" font-family="IBM Plex Mono" font-size="9.5" letter-spacing="1" fill="rgba(232,234,242,.3)">{{ tk.label }}</text>
+                </sc-for>
+              </svg>
+              <sc-if value="{{ m.note }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(232,234,242,.42); margin-top:10px; line-height:1.5;">{{ m.note }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isTrust }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Instrument trust" style="padding-top:64px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(232,234,242,.42); animation:rise .5s cubic-bezier(.2,.7,.3,1) both;">Instrument trust</div>
+        <h1 style="font-family:'Space Grotesk','IBM Plex Sans',sans-serif; font-weight:300; font-size:36px; line-height:1.15; letter-spacing:-0.01em; margin:16px 0 0; animation:rise .55s cubic-bezier(.2,.7,.3,1) .06s both;">Which instruments earn belief.</h1>
+        <p style="font-size:15.5px; color:rgba(232,234,242,.58); max-width:640px; margin:12px 0 0; line-height:1.55; animation:rise .55s cubic-bezier(.2,.7,.3,1) .12s both;">Every source is graded per metric against the reference instrument. Distrusted pairs are excluded from your baselines and render faded and dashed everywhere in VitalScan — including the charts you just saw.</p>
+
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:36px;">
+          <sc-for list="{{ trust }}" as="g" hint-placeholder-count="3">
+            <div style="border-radius:18px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:22px 26px; animation:rise .55s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ g.delay }};">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div style="font-size:16.5px; font-weight:600;">{{ g.source }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; color:rgba(232,234,242,.4);">{{ g.role }}</div>
+              </div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+                  <div style="display:grid; grid-template-columns:220px 200px 120px 1fr; gap:14px; align-items:center; padding:11px 0; border-top:1px solid rgba(255,255,255,.06); opacity:{{ r.op }};">
+                    <div style="display:flex; align-items:center; gap:9px;">
+                      <span style="width:7px; height:7px; border-radius:50%; background:{{ r.mcol }};"></span>
+                      <span style="font-size:14px; color:rgba(232,234,242,.85);">{{ r.metric }}</span>
+                    </div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:rgba(232,234,242,.5);">{{ r.r }}</div>
+                    <div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; padding:3px 9px; border-radius:999px; color:{{ r.gc }}; border:1px {{ r.bs }} {{ r.gbd }};">{{ r.grade }}</span></div>
+                    <div style="font-size:13px; color:rgba(232,234,242,.48);">{{ r.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.7; color:rgba(232,234,242,.38); margin-top:22px; max-width:720px; animation:rise .55s cubic-bezier(.2,.7,.3,1) .4s both;">r = Pearson agreement vs Apple Watch over shared days &middot; &ge; 0.70 trusted &middot; 0.40&ndash;0.69 partial &middot; &lt; 0.40 distrust. Grades re-computed monthly; demotions are logged in the audit trail, never silent.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Audit log" style="padding-top:64px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(232,234,242,.42); animation:rise .5s cubic-bezier(.2,.7,.3,1) both;">Audit log</div>
+        <h1 style="font-family:'Space Grotesk','IBM Plex Sans',sans-serif; font-weight:300; font-size:36px; line-height:1.15; letter-spacing:-0.01em; margin:16px 0 0; animation:rise .55s cubic-bezier(.2,.7,.3,1) .06s both;">Every decision, on the record.</h1>
+        <p style="font-size:15.5px; color:rgba(232,234,242,.58); max-width:640px; margin:12px 0 0; line-height:1.55; animation:rise .55s cubic-bezier(.2,.7,.3,1) .12s both;">Each escalation — and each suppression — is logged with the arithmetic that produced it. Nothing VitalScan tells you is a black box.</p>
+
+        <sc-if value="{{ hiddenNote }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(232,234,242,.38); margin-top:16px;">{{ hiddenNote }}</div>
+        </sc-if>
+
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:32px;">
+          <sc-for list="{{ audit }}" as="a" hint-placeholder-count="6">
+            <div style="border-radius:16px; border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.03); box-shadow:0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); padding:20px 24px; animation:rise .55s cubic-bezier(.2,.7,.3,1) both; animation-delay:{{ a.delay }};">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:9px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:{{ a.col }};"></span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(232,234,242,.5);">{{ a.sig }}</span>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:rgba(232,234,242,.36);">{{ a.date }}</span>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; flex-wrap:wrap;">
+                <div style="font-size:16px; font-weight:600; letter-spacing:-.01em;">{{ a.title }}</div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; padding:3px 10px; border-radius:999px; color:{{ a.bcol }}; border:1px solid {{ a.badgeBd }}; background:{{ a.badgeBg }};">{{ a.badge }}</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:13px 17px; margin-top:14px;">
+                <sc-for list="{{ a.lines }}" as="ln" hint-placeholder-count="4">
+                  <div style="display:grid; grid-template-columns:160px 1fr; gap:12px; padding:3px 0;">
+                    <div style="color:rgba(232,234,242,.38);">{{ ln.k }}</div>
+                    <div style="color:rgba(232,234,242,.72);">{{ ln.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:72px; padding-top:22px; border-top:1px solid rgba(255,255,255,.07); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:11px; color:rgba(232,234,242,.35);">
+      <div>VitalScan &middot; organises evidence, not a diagnosis</div>
+      <div>last read today 06:12 &middot; 731,204 records &middot; 9 months</div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;dashboard&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Scenario&quot;},&quot;quietWeek&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Scenario&quot;},&quot;showSuppressed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Audit log&quot;}}">
+class Component extends DCLogic {
+  state = { view: null, open: {} };
+
+  data() {
+    if (this._d) return this._d;
+    const C = { coral:'#ff5b46', teal:'#34d6c0', amber:'#f3b13e', blue:'#6c8cff', slate:'#98a2b8' };
+    const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n>>16&255) + ',' + (n>>8&255) + ',' + (n&255) + ',' + a + ')'; };
+    let s = 7;
+    const rng = () => { s|=0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s>>>15, 1|s); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; };
+    const nz = () => rng() + rng() + rng() - 1.5;
+    const N = 90, end = new Date(2026, 6, 2);
+    const dates = [...Array(N)].map((_, i) => new Date(end.getTime() - (N-1-i) * 864e5));
+    const sick = i => ({42:6, 43:9, 44:8, 45:5, 46:2.5}[i] || 0);
+    const trav = i => i >= 60 && i <= 63;
+    const rhr=[], hrv=[], slp=[], stp=[], mhr=[], br=[], sp=[], zep=[];
+    for (let i = 0; i < N; i++) {
+      const sk = sick(i);
+      const r = 60 + Math.sin(i/14)*1.2 + nz()*2.1 + sk;
+      rhr.push(+r.toFixed(1));
+      hrv.push(Math.round(60 + Math.sin(i/11)*2.6 + nz()*5.2 - sk*1.7));
+      let s1 = 6.55 + nz()*0.82; if (trav(i)) s1 = 5.3 + rng()*0.5;
+      s1 = Math.min(8.4, Math.max(4.6, s1));
+      slp.push(i >= 80 ? null : +s1.toFixed(1));
+      let st = 11500 + Math.sin(i/9)*900 + nz()*2300; if (trav(i)) st = 15200 + rng()*2200; if (i === 85) st = 2104;
+      stp.push(Math.round(Math.max(4800, st)));
+      mhr.push(Math.round(72 + Math.sin(i/13)*1.4 + nz()*2.2 + sk*0.7));
+      br.push(+(14.2 + Math.sin(i/16)*0.2 + nz()*0.42 + sk*0.18).toFixed(1));
+      sp.push(+Math.min(99.4, Math.max(94.9, 97 + nz()*0.62)).toFixed(1));
+      zep.push(+(60 + nz()*3.4 - (r-60)*0.45).toFixed(1));
+    }
+    const chart = (vals, lo0, hi0, col, o) => {
+      o = o || {};
+      const W = o.W || 940, H = o.H || 176, PL = 46, PR = 14, PT = 16, PB = 22, ph = o.ph || 0;
+      const lo = [...Array(N)].map((_, i) => lo0 + Math.sin(i/23 + ph) * (hi0-lo0) * 0.03);
+      const hi = [...Array(N)].map((_, i) => hi0 + Math.sin(i/19 + ph + 2) * (hi0-lo0) * 0.03);
+      let mn = Math.min(...lo), mx = Math.max(...hi);
+      vals.forEach(v => { if (v != null) { if (v < mn) mn = v; if (v > mx) mx = v; } });
+      if (o.ref != null) { mn = Math.min(mn, o.ref); mx = Math.max(mx, o.ref); }
+      const pd = (mx-mn) * 0.13; mn -= pd; mx += pd;
+      const x = i => +(PL + i * (W-PL-PR) / (N-1)).toFixed(1);
+      const y = v => +(PT + (mx-v) * (H-PT-PB) / (mx-mn)).toFixed(1);
+      let line = '', pen = false;
+      vals.forEach((v, i) => { if (v == null) { pen = false; return; } line += (pen ? 'L' : 'M') + x(i) + ' ' + y(v) + ' '; pen = true; });
+      let band = 'M' + x(0) + ' ' + y(hi[0]) + ' ';
+      for (let i = 1; i < N; i++) band += 'L' + x(i) + ' ' + y(hi[i]) + ' ';
+      for (let i = N-1; i >= 0; i--) band += 'L' + x(i) + ' ' + y(lo[i]) + ' ';
+      band += 'Z';
+      const dots = []; vals.forEach((v, i) => { if (v != null && (v > hi[i] || v < lo[i])) dots.push({ x: x(i), y: y(v) }); });
+      const ticks = []; dates.forEach((dt, i) => { if (dt.getDate() === 1) ticks.push({ x: x(i), label: dt.toLocaleString('en', { month: 'short' }).toUpperCase() }); });
+      const annos = (o.annos || []).map(a => ({ x0: x(a.a), w: +(x(a.b) - x(a.a)).toFixed(1), cx: +((x(a.a) + x(a.b)) / 2).toFixed(1), label: a.label, y0: PT, h: H-PT-PB, ty: PT - 5 }));
+      let zp = '';
+      if (o.zepp) { let p2 = false; o.zepp.forEach((v, i) => { if (i % 2) return; zp += (p2 ? 'L' : 'M') + x(i) + ' ' + y(v) + ' '; p2 = true; }); }
+      const fmt = o.fmt || (v => v);
+      return {
+        w: W, h: H, line, band, col, bandFill: rgba(col, .08), colGlow: rgba(col, .12), dots, ticks, tickY: H - 7,
+        yHiY: y(hi0) + 3, yLoY: y(lo0) + 3, yHiTx: '' + fmt(hi0), yLoTx: '' + fmt(lo0),
+        hasRef: o.ref != null, refY: o.ref != null ? y(o.ref) : 0, refX0: PL, refX1: W - PR, refTy: o.ref != null ? y(o.ref) - 6 : 0, refTx: o.refTx || '',
+        hasGap: !!o.gapFrom, gapX: o.gapFrom ? x(o.gapFrom) : 0, gapW: o.gapFrom ? +(W - PR - x(o.gapFrom)).toFixed(1) : 0,
+        gapY: PT, gapH: H-PT-PB, gapCx: o.gapFrom ? +((x(o.gapFrom) + W - PR) / 2).toFixed(1) : 0, gapTy: (PT + H - PB) / 2,
+        hasZepp: !!o.zepp, zepp: zp, zeppCol: rgba(col, .25), annos
+      };
+    };
+    const kf = v => (v/1000).toFixed(1).replace('.0', '') + 'k';
+    const SICK = { a: 42, b: 46, label: 'SICK' }, TRAV = { a: 60, b: 63, label: 'TRAVEL' };
+    const mets = [
+      { key:'rhr', name:'Resting heart rate', cur:'' + Math.round(rhr[N-1]), unit:'bpm', band:'your normal 53\u201368 bpm', col:C.coral,
+        c: chart(rhr, 53, 68, C.coral, { annos:[SICK, TRAV], zepp: zep, fmt: v => Math.round(v) }),
+        note: 'Dashed faint series = Zepp Band resting HR \u2014 distrusted (r = \u22120.26 vs Watch), excluded from your baseline. See Instruments.' },
+      { key:'hrv', name:'Morning HRV', cur:'' + hrv[N-1], unit:'ms', band:'your normal 42\u201378 ms', col:C.teal,
+        c: chart(hrv, 42, 78, C.teal, { annos:[SICK], ph: 1 }), note: '' },
+      { key:'sleep', name:'Sleep', cur:'\u2014', unit:'no data \u00b7 10 d', band:'your normal 5.1\u20138.2 h \u00b7 63% of nights under the 7 h reference', col:C.blue,
+        c: chart(slp, 5.1, 8.2, C.blue, { ref: 7, refTx: '7 h reference', gapFrom: 80, fmt: v => v.toFixed(1), ph: 2 }),
+        note: 'Last sample 22 Jun \u2014 sleep staging needs the watch worn overnight. No inference made from silence.' },
+      { key:'steps', name:'Steps', cur: stp[N-1].toLocaleString('en-US'), unit:'steps', band:'your normal 5.9k\u201317.3k / day', col:C.amber,
+        c: chart(stp, 5900, 17300, C.amber, { annos:[TRAV], fmt: kf, ph: 3 }),
+        note: 'The 2,104-step outlier on 28 Jun is flagged as likely non-wear \u2014 see the Watching card and audit log.' },
+      { key:'mhr', name:'Mean heart rate', cur:'' + mhr[N-1], unit:'bpm', band:'your normal 64\u201382 bpm', col:C.coral,
+        c: chart(mhr, 64, 82, C.coral, { ph: 4, fmt: v => Math.round(v) }), note: '' },
+      { key:'br', name:'Breathing rate', cur:'' + br[N-1], unit:'/min', band:'your normal 12.6\u201315.8 /min', col:C.teal,
+        c: chart(br, 12.6, 15.8, C.teal, { ph: 5, fmt: v => v.toFixed(1) }), note: '' },
+      { key:'spo2', name:'Blood oxygen', cur: sp[N-1].toFixed(1), unit:'%', band:'your normal 95\u201399%', col:C.teal,
+        c: chart(sp, 95, 99, C.teal, { ph: 6, fmt: v => Math.round(v) }), note: '' }
+    ].map((m, i) => ({ ...m, delay: (0.16 + i * 0.06).toFixed(2) + 's' }));
+
+    const zOf = arr => {
+      const nn = arr.filter(v => v != null);
+      const cur = nn[nn.length - 1];
+      const mean = nn.reduce((a, b) => a + b, 0) / nn.length;
+      const sd = Math.sqrt(nn.reduce((a, b) => a + (b - mean) * (b - mean), 0) / nn.length) || 1;
+      return (cur - mean) / sd;
+    };
+    const zByKey = { rhr: zOf(rhr), hrv: zOf(hrv), sleep: null, steps: zOf(stp), mhr: zOf(mhr), br: zOf(br), spo2: zOf(sp) };
+    mets.forEach(m => { m.z = zByKey[m.key]; });
+    const hero = { cur: Math.round(rhr[N-1]), c: chart(rhr, 53, 68, C.coral, { W: 620, H: 210, annos: [SICK, TRAV], zepp: zep, fmt: v => Math.round(v) }) };
+
+    const findings = [
+      { id:'f1', level:'WATCHING', col:C.amber, date:'SUN 28 JUN',
+        title:'One very low step day \u2014 probably the watch, not you.',
+        body:'Sunday logged 2,104 steps against your usual ~11,500 \u2014 3.2 SD outside your band. But wear time was 4.1 hours and heart-rate samples were sparse all day, so this reads as a watch left on the charger, not a collapse in activity. Watching, not worrying.',
+        c: chart(stp, 5900, 17300, C.amber, { H: 132, fmt: kf, ph: 3 }),
+        lines: [
+          { k:'signal', v:'steps \u00b7 Apple Watch (trusted)' },
+          { k:'value', v:'2,104 \u00b7 60-day median 11,480' },
+          { k:'z-score', v:'\u22123.2 \u00b7 escalation threshold \u00b12.0' },
+          { k:'corroboration', v:'wear-time 4.1 h \u00b7 HR samples at 11% of usual \u2192 non-wear likely' },
+          { k:'retires', v:'after one normal wear day' }
+        ] },
+      { id:'f2', level:'DATA GAP', col:C.slate, date:'SINCE 22 JUN',
+        title:'No sleep data for 10 days \u2014 wear the watch to bed.',
+        body:'Your last sleep sample was 22 Jun. Nothing else can stand in for this signal: sleep staging needs the watch on your wrist overnight. No inference is made from the silence \u2014 this card retires itself the first night data returns.',
+        c: chart(slp, 5.1, 8.2, C.blue, { H: 132, ref: 7, refTx: '7 h', gapFrom: 80, fmt: v => v.toFixed(1), ph: 2 }),
+        lines: [
+          { k:'signal', v:'sleep \u00b7 Apple Watch' },
+          { k:'last sample', v:'22 Jun 2026 \u00b7 gap 10 d \u00b7 threshold \u2265 7 d' },
+          { k:'corroboration', v:'overnight wear-time 0 h \u2014 watch charges at night' },
+          { k:'inference', v:'none \u2014 a gap is a gap, not a symptom' }
+        ] }
+    ];
+
+    const G = {
+      TRUSTED: { gc: C.teal, gbd: rgba(C.teal, .4), bs: 'solid', op: 1 },
+      PARTIAL: { gc: C.amber, gbd: rgba(C.amber, .4), bs: 'solid', op: 1 },
+      DISTRUST: { gc: C.coral, gbd: rgba(C.coral, .5), bs: 'dashed', op: .48 },
+      UNGRADED: { gc: C.slate, gbd: rgba(C.slate, .4), bs: 'solid', op: .75 }
+    };
+    const row = (metric, mcol, r, grade, note) => ({ metric, mcol, r, grade, note, ...G[grade] });
+    const trust = [
+      { source:'Apple Watch Series 10', role:'reference instrument \u00b7 worn 21 h/day median', rows: [
+        row('Resting HR \u00b7 mean HR', C.coral, 'coverage 99%', 'TRUSTED', 'reference \u2014 all other sources graded against it'),
+        row('Morning HRV', C.teal, 'coverage 96%', 'TRUSTED', 'sampled during sleep and still rest'),
+        row('Sleep', C.blue, 'coverage 87%', 'TRUSTED', 'current 10-day gap \u2014 see audit log'),
+        row('Steps \u00b7 breathing \u00b7 SpO\u2082', C.amber, 'coverage \u2265 98%', 'TRUSTED', 'reference')
+      ] },
+      { source:'Zepp Band 7', role:'secondary \u00b7 nights + backup days', rows: [
+        row('Steps', C.amber, 'r = 0.91 \u00b7 n = 62 d', 'TRUSTED', 'agrees with Watch within \u00b16%'),
+        row('Sleep', C.blue, 'r = 0.62 \u00b7 n = 38 d', 'PARTIAL', 'overcounts light sleep by ~25 min \u2014 corroboration only'),
+        row('Resting HR', C.coral, 'r = \u22120.26 \u00b7 n = 54 d', 'DISTRUST', 'anticorrelated with Watch \u2014 excluded from baselines, drawn dashed'),
+        row('HRV', C.teal, 'n = 9 d overlap', 'UNGRADED', 'not enough shared days to grade')
+      ] },
+      { source:'iPhone 15 Pro', role:'pocket pedometer \u00b7 fallback only', rows: [
+        row('Steps', C.amber, 'r = 0.83 \u00b7 n = 90 d', 'PARTIAL', 'undercounts when the phone stays on the desk')
+      ] }
+    ].map((g, i) => ({ ...g, delay: (0.16 + i * 0.08).toFixed(2) + 's' }));
+
+    const audit = [
+      { date:'01 Jul 2026 \u00b7 06:12', col:C.blue, sig:'Sleep \u00b7 Apple Watch', title:'Sleep gap reached 10 days', badge:'ESCALATED \u00b7 DATA GAP', bcol:C.slate, lines: [
+        { k:'last sample', v:'22 Jun 2026' },
+        { k:'gap', v:'10 d \u00b7 threshold \u2265 7 d' },
+        { k:'corroboration', v:'overnight wear-time 0 h \u2014 watch charged at night, not worn' },
+        { k:'decision', v:'raise DATA GAP card \u00b7 no health inference made' }
+      ] },
+      { date:'29 Jun 2026 \u00b7 06:03', col:C.amber, sig:'Steps \u00b7 Apple Watch', title:'Step count 3.2 SD below band', badge:'ESCALATED \u00b7 WATCHING', bcol:C.amber, lines: [
+        { k:'value', v:'2,104 \u00b7 60-day median 11,480 \u00b7 z = \u22123.2 \u00b7 threshold \u00b12.0' },
+        { k:'corroboration', v:'wear-time 4.1 h \u00b7 HR samples 11% of usual \u2192 non-wear likely' },
+        { k:'source trust', v:'Apple Watch \u00b7 TRUSTED' },
+        { k:'decision', v:'WATCHING, not ATTENTION \u2014 artefact more likely than real change' }
+      ] },
+      { date:'14 Jun 2026 \u00b7 06:05', col:C.teal, sig:'Morning HRV \u00b7 Apple Watch', title:'Single-day HRV dip, no second signal', badge:'SUPPRESSED', bcol:C.slate, sup:true, lines: [
+        { k:'value', v:'41 ms \u00b7 median 60 \u00b7 z = \u22122.1 \u00b7 threshold \u00b12.0' },
+        { k:'corroboration', v:'resting HR z +0.3 \u00b7 sleep 7.1 h \u00b7 breathing normal \u2014 nothing agrees' },
+        { k:'decision', v:'suppressed \u2014 one signal, one day, no corroboration. Logged, not shown.' }
+      ] },
+      { date:'21 May 2026 \u00b7 06:04', col:C.coral, sig:'Resting HR \u00b7 Apple Watch', title:'Cardiac excursion resolved', badge:'RESOLVED', bcol:C.teal, lines: [
+        { k:'observation', v:'back inside band 3 consecutive days (58\u201361 bpm)' },
+        { k:'event pinned', v:'\u201csick \u00b7 16\u201320 May\u201d \u2014 pinned by you on 18 May' },
+        { k:'decision', v:'ATTENTION card retired \u00b7 excursion attributed to pinned event' }
+      ] },
+      { date:'17 May 2026 \u00b7 06:02', col:C.coral, sig:'Resting HR \u00b7 Apple Watch', title:'Resting HR high 3 days running, HRV agrees', badge:'ESCALATED \u00b7 ATTENTION', bcol:C.coral, lines: [
+        { k:'value', v:'69 bpm \u00b7 median 60 \u00b7 z = +2.6 \u00b7 3rd consecutive day' },
+        { k:'corroboration', v:'HRV z \u22121.9 \u00b7 breathing z +1.8 \u2014 two signals agree' },
+        { k:'source trust', v:'Apple Watch \u00b7 TRUSTED' },
+        { k:'decision', v:'ATTENTION \u2014 \u201cworth mentioning to your GP if it persists\u201d' }
+      ] },
+      { date:'09 May 2026 \u00b7 06:01', col:C.coral, sig:'Resting HR \u00b7 Zepp Band', title:'Zepp resting HR demoted', badge:'SOURCE DISTRUSTED', bcol:C.coral, lines: [
+        { k:'agreement', v:'r = \u22120.26 vs Watch \u00b7 n = 54 shared days \u00b7 threshold \u2265 0.40' },
+        { k:'decision', v:'exclude from baselines \u00b7 render faded + dashed everywhere' }
+      ] }
+    ].map((a, i) => ({ ...a, delay: (0.14 + i * 0.06).toFixed(2) + 's' }));
+
+    const steady = 'Resting HR ' + Math.round(rhr[N-1]) + ', HRV ' + hrv[N-1] + ' ms, mean HR ' + mhr[N-1] + ', breathing ' + br[N-1] + ' /min, SpO\u2082 ' + sp[N-1] + '% \u2014 inside your band all week. Nothing to say about them.';
+    const steadyQuiet = 'All seven signals inside your band. VitalScan read 12,431 new records this week and found nothing worth your time \u2014 that is the product working.';
+
+    this._d = { C, rgba, mets, findings, trust, audit, steady, steadyQuiet, hero };
+    return this._d;
+  }
+
+  renderVals() {
+    const d = this.data();
+    const quiet = this.props.quietWeek ?? false;
+    const showSup = this.props.showSuppressed ?? true;
+    const v = this.state.view ?? (this.props.startView === 'dashboard' ? 'dash' : 'home');
+    const nav = [['home', 'Home'], ['dash', 'Dashboard'], ['evidence', 'Evidence'], ['trust', 'Instruments'], ['audit', 'Audit log']].map(p => {
+      const act = v === p[0];
+      return {
+        label: p[1], go: () => this.setState({ view: p[0] }),
+        col: act ? '#e8eaf2' : 'rgba(232,234,242,.48)',
+        bg: act ? 'rgba(255,255,255,.08)' : 'transparent',
+        bd: act ? 'rgba(255,255,255,.14)' : 'transparent'
+      };
+    });
+    const findings = quiet ? [] : d.findings.map((f, i) => ({
+      ...f,
+      open: !!this.state.open[f.id],
+      toggle: () => this.setState(s => ({ open: { ...s.open, [f.id]: !s.open[f.id] } })),
+      toggleLabel: this.state.open[f.id] ? 'Hide evidence \u25b4' : 'Show evidence \u2014 chart + rationale \u25be',
+      delay: (0.18 + i * 0.09).toFixed(2) + 's',
+      bd: d.rgba(f.col, .28), badgeBd: d.rgba(f.col, .4), badgeBg: d.rgba(f.col, .09),
+      shadow: '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06)'
+    }));
+    const audit = d.audit.filter(a => showSup || !a.sup).map(a => ({
+      ...a, badgeBd: d.rgba(a.bcol, .4), badgeBg: d.rgba(a.bcol, .09)
+    }));
+
+    const catMeta = [
+      { key:'cardiac', label:'CARDIAC', metricKeys:['rhr','mhr'], col:d.C.coral, flagWord:null },
+      { key:'recovery', label:'RECOVERY', metricKeys:['hrv','br','spo2'], col:d.C.teal, flagWord:null },
+      { key:'activity', label:'ACTIVITY', metricKeys:['steps'], col:d.C.amber, flagWord:'watching' },
+      { key:'sleep', label:'SLEEP', metricKeys:['sleep'], col:d.C.blue, flagWord:'gap' }
+    ];
+    const categories = catMeta.map((cm, i) => {
+      const ms = cm.metricKeys.map(k => d.mets.find(m => m.key === k));
+      const flag = quiet ? null : cm.flagWord;
+      const statusWord = flag === 'watching' ? 'Watching' : flag === 'gap' ? 'Data gap' : 'In range';
+      const statusHex = flag === 'watching' ? d.C.amber : flag === 'gap' ? d.C.slate : d.C.teal;
+      return {
+        label: cm.label,
+        statusWord, statusCol: statusHex, statusBd: d.rgba(statusHex, .4), statusBg: d.rgba(statusHex, .09),
+        metrics: ms.map(m => ({ name: m.name, cur: m.cur + ' ' + m.unit })),
+        mini: ms[0].c,
+        delay: (0.2 + i * 0.05).toFixed(2) + 's'
+      };
+    });
+
+    const dashTiles = d.mets.map((m, i) => {
+      const gap = !quiet && m.key === 'sleep';
+      const watch = !quiet && m.key === 'steps';
+      return {
+        name: m.name, c: m.c, cur: m.cur,
+        unit: m.key === 'sleep' ? '' : m.unit,
+        statusWord: gap ? 'Data gap' : watch ? 'Watching' : 'In range',
+        statusHex: gap ? d.C.slate : watch ? d.C.amber : d.C.teal,
+        zTxt: m.z == null ? 'last sample 22 Jun' : 'z ' + (m.z >= 0 ? '+' : '\u2212') + Math.abs(m.z).toFixed(1) + ' vs band',
+        go: () => this.setState({ view: 'evidence' }),
+        delay: (0.12 + i * 0.04).toFixed(2) + 's'
+      };
+    });
+    const dashSources = [
+      { name: 'Apple Watch S10', grade: 'TRUSTED', col: d.C.teal },
+      { name: 'Zepp Band 7', grade: 'MIXED', col: d.C.amber },
+      { name: 'iPhone 15 Pro', grade: 'PARTIAL', col: d.C.amber }
+    ].map(s => ({ ...s, bd: d.rgba(s.col, .4) }));
+    const dashLog = d.audit.slice(0, 4).map(a => ({
+      date: a.date.split(' \u00b7 ')[0], title: a.title,
+      badge: a.badge.indexOf('\u00b7') >= 0 ? a.badge.split(' \u00b7 ').pop() : a.badge,
+      bcol: a.bcol, badgeBd: d.rgba(a.bcol, .4), badgeBg: d.rgba(a.bcol, .09)
+    }));
+    const dashTitle = quiet ? 'All seven signals in band.' : 'Five in band, one watching, one gap.';
+
+    return {
+      isHome: v === 'home', isDash: v === 'dash', isEvidence: v === 'evidence', isTrust: v === 'trust', isAudit: v === 'audit',
+      dashTitle, dashTiles, dashSources, dashLog, hero: d.hero,
+      goTrust: () => this.setState({ view: 'trust' }),
+      goAudit: () => this.setState({ view: 'audit' }),
+      nav,
+      weekLabel: 'Week of 29 Jun \u2013 5 Jul 2026 \u00b7 731,204 records read',
+      verdict: quiet ? 'All signals in your normal range.' : 'Mostly a quiet week. Two things worth a glance.',
+      verdictSub: quiet
+        ? 'Nothing needs your attention. The next note arrives Sunday at 06:00 \u2014 you\u2019ll only hear sooner if two signals agree that something moved.'
+        : 'Five of seven signals stayed inside your band. One finding is about the instrument, not you; the other is a gap, not a symptom. Neither is urgent.',
+      findings, hasFindings: findings.length > 0, categories,
+      steady: quiet ? d.steadyQuiet : d.steady,
+      nextNote: 'next note Sunday 06:00 \u00b7 you\u2019ll hear sooner only if two signals agree',
+      charts: d.mets, trust: d.trust, audit,
+      hiddenNote: showSup ? '' : '1 suppressed decision hidden \u2014 turn on \u201cshow suppressed\u201d in tweaks to see everything.'
+    };
+  }
+}
+</script>
+</body>
+</html>

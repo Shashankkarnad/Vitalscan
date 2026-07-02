@@ -26,7 +26,10 @@ interface Tooltip {
 }
 
 function parseDate(str: string): Date {
-  return new Date(str.replace(' ', 'T'))
+  // Apple Health dates are "YYYY-MM-DD HH:MM:SS +ZZZZ"; the offset suffix is not
+  // valid ISO for Date(). Nights are bucketed by wall-clock time upstream, so
+  // parse the wall-clock part and ignore the offset.
+  return new Date(str.slice(0, 19).replace(' ', 'T'))
 }
 
 function fmtTime(d: Date): string {

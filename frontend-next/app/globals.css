@@ -187,3 +187,22 @@
   .pb-safe { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
   .pt-safe { padding-top: max(0px, env(safe-area-inset-top)); }
 }
+
+/* ── VitalScan redesign shell (routes /home /dashboard /evidence /instruments /audit) ── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.vs-shell ::selection { background: rgba(108, 140, 255, .35); }
+.vs-shell .vs-nav-link:hover { color: #e8eaf2 !important; }
+.vs-shell .vs-card-hover { transition: border-color .15s ease, background .15s ease; }
+.vs-shell .vs-card-hover:hover { border-color: rgba(255, 255, 255, .18) !important; }
+.vs-shell .vs-tile-hover { transition: border-color .15s ease, background .15s ease; }
+.vs-shell .vs-tile-hover:hover { border-color: rgba(255, 255, 255, .2) !important; background: rgba(255, 255, 255, .05) !important; }
+.vs-shell .vs-ghost-btn { transition: color .15s ease; }
+.vs-shell .vs-ghost-btn:hover { color: #e8eaf2 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vs-shell, .vs-shell * { animation: none !important; transition: none !important; }
+}

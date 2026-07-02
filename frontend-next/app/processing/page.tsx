@@ -81,7 +81,7 @@ export default function ProcessingPage() {
         setMilestones(MILESTONE_LABELS.map((label) => ({ label, status: 'done' })))
 
         saveResult(data)
-        setTimeout(() => router.push('/verdict'), 600)
+        setTimeout(() => router.push('/home'), 600)
       } catch (err) {
         clearTimeout(timeoutId)
         if (intervalRef.current) clearInterval(intervalRef.current)

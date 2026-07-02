@@ -39,6 +39,8 @@ import json
 import zipfile
 import io
 import os
+import math
+import bisect
 
 
 # ── SOURCE CONFIGURATION ──────────────────────────────────────────────────────
@@ -110,6 +112,12 @@ def parse_export(source, exclude_sources=None):
     hrv_allday   = defaultdict(list)   # {date: [val]} — fallback
     me_attrs     = {}                  # <Me> element attributes
 
+    # v0.3: per-source daily aggregates (sum/mean only — no raw samples kept)
+    # used for cross-source correlation grading and the trusted `daily` series.
+    hrv_morning_src = defaultdict(lambda: defaultdict(list))  # {src: {date: [val]}}
+    hrv_allday_src  = defaultdict(lambda: defaultdict(list))
+    record_count    = 0                # total <Record> elements seen (for weekly.records_read)
+
     xml_stream, zip_ref = _open_xml_stream(source)
     try:
         context = ET.iterparse(xml_stream, events=['start', 'end'])
@@ -129,6 +137,8 @@ def parse_export(source, exclude_sources=None):
             if tag != 'Record':
                 root_elem.clear()
                 continue
+
+            record_count += 1
 
             t   = elem.get('type', '')
             src = elem.get('sourceName', '')
@@ -160,7 +170,7 @@ def parse_export(source, exclude_sources=None):
                 start_str = elem.get('startDate', '')
                 end_str   = elem.get('endDate', '')
                 if start_str and end_str:
-                    sleep_records.append((val, start_str, end_str))
+                    sleep_records.append((val, start_str, end_str, src))
 
             elif t == _HRV_TYPE:
                 date_str = elem.get('startDate', '')
@@ -172,8 +182,10 @@ def parse_export(source, exclude_sources=None):
                         if v > 0:
                             date = date_str[:10]
                             hrv_allday[date].append(v)
+                            hrv_allday_src[src][date].append(v)
                             if 2 <= h <= 9:
                                 hrv_morning[date].append(v)
+                                hrv_morning_src[src][date].append(v)
                     except (ValueError, TypeError):
                         pass
 
@@ -197,7 +209,21 @@ def parse_export(source, exclude_sources=None):
     sleep = _build_sleep_daily(sleep_records)
     hrv   = _build_hrv_daily(hrv_morning, hrv_allday)
 
-    return _compile_output(me_attrs, raw, steps, sleep, hrv, sleep_records)
+    # v0.3: per-source daily aggregates for cross-source correlation grading.
+    hrv_source_daily = {
+        src: _build_hrv_daily(hrv_morning_src.get(src, {}), hrv_allday_src.get(src, {}))
+        for src in set(hrv_morning_src) | set(hrv_allday_src)
+    }
+    sleep_source_daily = _build_sleep_source_daily(sleep_records)
+    steps_source_daily = _build_steps_source_daily(step_records)
+
+    return _compile_output(
+        me_attrs, raw, steps, sleep, hrv, sleep_records,
+        hrv_source_daily=hrv_source_daily,
+        sleep_source_daily=sleep_source_daily,
+        steps_source_daily=steps_source_daily,
+        record_count=record_count,
+    )
 
 
 # ── XML STREAMING ─────────────────────────────────────────────────────────────
@@ -234,11 +260,11 @@ def _build_steps_daily(step_records):
 
 
 def _build_sleep_daily(sleep_records):
-    """Aggregate raw sleep tuples (val, start_str, end_str) into per-night totals."""
+    """Aggregate raw sleep tuples (val, start_str, end_str, src) into per-night totals."""
     nights = defaultdict(lambda: {
         'asleep': 0.0, 'deep': 0.0, 'rem': 0.0, 'core': 0.0, 'awake': 0.0
     })
-    for val, start_str, end_str in sleep_records:
+    for val, start_str, end_str, src in sleep_records:
         try:
             s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
             e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
@@ -264,7 +290,7 @@ def _build_sleep_daily(sleep_records):
 def _build_sleep_timeline(sleep_records):
     """Build per-night ordered stage intervals for the hypnogram (last 14 nights)."""
     timeline = defaultdict(list)
-    for val, start_str, end_str in sleep_records:
+    for val, start_str, end_str, src in sleep_records:
         try:
             s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
             e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
@@ -298,6 +324,32 @@ def _build_hrv_daily(morning, allday):
         if readings:
             result[date] = round(statistics.mean(readings), 1)
     return result
+
+
+def _build_steps_source_daily(step_records):
+    """Per-source daily step totals (no cross-source dedup — used for source grading)."""
+    out = defaultdict(lambda: defaultdict(float))
+    for r in step_records:
+        out[r['src']][r['start'].strftime('%Y-%m-%d')] += r['val']
+    return {src: dict(days) for src, days in out.items()}
+
+
+def _build_sleep_source_daily(sleep_records):
+    """Per-source per-night asleep hours (same night-assignment rule as _build_sleep_daily)."""
+    out = defaultdict(lambda: defaultdict(float))
+    for val, start_str, end_str, src in sleep_records:
+        try:
+            s = datetime.strptime(start_str[:19], '%Y-%m-%d %H:%M:%S')
+            e = datetime.strptime(end_str[:19],   '%Y-%m-%d %H:%M:%S')
+        except (ValueError, TypeError):
+            continue
+        if not any(x in val for x in ['Asleep', 'Core', 'Deep', 'REM']):
+            continue
+        date = start_str[:10]
+        if s.hour < 14:
+            date = (s - timedelta(days=1)).strftime('%Y-%m-%d')
+        out[src][date] += (e - s).total_seconds() / 3600
+    return {src: dict(days) for src, days in out.items()}
 
 
 # ── FIX #2: STEP DEDUPLICATION (per-day, unchanged) ──────────────────────────
@@ -340,7 +392,9 @@ def _dedup_day(recs):
 
 # ── OUTPUT COMPILATION ────────────────────────────────────────────────────────
 
-def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=None):
+def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=None,
+                    hrv_source_daily=None, sleep_source_daily=None,
+                    steps_source_daily=None, record_count=0):
     """Compile all parsed data into dashboard-ready JSON structure."""
 
     # ── Helpers ──
@@ -483,8 +537,16 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=
         vo2_trend=vo2,
     )
 
+    # ── v0.3 blocks: daily series, personal-normal bands, source grades,
+    #    decision audit log, weekly verdict inputs ──
+    v03 = _build_v03_blocks(
+        raw, steps_daily, sleep, hrv_daily,
+        hrv_source_daily or {}, sleep_source_daily or {}, steps_source_daily or {},
+        record_count,
+    )
+
     return {
-        'version': '0.2',
+        'version': '0.3',
         'bugs_fixed': [
             'SpO2: always multiply by 100 — 299 records corrected',
             'Steps: minute-level dedup — Jan 291K (was 408K), Feb 278K (was 437K)',
@@ -528,7 +590,527 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=
         },
         'sleep_timeline': _build_sleep_timeline(sleep_records or []),
         'findings': findings,
+        'daily':     v03['daily'],
+        'bands':     v03['bands'],
+        'sources':   v03['sources'],
+        'decisions': v03['decisions'],
+        'weekly':    v03['weekly'],
     }
+
+
+# ── V0.3: DAILY SERIES · BANDS · SOURCE GRADES · DECISION ENGINE ─────────────
+#
+# Contract (docs/design/IMPLEMENTATION_SPEC.md, "New response contract"):
+#   daily     — last 90 calendar days ending at the last day with any data;
+#               per-metric arrays aligned to daily.dates, null = no samples.
+#   bands     — rolling 60-day personal-normal band per metric:
+#               median ± 2 × 1.4826 × MAD, null until the window has ≥14 samples.
+#   sources   — per-source per-metric grades vs the reference instrument
+#               (Pearson r over shared days: ≥0.70 TRUSTED · 0.40–0.69 PARTIAL ·
+#               <0.40 DISTRUST · <15 shared days UNGRADED).
+#   decisions — mechanical audit log over the 90-day window, newest first.
+#   weekly    — verdict inputs for the Home screen.
+
+_DAILY_METRIC_KEYS = ['rhr', 'mean_hr', 'hrv', 'steps', 'sleep_hours', 'spo2', 'breathing']
+_HEART_METRICS = ('rhr', 'mean_hr', 'hrv')   # reference = most coverage on these
+_METRIC_LABELS = {
+    'rhr': 'Resting HR', 'mean_hr': 'Mean HR', 'hrv': 'HRV', 'steps': 'Steps',
+    'sleep_hours': 'Sleep', 'spo2': 'SpO2', 'breathing': 'Breathing rate',
+}
+_METRIC_DECIMALS = {'rhr': 1, 'mean_hr': 1, 'hrv': 1, 'spo2': 1, 'breathing': 1, 'sleep_hours': 2}
+
+_DAILY_WINDOW_DAYS  = 90    # length of the daily/bands window
+_BAND_WINDOW_DAYS   = 60    # rolling window for the personal-normal band
+_BAND_MIN_SAMPLES   = 14    # samples required before a band / z is computed
+_Z_THRESHOLD        = 2.0   # |z| ≥ 2 → out of personal band
+_CORROBORATION_Z    = 1.0   # |z| ≥ 1 on another signal counts as corroboration
+_GAP_DAYS_THRESHOLD = 7     # ≥ 7 days without samples → data gap
+_RESOLVE_DAYS       = 3     # back in band this many consecutive days → RESOLVED
+_SHARED_DAYS_MIN    = 15    # fewer shared days → UNGRADED
+_R_TRUSTED          = 0.70
+_R_PARTIAL          = 0.40
+
+
+def _daily_mean_by_source(records, transform=None, lo=None, hi=None):
+    """[(date_str, val, src)] → {src: {YYYY-MM-DD: mean}}. Aggregates only."""
+    acc = defaultdict(lambda: defaultdict(lambda: [0.0, 0]))
+    for d, v, src in records:
+        if transform is not None:
+            v = transform(v)
+        if lo is not None and not (lo < v <= hi):
+            continue
+        cell = acc[src][d[:10]]
+        cell[0] += v
+        cell[1] += 1
+    return {src: {d: s / n for d, (s, n) in days.items()} for src, days in acc.items()}
+
+
+def _pearson_r(pairs):
+    """Pearson correlation over [(x, y)]. None when undefined (n<2 or zero variance)."""
+    n = len(pairs)
+    if n < 2:
+        return None
+    mx = sum(p[0] for p in pairs) / n
+    my = sum(p[1] for p in pairs) / n
+    sxx = sum((x - mx) ** 2 for x, _ in pairs)
+    syy = sum((y - my) ** 2 for _, y in pairs)
+    if sxx <= 0 or syy <= 0:
+        return None
+    sxy = sum((x - mx) * (y - my) for x, y in pairs)
+    return sxy / math.sqrt(sxx * syy)
+
+
+def _robust_stats(samples):
+    """(median, robust SD). robust SD = 1.4826 × MAD; falls back to population SD,
+    then to a small epsilon, so callers never divide by zero."""
+    med = statistics.median(samples)
+    mad = statistics.median([abs(x - med) for x in samples])
+    rsd = 1.4826 * mad
+    if rsd <= 1e-9:
+        rsd = statistics.pstdev(samples) if len(samples) > 1 else 0.0
+    if rsd <= 1e-9:
+        rsd = 1e-6
+    return med, rsd
+
+
+def _round_metric(metric, v):
+    if v is None:
+        return None
+    if metric == 'steps':
+        return int(round(v))
+    return round(v, _METRIC_DECIMALS.get(metric, 1))
+
+
+def _fmt_metric_value(metric, v):
+    if metric == 'steps':
+        return f'{int(round(v)):,}'
+    if metric == 'sleep_hours':
+        return f'{v:.2f} h'
+    if metric == 'spo2':
+        return f'{v:.1f}%'
+    if metric in ('rhr', 'mean_hr'):
+        return f'{v:.1f} bpm'
+    if metric == 'hrv':
+        return f'{v:.1f} ms'
+    return f'{v:.1f}/min'   # breathing
+
+
+def _empty_v03_blocks(record_count):
+    """Shape-complete v0.3 blocks for exports with no usable daily data."""
+    daily = {'dates': []}
+    bands = {}
+    for m in _DAILY_METRIC_KEYS:
+        daily[m] = []
+        bands[m] = {'lo': [], 'hi': [], 'current': None, 'z': None,
+                    'status': 'no_data', 'gap_days': None, 'last_sample': None}
+    return {
+        'daily': daily, 'bands': bands, 'sources': [], 'decisions': [],
+        'weekly': {'label': None, 'records_read': record_count,
+                   'in_band': [], 'watching': [], 'gaps': [],
+                   'no_data': list(_DAILY_METRIC_KEYS)},
+    }
+
+
+def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
+                      hrv_source_daily, sleep_source_daily, steps_source_daily,
+                      record_count):
+    """Build the v0.3 daily/bands/sources/decisions/weekly blocks."""
+
+    # ── 1. Per-source per-metric daily maps ──────────────────────────────────
+    per_source = {
+        'rhr':      _daily_mean_by_source(raw.get('HKQuantityTypeIdentifierRestingHeartRate', []),
+                                          lo=20, hi=250),
+        'mean_hr':  _daily_mean_by_source(raw.get('HKQuantityTypeIdentifierHeartRate', []),
+                                          lo=20, hi=250),
+        'breathing': _daily_mean_by_source(raw.get('HKQuantityTypeIdentifierRespiratoryRate', []),
+                                           lo=0, hi=120),
+        'spo2':     _daily_mean_by_source(raw.get('HKQuantityTypeIdentifierOxygenSaturation', []),
+                                          transform=lambda v: v * 100, lo=50, hi=100),
+        'hrv':         {s: dict(d) for s, d in (hrv_source_daily or {}).items() if d},
+        'steps':       {s: dict(d) for s, d in (steps_source_daily or {}).items() if d},
+        'sleep_hours': {s: dict(d) for s, d in (sleep_source_daily or {}).items() if d},
+    }
+
+    # ── 2. 90-day window ending at the last day with any data ───────────────
+    all_dates = set()
+    for maps in per_source.values():
+        for days in maps.values():
+            all_dates.update(days.keys())
+    all_dates = {d for d in all_dates if len(d) == 10}
+    if not all_dates:
+        return _empty_v03_blocks(record_count)
+
+    end_key = max(all_dates)
+    end_dt = datetime.strptime(end_key, '%Y-%m-%d').date()
+    dates = [(end_dt - timedelta(days=i)).isoformat()
+             for i in range(_DAILY_WINDOW_DAYS - 1, -1, -1)]
+    window_set = set(dates)
+    date_index = {d: i for i, d in enumerate(dates)}
+
+    def coverage_days(src, metric):
+        return sum(1 for d in per_source[metric].get(src, {}) if d in window_set)
+
+    # ── 3. Reference instrument = source with most heart-metric coverage ────
+    sources_all = set()
+    for maps in per_source.values():
+        sources_all.update(maps.keys())
+    reference = max(
+        sources_all,
+        key=lambda s: (sum(coverage_days(s, m) for m in _HEART_METRICS),
+                       sum(coverage_days(s, m) for m in _DAILY_METRIC_KEYS),
+                       s),
+    )
+
+    # ── 4. Grades per (source, metric): Pearson r vs reference over shared days
+    grades = {}            # (src, metric) -> grade string
+    distrust_events = []   # (src, metric, r, shared_days, last_shared_day)
+    sources_block = []
+    for src in sorted(sources_all, key=lambda s: (s != reference, s)):
+        metrics_entries = []
+        for metric in _DAILY_METRIC_KEYS:
+            days = per_source[metric].get(src)
+            if not days:
+                continue
+            cov_pct = round(100 * coverage_days(src, metric) / _DAILY_WINDOW_DAYS)
+            if src == reference:
+                grade, r, shared = 'TRUSTED', None, None
+                note = 'reference instrument'
+            else:
+                ref_days = per_source[metric].get(reference, {})
+                shared_keys = sorted(set(days) & set(ref_days))
+                shared = len(shared_keys)
+                if shared < _SHARED_DAYS_MIN:
+                    grade, r = 'UNGRADED', None
+                    note = f'{shared} shared days with reference (need {_SHARED_DAYS_MIN})'
+                else:
+                    r = _pearson_r([(days[d], ref_days[d]) for d in shared_keys])
+                    if r is None:
+                        grade = 'UNGRADED'
+                        note = 'no variance over shared days — r undefined'
+                    elif r >= _R_TRUSTED:
+                        grade = 'TRUSTED'
+                        note = f'agrees with reference (r = {r:.2f} over {shared} days)'
+                    elif r >= _R_PARTIAL:
+                        grade = 'PARTIAL'
+                        note = f'partial agreement with reference (r = {r:.2f} over {shared} days)'
+                    else:
+                        grade = 'DISTRUST'
+                        note = ('anticorrelated with reference' if r < 0
+                                else 'poor agreement with reference')
+                        note += f' (r = {r:.2f} over {shared} days)'
+                        distrust_events.append((src, metric, r, shared, shared_keys[-1]))
+            grades[(src, metric)] = grade
+            metrics_entries.append({
+                'metric': metric,
+                'coverage_pct': cov_pct,
+                'shared_days': shared,
+                'r': round(r, 2) if r is not None else None,
+                'grade': grade,
+                'note': note,
+            })
+        if metrics_entries:
+            sources_block.append({
+                'name': src,
+                'role': 'reference' if src == reference else 'secondary',
+                'metrics': metrics_entries,
+            })
+
+    # ── 5. Trusted combined daily series (DISTRUST sources excluded) ────────
+    combined = {}
+    for metric in _DAILY_METRIC_KEYS:
+        maps = per_source[metric]
+        trusted = [s for s in maps if grades.get((s, metric)) != 'DISTRUST']
+        has_distrusted = len(trusted) != len(maps)
+        if metric == 'steps' and not has_distrusted:
+            comb = {d: float(v) for d, v in steps_daily.items()}      # cross-source deduped
+        elif metric == 'sleep_hours' and not has_distrusted:
+            comb = {d: n['asleep'] for d, n in sleep.items() if n['asleep'] > 0}
+        elif metric == 'hrv' and not has_distrusted:
+            comb = {d: float(v) for d, v in hrv_daily.items()}        # morning-preferred merge
+        elif metric in ('steps', 'sleep_hours'):
+            # A source is distrusted: rebuild from trusted sources only.
+            # max() (not sum) avoids double counting overlapping trusted sources.
+            vals = defaultdict(list)
+            for s in trusted:
+                for d, v in maps[s].items():
+                    vals[d].append(v)
+            comb = {d: max(vs) for d, vs in vals.items()}
+        else:
+            vals = defaultdict(list)
+            for s in trusted:
+                for d, v in maps[s].items():
+                    vals[d].append(v)
+            comb = {d: sum(vs) / len(vs) for d, vs in vals.items()}
+        combined[metric] = comb
+
+    # ── 6+7. daily block and bands block ─────────────────────────────────────
+    daily = {'dates': dates}
+    bands = {}
+    z_maps = {}          # {metric: {date: z}} within the window (for decisions)
+    band_mid = {}        # {metric: {date: (median, robust_sd)}} (for decision lines)
+    for metric in _DAILY_METRIC_KEYS:
+        comb = combined[metric]
+        daily[metric] = [_round_metric(metric, comb.get(d)) for d in dates]
+
+        items = sorted(comb.items())
+        keys_sorted = [k for k, _ in items]
+        vals_sorted = [v for _, v in items]
+
+        def window_samples(day_key):
+            start_key = (datetime.strptime(day_key, '%Y-%m-%d').date()
+                         - timedelta(days=_BAND_WINDOW_DAYS - 1)).isoformat()
+            i = bisect.bisect_left(keys_sorted, start_key)
+            j = bisect.bisect_right(keys_sorted, day_key)
+            return vals_sorted[i:j]
+
+        lo_arr, hi_arr = [], []
+        zmap, midmap = {}, {}
+        for d in dates:
+            samples = window_samples(d)
+            if len(samples) >= _BAND_MIN_SAMPLES:
+                med, rsd = _robust_stats(samples)
+                lo_arr.append(round(med - 2 * rsd, 2))
+                hi_arr.append(round(med + 2 * rsd, 2))
+                v = comb.get(d)
+                if v is not None:
+                    zmap[d] = (v - med) / rsd
+                    midmap[d] = (med, rsd)
+            else:
+                lo_arr.append(None)
+                hi_arr.append(None)
+
+        last_sample = keys_sorted[-1] if keys_sorted else None
+        current = vals_sorted[-1] if vals_sorted else None
+        z = None
+        if last_sample is not None:
+            samples = window_samples(last_sample)
+            if len(samples) >= _BAND_MIN_SAMPLES:
+                med, rsd = _robust_stats(samples)
+                z = (current - med) / rsd
+        gap_days = (end_dt - datetime.strptime(last_sample, '%Y-%m-%d').date()).days \
+            if last_sample else None
+
+        if last_sample is None:
+            status = 'no_data'
+        elif gap_days >= _GAP_DAYS_THRESHOLD:
+            status = 'data_gap'
+        elif z is not None and abs(z) >= _Z_THRESHOLD:
+            status = 'watching'
+        else:
+            status = 'in_range'
+
+        bands[metric] = {
+            'lo': lo_arr, 'hi': hi_arr,
+            'current': _round_metric(metric, current),
+            'z': round(z, 2) if z is not None else None,
+            'status': status,
+            'gap_days': gap_days,
+            'last_sample': last_sample,
+        }
+        z_maps[metric] = zmap
+        band_mid[metric] = midmap
+
+    # ── 8. Decision engine ────────────────────────────────────────────────────
+    # Rules (spec): WATCHING when |z| ≥ 2 on one signal; ATTENTION when ≥2
+    # signals cross ±2 the same day or a signal stays out 3+ consecutive days;
+    # SUPPRESSED when a single signal crosses for a single day with no
+    # corroboration (still logged, suppressed:true); DATA_GAP when a gap
+    # reaches 7 days; RESOLVED when an escalated metric is back in band 3
+    # consecutive days; SOURCE_DISTRUSTED when a source-metric r < 0.40.
+    # Corroboration = any other metric with |z| ≥ 1 the same day (values logged).
+    decisions = []
+
+    def metric_source(metric):
+        maps = per_source[metric]
+        cands = [s for s in maps if grades.get((s, metric)) != 'DISTRUST']
+        if not cands:
+            return reference
+        return max(cands, key=lambda s: (s == reference, coverage_days(s, metric)))
+
+    def signal_name(metric, src=None):
+        return f'{_METRIC_LABELS[metric]} · {src or metric_source(metric)}'
+
+    for metric in _DAILY_METRIC_KEYS:
+        zmap = z_maps[metric]
+        if not zmap:
+            continue
+        out_days = [d for d in dates if d in zmap and abs(zmap[d]) >= _Z_THRESHOLD]
+
+        # group out-of-band days into runs of consecutive calendar days
+        runs = []
+        for d in out_days:
+            d_dt = datetime.strptime(d, '%Y-%m-%d').date()
+            if runs and (d_dt - datetime.strptime(runs[-1][-1], '%Y-%m-%d').date()).days == 1:
+                runs[-1].append(d)
+            else:
+                runs.append([d])
+
+        for run in runs:
+            first, length = run[0], len(run)
+            z0 = zmap[first]
+            v0 = combined[metric][first]
+            med, _rsd = band_mid[metric][first]
+
+            # corroboration on the first day of the run
+            weak = [(m2, z_maps[m2][first]) for m2 in _DAILY_METRIC_KEYS
+                    if m2 != metric and first in z_maps[m2]
+                    and abs(z_maps[m2][first]) >= _CORROBORATION_Z]
+            # ≥2 signals crossing ±2 on the same day (any day of the run)
+            strong = any(
+                any(m2 != metric and d in z_maps[m2] and abs(z_maps[m2][d]) >= _Z_THRESHOLD
+                    for m2 in _DAILY_METRIC_KEYS)
+                for d in run
+            )
+
+            if length >= _RESOLVE_DAYS or strong:
+                badge = 'ATTENTION'
+            elif length == 1 and not weak:
+                badge = 'SUPPRESSED'
+            else:
+                badge = 'WATCHING'
+            suppressed = badge == 'SUPPRESSED'
+
+            direction = 'below' if z0 < 0 else 'above'
+            lines = [{
+                'k': 'value',
+                'v': (f'{_fmt_metric_value(metric, v0)} · 60-day median '
+                      f'{_fmt_metric_value(metric, med)} · z = {z0:+.1f} · '
+                      f'threshold ±{_Z_THRESHOLD:.1f}'),
+            }]
+            if length > 1:
+                lines.append({'k': 'duration', 'v': f'{length} consecutive days out of band'})
+            for m2, z2 in weak:
+                lines.append({'k': 'corroboration',
+                              'v': f'{_METRIC_LABELS[m2]} z = {z2:+.1f} same day'})
+            if suppressed:
+                lines.append({'k': 'rule',
+                              'v': 'single day, no corroborating signal — logged only'})
+
+            decisions.append({
+                'date': first,
+                'signal': signal_name(metric),
+                'metric': metric,
+                'title': f'{_METRIC_LABELS[metric]} {abs(z0):.1f} SD {direction} 60-day band',
+                'badge': badge,
+                'suppressed': suppressed,
+                'lines': lines,
+            })
+
+            # RESOLVED: escalated metric back in band 3 consecutive days
+            if badge in ('WATCHING', 'ATTENTION'):
+                streak = 0
+                start_i = date_index[run[-1]] + 1
+                for d in dates[start_i:]:
+                    if d in zmap:
+                        if abs(zmap[d]) < _Z_THRESHOLD:
+                            streak += 1
+                            if streak == _RESOLVE_DAYS:
+                                zr = zmap[d]
+                                decisions.append({
+                                    'date': d,
+                                    'signal': signal_name(metric),
+                                    'metric': metric,
+                                    'title': f'{_METRIC_LABELS[metric]} back in band',
+                                    'badge': 'RESOLVED',
+                                    'suppressed': False,
+                                    'lines': [{
+                                        'k': 'status',
+                                        'v': (f'in band {_RESOLVE_DAYS} consecutive days · '
+                                              f'z = {zr:+.1f} · threshold ±{_Z_THRESHOLD:.1f}'),
+                                    }],
+                                })
+                                break
+                        else:
+                            break          # a new excursion starts; its own run logs it
+                    else:
+                        streak = 0         # missing day breaks consecutiveness
+
+    # DATA_GAP: interior gaps ≥7 days between samples, plus the trailing gap
+    for metric in _DAILY_METRIC_KEYS:
+        comb = combined[metric]
+        if not comb:
+            continue
+        keys_sorted = sorted(comb.keys())
+        gap_pairs = []
+        for i in range(1, len(keys_sorted)):
+            d1 = datetime.strptime(keys_sorted[i - 1], '%Y-%m-%d').date()
+            d2 = datetime.strptime(keys_sorted[i], '%Y-%m-%d').date()
+            missing = (d2 - d1).days - 1
+            if missing >= _GAP_DAYS_THRESHOLD:
+                gap_pairs.append((keys_sorted[i - 1], missing, keys_sorted[i]))
+        trailing = (end_dt - datetime.strptime(keys_sorted[-1], '%Y-%m-%d').date()).days
+        if trailing >= _GAP_DAYS_THRESHOLD:
+            gap_pairs.append((keys_sorted[-1], trailing, None))
+
+        for last_before, gap_len, next_after in gap_pairs:
+            detect = (datetime.strptime(last_before, '%Y-%m-%d').date()
+                      + timedelta(days=_GAP_DAYS_THRESHOLD)).isoformat()
+            if detect > end_key:
+                continue
+            if detect < dates[0]:
+                detect = dates[0]
+            lines = [{'k': 'gap',
+                      'v': (f'last sample {last_before} · '
+                            f'{gap_len} days without samples · threshold '
+                            f'{_GAP_DAYS_THRESHOLD} days')}]
+            if next_after:
+                lines.append({'k': 'resumed', 'v': f'samples resumed {next_after}'})
+            else:
+                lines.append({'k': 'status', 'v': 'gap ongoing at end of window'})
+            decisions.append({
+                'date': detect,
+                'signal': signal_name(metric),
+                'metric': metric,
+                'title': f'{_METRIC_LABELS[metric]} gap reached {_GAP_DAYS_THRESHOLD} days',
+                'badge': 'DATA_GAP',
+                'suppressed': False,
+                'lines': lines,
+            })
+
+    # SOURCE_DISTRUSTED: one entry per distrusted (source, metric)
+    for src, metric, r, shared, last_shared in distrust_events:
+        d = min(max(last_shared, dates[0]), end_key)
+        decisions.append({
+            'date': d,
+            'signal': f'{_METRIC_LABELS[metric]} · {src}',
+            'metric': metric,
+            'title': f'{src} {_METRIC_LABELS[metric]} distrusted (r = {r:.2f})',
+            'badge': 'SOURCE_DISTRUSTED',
+            'suppressed': False,
+            'lines': [
+                {'k': 'correlation',
+                 'v': (f'r = {r:.2f} vs {reference} over {shared} shared days · '
+                       f'threshold ≥ {_R_PARTIAL:.2f}')},
+                {'k': 'action',
+                 'v': 'source excluded from daily series and bands for this metric'},
+            ],
+        })
+
+    decisions.sort(key=lambda e: e['date'], reverse=True)
+
+    # ── 9. weekly ─────────────────────────────────────────────────────────────
+    monday = end_dt - timedelta(days=end_dt.weekday())
+    sunday = monday + timedelta(days=6)
+    if monday.year != sunday.year:
+        label = (f"Week of {monday.day} {monday.strftime('%b %Y')} – "
+                 f"{sunday.day} {sunday.strftime('%b %Y')}")
+    elif monday.month != sunday.month:
+        label = (f"Week of {monday.day} {monday.strftime('%b')} – "
+                 f"{sunday.day} {sunday.strftime('%b %Y')}")
+    else:
+        label = f"Week of {monday.day}–{sunday.day} {monday.strftime('%b %Y')}"
+
+    weekly = {
+        'label': label,
+        'records_read': record_count,
+        'in_band':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'in_range'],
+        'watching': [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'watching'],
+        'gaps':     [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'data_gap'],
+        'no_data':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'no_data'],
+    }
+
+    return {'daily': daily, 'bands': bands, 'sources': sources_block,
+            'decisions': decisions, 'weekly': weekly}
 
 
 def _get_months(raw, steps_daily, sleep):

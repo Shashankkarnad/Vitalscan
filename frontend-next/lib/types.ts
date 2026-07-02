@@ -42,6 +42,87 @@ export interface SleepSegment {
   stage: 'deep' | 'rem' | 'core' | 'awake'
 }
 
+// ── 0.3 contract (all optional — old cached 0.2 results in sessionStorage lack these) ──
+
+/** Per-day arrays, last 90 calendar days ending at the last day with any data. Every array aligned to `dates`; null = no samples that day. */
+export interface DailyData {
+  dates: string[]
+  rhr: (number | null)[]
+  mean_hr: (number | null)[]
+  hrv: (number | null)[]
+  steps: (number | null)[]
+  sleep_hours: (number | null)[]
+  spo2: (number | null)[]
+  breathing: (number | null)[]
+}
+
+export type MetricKey = 'rhr' | 'mean_hr' | 'hrv' | 'steps' | 'sleep_hours' | 'spo2' | 'breathing'
+
+export type BandStatus = 'in_range' | 'watching' | 'data_gap' | 'no_data'
+
+/** Personal-normal band for one metric: rolling 60-day median ± 2 robust SD (MAD-based), aligned to daily.dates. */
+export interface MetricBand {
+  lo: (number | null)[]
+  hi: (number | null)[]
+  current: number | null
+  z: number | null
+  status: BandStatus
+  gap_days: number
+  last_sample: string | null
+}
+
+export type Bands = Partial<Record<MetricKey, MetricBand>>
+
+export type SourceRole = 'reference' | 'secondary'
+export type SourceGrade = 'TRUSTED' | 'PARTIAL' | 'DISTRUST' | 'UNGRADED'
+
+export interface SourceMetric {
+  metric: string
+  coverage_pct: number
+  shared_days: number
+  r: number | null
+  grade: SourceGrade
+  note: string
+}
+
+export interface Source {
+  name: string
+  role: SourceRole
+  metrics: SourceMetric[]
+}
+
+export type DecisionBadge =
+  | 'WATCHING'
+  | 'ATTENTION'
+  | 'DATA_GAP'
+  | 'SUPPRESSED'
+  | 'RESOLVED'
+  | 'SOURCE_DISTRUSTED'
+
+export interface DecisionLine {
+  k: string
+  v: string
+}
+
+export interface Decision {
+  date: string
+  signal: string
+  metric: string
+  title: string
+  badge: DecisionBadge
+  suppressed: boolean
+  lines: DecisionLine[]
+}
+
+export interface Weekly {
+  label: string
+  records_read: number
+  in_band: string[]
+  watching: string[]
+  gaps: string[]
+  no_data: string[]
+}
+
 export interface VitalScanResult {
   version: string
   profile: Profile
@@ -64,7 +145,15 @@ export interface VitalScanResult {
   recent_sleep: RecentSleep
   sleep_nights: Record<string, SleepNight>
   sleep_timeline?: Record<string, SleepSegment[]>
+  steps_daily?: Record<string, number>
   weight_trend: [string, number][]
   vo2_trend: [string, number][]
   findings: Finding[]
+
+  // 0.3 contract — optional, absent on old cached (0.2) results
+  daily?: DailyData
+  bands?: Bands
+  sources?: Source[]
+  decisions?: Decision[]
+  weekly?: Weekly
 }
