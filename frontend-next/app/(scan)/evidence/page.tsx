@@ -122,6 +122,7 @@ export default function EvidencePage() {
                     fmt={fmtAxis}
                     unit={meta.unit || (isSleep ? 'h' : '')}
                     refLine={isSleep ? { value: 7, label: '7 h reference' } : undefined}
+                    variant={meta.chartKind}
                     label={`${meta.name} — 90 days against your personal band`}
                   />
                 )}

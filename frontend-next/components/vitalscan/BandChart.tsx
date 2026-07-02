@@ -33,6 +33,22 @@ export interface BandChartProps {
   unit?: string
   /** Accessible name — identity is never carried by color alone. */
   label: string
+  /**
+   * 'bar' renders each day as a baseline-anchored, rounded-top bar instead of
+   * a connected line — suited to discrete daily totals (steps, sleep hours).
+   * Defaults to 'line'.
+   */
+  variant?: 'line' | 'bar'
+}
+
+/** Rounded-top, baseline-anchored bar path (mark spec: 4px rounded data-ends). */
+function barPath(x0: number, w: number, yTop: number, yBase: number): string {
+  const r = Math.max(0, Math.min(4, w / 2, yBase - yTop))
+  if (r <= 0.5) return `M${x0} ${yBase} L${x0} ${yTop} L${x0 + w} ${yTop} L${x0 + w} ${yBase} Z`
+  return (
+    `M${x0} ${yBase} L${x0} ${yTop + r} Q${x0} ${yTop} ${x0 + r} ${yTop} ` +
+    `L${x0 + w - r} ${yTop} Q${x0 + w} ${yTop} ${x0 + w} ${yTop + r} L${x0 + w} ${yBase} Z`
+  )
 }
 
 interface Geometry {
@@ -42,6 +58,7 @@ interface Geometry {
   bandPaths: string[]
   overlayPath: string
   dots: { x: number; y: number }[]
+  bars: { x: number; w: number; yTop: number; yBase: number; outlier: boolean }[]
   ticks: { x: number; label: string }[]
   yHi: { y: number; text: string } | null
   yLo: { y: number; text: string } | null
@@ -113,13 +130,28 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
   }
   flush()
 
-  // Outlier dots — value outside band
+  // Outlier dots — value outside band (line variant only)
   const dots: { x: number; y: number }[] = []
-  p.values.forEach((v, i) => {
-    if (v != null && p.lo[i] != null && p.hi[i] != null && (v > p.hi[i]! || v < p.lo[i]!)) {
-      dots.push({ x: x(i), y: y(v) })
-    }
-  })
+  if (p.variant !== 'bar') {
+    p.values.forEach((v, i) => {
+      if (v != null && p.lo[i] != null && p.hi[i] != null && (v > p.hi[i]! || v < p.lo[i]!)) {
+        dots.push({ x: x(i), y: y(v) })
+      }
+    })
+  }
+
+  // Baseline-anchored bars (bar variant only) — one per day, 2px surface gap between fills
+  const bars: Geometry['bars'] = []
+  if (p.variant === 'bar') {
+    const yBase = y(mn)
+    const slot = (W - PL - PR) / N
+    const barW = Math.max(1, slot - 2)
+    p.values.forEach((v, i) => {
+      if (v == null) return
+      const outlier = p.lo[i] != null && p.hi[i] != null && (v > p.hi[i]! || v < p.lo[i]!)
+      bars.push({ x: x(i) - barW / 2, w: barW, yTop: y(v), yBase, outlier })
+    })
+  }
 
   // Month ticks — first of each month
   const ticks: { x: number; label: string }[] = []
@@ -177,6 +209,7 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
     bandPaths,
     overlayPath,
     dots,
+    bars,
     ticks,
     yHi,
     yLo,
@@ -278,19 +311,44 @@ export default function BandChart(props: BandChartProps) {
         )}
         {geo.refY != null && props.refLine && (
           <>
-            <line x1={PL} x2={W - PR} y1={geo.refY} y2={geo.refY} stroke="rgba(255,255,255,.22)" strokeDasharray="3 4" strokeWidth="1" />
-            <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(232,234,242,.4)">
-              {props.refLine.label}
-            </text>
+            {/* A reference line is meaningless where there's no data to compare — stop it at the gap. */}
+            <line
+              x1={PL}
+              x2={geo.gap ? geo.gap.x : W - PR}
+              y1={geo.refY}
+              y2={geo.refY}
+              stroke="rgba(255,255,255,.22)"
+              strokeDasharray="3 4"
+              strokeWidth="1"
+            />
+            {/* Label omitted when a trailing gap is present — it would crowd the NO DATA text;
+                the truncated dashed line's y-position still reads against the axis. */}
+            {!geo.gap && (
+              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(232,234,242,.4)">
+                {props.refLine.label}
+              </text>
+            )}
           </>
         )}
         {geo.overlayPath && (
           <path d={geo.overlayPath} fill="none" stroke={rgba(props.color, 0.25)} strokeWidth="1.2" strokeDasharray="2 5" />
         )}
-        <path d={geo.linePath} fill="none" stroke={props.color} strokeWidth="1.8" strokeLinejoin="round" />
-        {geo.dots.map((dt, i) => (
-          <circle key={i} cx={dt.x} cy={dt.y} r="3.4" fill={props.color} stroke={SURFACE} strokeWidth="1.4" />
-        ))}
+        {props.variant === 'bar' ? (
+          geo.bars.map((b, i) => (
+            <path
+              key={i}
+              d={barPath(b.x, b.w, b.yTop, b.yBase)}
+              fill={b.outlier ? props.color : rgba(props.color, 0.55)}
+            />
+          ))
+        ) : (
+          <>
+            <path d={geo.linePath} fill="none" stroke={props.color} strokeWidth="1.8" strokeLinejoin="round" />
+            {geo.dots.map((dt, i) => (
+              <circle key={i} cx={dt.x} cy={dt.y} r="3.4" fill={props.color} stroke={SURFACE} strokeWidth="1.4" />
+            ))}
+          </>
+        )}
         {geo.yHi && (
           <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(232,234,242,.35)">
             {geo.yHi.text}
@@ -372,9 +430,11 @@ export interface SparklineProps {
   color: string
   height?: number
   label: string
+  /** Mirrors BandChart's variant — bars for discrete daily totals. */
+  variant?: 'line' | 'bar'
 }
 
-export function Sparkline({ values, lo, hi, color, height = 38, label }: SparklineProps) {
+export function Sparkline({ values, lo, hi, color, height = 38, label, variant = 'line' }: SparklineProps) {
   const W = 100
   const H = 30
   const N = values.length
@@ -443,7 +503,28 @@ export function Sparkline({ values, lo, hi, color, height = 38, label }: Sparkli
       {bands.map((d, i) => (
         <path key={i} d={d} fill={rgba(color, 0.08)} />
       ))}
-      <path d={line} fill="none" stroke={color} strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+      {variant === 'bar' ? (
+        (() => {
+          const yBase = y(mn)
+          const slot = W / N
+          const barW = Math.max(0.6, slot - 0.8)
+          return values.map((v, i) => {
+            if (v == null) return null
+            return (
+              <rect
+                key={i}
+                x={x(i) - barW / 2}
+                y={Math.min(y(v), yBase)}
+                width={barW}
+                height={Math.abs(yBase - y(v))}
+                fill={rgba(color, 0.7)}
+              />
+            )
+          })
+        })()
+      ) : (
+        <path d={line} fill="none" stroke={color} strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+      )}
     </svg>
   )
 }

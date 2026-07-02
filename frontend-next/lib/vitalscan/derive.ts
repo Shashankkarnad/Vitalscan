@@ -74,6 +74,7 @@ export interface CategoryCard {
   metrics: { name: string; cur: string }[]
   series: MetricSeries
   color: string
+  chartKind: 'line' | 'bar'
 }
 
 export function buildCategories(result: VitalScanResult): CategoryCard[] {
@@ -101,6 +102,7 @@ export function buildCategories(result: VitalScanResult): CategoryCard[] {
       metrics,
       series: getSeries(result, cat.metricKeys[0]),
       color: cat.color,
+      chartKind: METRIC_BY_KEY[cat.metricKeys[0]].chartKind,
     }
   })
 }

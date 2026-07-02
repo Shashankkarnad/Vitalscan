@@ -118,6 +118,7 @@ export default function DashboardPage() {
                 hi={t.series.hi}
                 color={t.meta.color}
                 height={40}
+                variant={t.meta.chartKind}
                 label={`${t.meta.name} 90-day trend sparkline`}
               />
             </div>

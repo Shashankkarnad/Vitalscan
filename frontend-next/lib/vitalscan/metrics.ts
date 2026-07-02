@@ -10,6 +10,13 @@ export interface MetricMeta {
   color: string
   /** Format a raw value for display (current value / axis labels). */
   fmt: (v: number) => string
+  /**
+   * Chart form for this metric's timeline: 'bar' for discrete daily totals
+   * (steps, sleep duration), 'line' for continuously-varying physiological
+   * signals (heart rate, HRV, SpO2, breathing) where a line-in-band reads
+   * change over time more naturally than discrete bars.
+   */
+  chartKind: 'line' | 'bar'
 }
 
 export const METRICS: MetricMeta[] = [
@@ -20,6 +27,7 @@ export const METRICS: MetricMeta[] = [
     unit: 'bpm',
     color: COLOR.coral,
     fmt: (v) => String(Math.round(v)),
+    chartKind: 'line',
   },
   {
     key: 'hrv',
@@ -28,6 +36,7 @@ export const METRICS: MetricMeta[] = [
     unit: 'ms',
     color: COLOR.teal,
     fmt: (v) => String(Math.round(v)),
+    chartKind: 'line',
   },
   {
     key: 'sleep_hours',
@@ -36,6 +45,7 @@ export const METRICS: MetricMeta[] = [
     unit: '',
     color: COLOR.blue,
     fmt: (v) => formatHours(v),
+    chartKind: 'bar',
   },
   {
     key: 'steps',
@@ -44,6 +54,7 @@ export const METRICS: MetricMeta[] = [
     unit: 'steps',
     color: COLOR.amber,
     fmt: (v) => Math.round(v).toLocaleString('en-US'),
+    chartKind: 'bar',
   },
   {
     key: 'mean_hr',
@@ -52,6 +63,7 @@ export const METRICS: MetricMeta[] = [
     unit: 'bpm',
     color: COLOR.coral,
     fmt: (v) => String(Math.round(v)),
+    chartKind: 'line',
   },
   {
     key: 'breathing',
@@ -60,6 +72,7 @@ export const METRICS: MetricMeta[] = [
     unit: '/min',
     color: COLOR.teal,
     fmt: (v) => v.toFixed(1),
+    chartKind: 'line',
   },
   {
     key: 'spo2',
@@ -68,6 +81,7 @@ export const METRICS: MetricMeta[] = [
     unit: '%',
     color: COLOR.teal,
     fmt: (v) => v.toFixed(1),
+    chartKind: 'line',
   },
 ]
 

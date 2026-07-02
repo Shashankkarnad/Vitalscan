@@ -96,6 +96,7 @@ export default function HomePage() {
                 hi={cat.series.hi}
                 color={cat.color}
                 height={38}
+                variant={cat.chartKind}
                 label={`${cat.label} 90-day trend sparkline`}
               />
             </div>
@@ -197,6 +198,7 @@ export default function HomePage() {
                       fmt={f.meta.key === 'steps' ? (v) => (v / 1000).toFixed(1).replace('.0', '') + 'k' : f.meta.fmt}
                       unit={f.meta.unit}
                       refLine={f.meta.key === 'sleep_hours' ? { value: 7, label: '7 h' } : undefined}
+                      variant={f.meta.chartKind}
                       label={`${f.meta.name} — 90 days against your personal band`}
                     />
                   )}
