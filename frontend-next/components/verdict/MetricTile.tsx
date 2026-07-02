@@ -11,10 +11,10 @@ interface Props {
 }
 
 const TOP_BORDER: Record<string, string> = {
-  critical: 'border-t-clinical-red',
-  elevated: 'border-t-clinical-orange',
-  moderate: 'border-t-clinical-yellow',
-  good: 'border-t-clinical-green',
+  critical: 'border-t-critical',
+  elevated: 'border-t-elevated',
+  moderate: 'border-t-moderate',
+  good: 'border-t-good',
 }
 
 export default function MetricTile({ label, value, unit, severity = 'good', sub }: Props) {

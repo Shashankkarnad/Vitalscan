@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import type { VitalScanResult } from '@/lib/types'
 import { loadResult } from '@/lib/store'
 import { avg, nn, formatK } from '@/lib/utils'
 import ChartSection from '@/components/results/ChartSection'
-import HrvChart from '@/components/results/charts/HrvChart'
-import RhrChart from '@/components/results/charts/RhrChart'
-import Spo2Chart from '@/components/results/charts/Spo2Chart'
-import SleepChart from '@/components/results/charts/SleepChart'
-import SleepHypnogram from '@/components/results/charts/SleepHypnogram'
-import StepsChart from '@/components/results/charts/StepsChart'
+
+const HrvChart = dynamic(() => import('@/components/results/charts/HrvChart'), { ssr: false })
+const RhrChart = dynamic(() => import('@/components/results/charts/RhrChart'), { ssr: false })
+const Spo2Chart = dynamic(() => import('@/components/results/charts/Spo2Chart'), { ssr: false })
+const SleepChart = dynamic(() => import('@/components/results/charts/SleepChart'), { ssr: false })
+const SleepHypnogram = dynamic(() => import('@/components/results/charts/SleepHypnogram'), { ssr: false })
+const StepsChart = dynamic(() => import('@/components/results/charts/StepsChart'), { ssr: false })
 
 export default function ResultsPage() {
   const router = useRouter()

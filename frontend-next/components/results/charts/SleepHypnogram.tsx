@@ -66,19 +66,28 @@ export default function SleepHypnogram({ timeline, nights }: Props) {
   const segments = timeline[selectedDate]
   const starts = segments.map((s) => parseDate(s.start))
   const ends = segments.map((s) => parseDate(s.end))
-  const nightStart = new Date(Math.min(...starts.map((d) => d.getTime())))
-  const nightEnd = new Date(Math.max(...ends.map((d) => d.getTime())))
-  const totalMs = nightEnd.getTime() - nightStart.getTime()
+  const nightStartMs = Math.min(...starts.map((d) => d.getTime()))
+  const nightEndMs = Math.max(...ends.map((d) => d.getTime()))
+  const totalMs = nightEndMs - nightStartMs
+
+  if (!totalMs || !isFinite(totalMs)) {
+    return <p className="text-sm text-muted-foreground py-4 text-center">Sleep data incomplete for this night.</p>
+  }
+
+  const nightStart = new Date(nightStartMs)
+  const nightEnd = new Date(nightEndMs)
 
   // X-axis hour ticks
   const hourTicks: { x: number; label: string }[] = []
-  const tickStart = new Date(nightStart)
-  tickStart.setMinutes(0, 0, 0)
-  if (tickStart < nightStart) tickStart.setHours(tickStart.getHours() + 1)
-  for (let t = new Date(tickStart); t <= nightEnd; t.setHours(t.getHours() + 1)) {
-    const x = PADDING.left + ((t.getTime() - nightStart.getTime()) / totalMs) * CHART_W
-    const label = t.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
+  const tickCursor = new Date(nightStart)
+  tickCursor.setMinutes(0, 0, 0)
+  if (tickCursor.getTime() < nightStartMs) tickCursor.setHours(tickCursor.getHours() + 1)
+  const MAX_TICKS = 16
+  while (tickCursor <= nightEnd && hourTicks.length < MAX_TICKS) {
+    const x = PADDING.left + ((tickCursor.getTime() - nightStartMs) / totalMs) * CHART_W
+    const label = tickCursor.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
     hourTicks.push({ x, label })
+    tickCursor.setHours(tickCursor.getHours() + 1)
   }
 
   const night = nights[selectedDate]
@@ -143,7 +152,7 @@ export default function SleepHypnogram({ timeline, nights }: Props) {
             const cfg = STAGE_CONFIG[seg.stage]
             const s = parseDate(seg.start)
             const e = parseDate(seg.end)
-            const x = PADDING.left + ((s.getTime() - nightStart.getTime()) / totalMs) * CHART_W
+            const x = PADDING.left + ((s.getTime() - nightStartMs) / totalMs) * CHART_W
             const w = Math.max(2, ((e.getTime() - s.getTime()) / totalMs) * CHART_W)
             const y = PADDING.top + cfg.y * ROW_H + 2
             const h = ROW_H - 4
@@ -235,15 +244,15 @@ export default function SleepHypnogram({ timeline, nights }: Props) {
         ))}
       </div>
 
-      {/* Per-night stats */}
+      {/* Per-night stats — sleep_nights values are already in hours */}
       {night && (
         <div className="flex gap-4 flex-wrap text-sm">
           {[
-            { label: 'Total', value: formatHours(night.asleep / 60) },
-            { label: 'N3 Deep', value: formatHours(night.deep / 60) },
-            { label: 'REM', value: formatHours(night.rem / 60) },
-            { label: 'Light', value: formatHours(night.core / 60) },
-            { label: 'Awake', value: formatHours(night.awake / 60) },
+            { label: 'Total', value: formatHours(night.asleep) },
+            { label: 'N3 Deep', value: formatHours(night.deep) },
+            { label: 'REM', value: formatHours(night.rem) },
+            { label: 'Light', value: formatHours(night.core) },
+            { label: 'Awake', value: formatHours(night.awake) },
           ].map((s) => (
             <div key={s.label} className="flex flex-col">
               <span className="text-xs text-muted-foreground">{s.label}</span>

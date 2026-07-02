@@ -137,7 +137,7 @@ export default function VerdictPage() {
           {avgSleep != null && (
             <MetricTile
               label="Avg Sleep"
-              value={formatHours(avgSleep / 60)}
+              value={formatHours(avgSleep)}
               severity={sleepSeverity}
               sub="Last 7 nights"
             />

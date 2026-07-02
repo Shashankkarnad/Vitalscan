@@ -7,13 +7,15 @@ interface Props {
 
 const CONFIG = {
   emergency: {
-    bg: 'bg-critical-tint border-clinical-red/30',
+    bg: 'bg-critical-tint',
+    borderColor: 'rgba(220,38,38,0.25)',
     icon: 'text-critical',
     textColor: 'text-critical',
     path: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01',
   },
   warning: {
-    bg: 'bg-elevated-tint border-clinical-orange/30',
+    bg: 'bg-elevated-tint',
+    borderColor: 'rgba(234,88,12,0.25)',
     icon: 'text-elevated',
     textColor: 'text-elevated',
     path: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01',
@@ -23,7 +25,10 @@ const CONFIG = {
 export default function AlertBanner({ type, message }: Props) {
   const c = CONFIG[type]
   return (
-    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${c.bg}`}>
+    <div
+      className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${c.bg}`}
+      style={{ borderColor: c.borderColor }}
+    >
       <svg
         className={`flex-shrink-0 mt-0.5 ${c.icon}`}
         width="16"

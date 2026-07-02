@@ -16,6 +16,13 @@ export default function ChartSection({ title, subtitle, children, note }: Props)
   useEffect(() => {
     const el = ref.current
     if (!el) return
+
+    // Fire immediately if already in viewport (first-paint sections)
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true)
+      return
+    }
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -23,7 +30,7 @@ export default function ChartSection({ title, subtitle, children, note }: Props)
           obs.disconnect()
         }
       },
-      { threshold: 0.12 },
+      { threshold: 0.05, rootMargin: '0px 0px 80px 0px' },
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -34,7 +41,7 @@ export default function ChartSection({ title, subtitle, children, note }: Props)
       ref={ref}
       className={[
         'bg-card border border-border rounded-2xl p-5 transition-all duration-500',
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6',
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
       ].join(' ')}
     >
       <div className="mb-4">
