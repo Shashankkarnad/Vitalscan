@@ -1,19 +1,34 @@
 'use client'
 
-// Dashboard (design lines 123–221): 7 metric tiles linking to Evidence,
-// Instruments tile with per-source grades, hero resting-HR chart (620×210),
-// Recent decisions list → audit link.
+// Dashboard: metric-centric view — select any signal to see your personal chart,
+// breakdown (what / why), and filtered decisions. Tiles double as selector + Evidence link.
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
-import { hasContract, buildDashboardTiles, getSeries } from '@/lib/vitalscan/derive'
-import { METRIC_BY_KEY, GRADE_COLOR, BADGE_COLOR, badgeLabel, numberWord, capitalize, formatShortDate } from '@/lib/vitalscan/metrics'
+import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
+import {
+  hasContract,
+  buildDashboardTiles,
+  buildMetricBreakdown,
+  defaultDashboardMetric,
+  getSeries,
+} from '@/lib/vitalscan/derive'
+import {
+  METRIC_BY_KEY,
+  BADGE_COLOR,
+  badgeLabel,
+  formatStepsK,
+  numberWord,
+  capitalize,
+  formatShortDate,
+} from '@/lib/vitalscan/metrics'
 import { COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
 import { card, kicker, h1, rise } from '@/components/vitalscan/styles'
-import type { Source, SourceGrade } from '@/lib/types'
+import type { MetricKey, Source, SourceGrade } from '@/lib/types'
 
 function sourceGrade(s: Source): { grade: string; color: string } {
   const grades = new Set<SourceGrade>(s.metrics.map((m) => m.grade))
@@ -30,6 +45,14 @@ function sourceGrade(s: Source): { grade: string; color: string } {
 export default function DashboardPage() {
   const router = useRouter()
   const { result, ready } = useScanResult()
+  const [selected, setSelected] = useState<MetricKey>('rhr')
+  const [picked, setPicked] = useState(false)
+
+  useEffect(() => {
+    if (result && hasContract(result) && !picked) {
+      setSelected(defaultDashboardMetric(result))
+    }
+  }, [result, picked])
 
   if (!ready || !result) return null
   if (!hasContract(result)) return <ContractNotice />
@@ -38,9 +61,15 @@ export default function DashboardPage() {
   const weekly = result.weekly!
   const sources = result.sources ?? []
   const decisions = result.decisions ?? []
-  const rhrSeries = getSeries(result, 'rhr')
-  const rhrMeta = METRIC_BY_KEY.rhr
-  const rhrBand = rhrSeries.band
+
+  const meta = METRIC_BY_KEY[selected]
+  const series = getSeries(result, selected)
+  const band = series.band
+  const breakdown = buildMetricBreakdown(result, selected)
+  const fmtAxis = selected === 'steps' ? formatStepsK : meta.fmt
+  const isSleep = selected === 'sleep_hours'
+
+  const metricDecisions = decisions.filter((d) => d.metric === selected).slice(0, 4)
 
   const parts: string[] = [`${capitalize(numberWord(weekly.in_band.length))} in band`]
   if (weekly.watching.length) parts.push(`${numberWord(weekly.watching.length)} watching`)
@@ -48,15 +77,6 @@ export default function DashboardPage() {
   if (weekly.no_data.length) parts.push(`${numberWord(weekly.no_data.length)} without data`)
   const dashTitle =
     parts.length === 1 ? `All ${numberWord(weekly.in_band.length)} signals in band.` : parts.join(', ') + '.'
-
-  // Latest non-null band edges for the hero subtitle
-  let heroLo: number | null = null
-  let heroHi: number | null = null
-  for (let i = rhrSeries.dates.length - 1; i >= 0; i--) {
-    if (heroHi == null && rhrSeries.hi[i] != null) heroHi = rhrSeries.hi[i]
-    if (heroLo == null && rhrSeries.lo[i] != null) heroLo = rhrSeries.lo[i]
-    if (heroLo != null && heroHi != null) break
-  }
 
   const distrusted = sources.reduce(
     (n, s) => n + s.metrics.filter((m) => m.grade === 'DISTRUST').length,
@@ -69,67 +89,80 @@ export default function DashboardPage() {
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Dashboard &middot; last 90 days</div>
       <h1 style={h1(36)}>{dashTitle}</h1>
+      <p style={{ fontSize: 14.5, color: 'rgba(232,234,242,.5)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
+        Select a signal to see your personal chart and what it means for you.
+      </p>
 
+      {/* Metric selector tiles */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 14,
-          marginTop: 32,
+          marginTop: 28,
         }}
       >
-        {tiles.map((t, i) => (
-          <Link
-            key={t.meta.key}
-            href={`/evidence#${t.meta.key}`}
-            className="vs-tile-hover"
-            style={{
-              textAlign: 'left',
-              display: 'block',
-              width: '100%',
-              color: '#e8eaf2',
-              textDecoration: 'none',
-              ...card(16),
-              padding: '16px 16px 14px',
-              cursor: 'pointer',
-              ...rise(0.12 + i * 0.04),
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span
-                style={{
-                  ...mono(10, 'rgba(232,234,242,.45)'),
-                  letterSpacing: '.14em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {t.meta.name}
-              </span>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.statusColor }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-              <span style={{ ...mono(24, '#e8eaf2'), letterSpacing: '-.01em' }}>{t.cur}</span>
-              <span style={mono(11.5, 'rgba(232,234,242,.45)')}>{t.meta.unit}</span>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <Sparkline
-                values={t.series.values}
-                lo={t.series.lo}
-                hi={t.series.hi}
-                color={t.meta.color}
-                height={40}
-                variant={t.meta.chartKind}
-                label={`${t.meta.name} 90-day trend sparkline`}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12 }}>
-              <span style={{ ...mono(10, t.statusColor), letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                {t.statusWord}
-              </span>
-              <span style={mono(10.5, 'rgba(232,234,242,.4)')}>{t.zTxt}</span>
-            </div>
-          </Link>
-        ))}
+        {tiles.map((t, i) => {
+          const active = t.meta.key === selected
+          return (
+            <button
+              key={t.meta.key}
+              type="button"
+              onClick={() => {
+                setPicked(true)
+                setSelected(t.meta.key)
+              }}
+              className="vs-tile-hover"
+              style={{
+                textAlign: 'left',
+                display: 'block',
+                width: '100%',
+                color: '#e8eaf2',
+                ...card(16),
+                padding: '16px 16px 14px',
+                cursor: 'pointer',
+                border: active ? `1px solid ${rgba(t.meta.color, 0.55)}` : undefined,
+                boxShadow: active ? `0 0 0 1px ${rgba(t.meta.color, 0.2)}` : undefined,
+                background: active ? rgba(t.meta.color, 0.06) : undefined,
+                ...rise(0.12 + i * 0.04),
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span
+                  style={{
+                    ...mono(10, active ? t.meta.color : 'rgba(232,234,242,.45)'),
+                    letterSpacing: '.14em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {t.meta.name}
+                </span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.statusColor }} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
+                <span style={{ ...mono(24, '#e8eaf2'), letterSpacing: '-.01em' }}>{t.cur}</span>
+                <span style={mono(11.5, 'rgba(232,234,242,.45)')}>{t.meta.unit}</span>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <Sparkline
+                  values={t.series.values}
+                  lo={t.series.lo}
+                  hi={t.series.hi}
+                  color={t.meta.color}
+                  height={40}
+                  variant={t.meta.chartKind}
+                  label={`${t.meta.name} 90-day trend sparkline`}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12 }}>
+                <span style={{ ...mono(10, t.statusColor), letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                  {t.statusWord}
+                </span>
+                <span style={mono(10.5, 'rgba(232,234,242,.4)')}>{t.zTxt}</span>
+              </div>
+            </button>
+          )
+        })}
 
         {/* Instruments tile */}
         <Link
@@ -205,120 +238,139 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)',
-          gap: 14,
-          marginTop: 14,
-        }}
-      >
-        {/* Hero resting-HR chart */}
-        <div style={{ ...card(16), padding: '20px 24px', ...rise(0.48, 0.55) }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLOR.coral }} />
-              <span
-                style={{
-                  ...mono(11, 'rgba(232,234,242,.55)'),
-                  letterSpacing: '.16em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Resting heart rate
-              </span>
-            </div>
-            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS</span>
+      {/* Selected metric — chart + personal breakdown */}
+      <div style={{ ...card(16), padding: '22px 26px', marginTop: 14, ...rise(0.48, 0.55) }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
+            <span
+              style={{
+                ...mono(11, 'rgba(232,234,242,.55)'),
+                letterSpacing: '.16em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {meta.name}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12 }}>
-            <span style={mono(26, '#e8eaf2')}>{rhrBand?.current != null ? Math.round(rhrBand.current) : '—'}</span>
-            <span style={mono(13, 'rgba(232,234,242,.45)')}>bpm</span>
-            {heroLo != null && heroHi != null && (
-              <span style={{ fontSize: 13, color: 'rgba(232,234,242,.45)', marginLeft: 8 }}>
-                your normal {Math.round(heroLo)}&ndash;{Math.round(heroHi)} bpm
-              </span>
-            )}
-          </div>
-          <div style={{ marginTop: 10 }}>
-            <BandChart
-              values={rhrSeries.values}
-              dates={rhrSeries.dates}
-              lo={rhrSeries.lo}
-              hi={rhrSeries.hi}
-              color={COLOR.coral}
-              width={620}
-              height={210}
-              fmt={rhrMeta.fmt}
-              unit="bpm"
-              label="Resting heart rate — 90 days against your personal band"
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS · YOUR BAND</span>
+            <Link
+              href={`/evidence#${selected}`}
+              style={{
+                ...mono(10, meta.color),
+                letterSpacing: '.1em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+              }}
+            >
+              Full evidence &rarr;
+            </Link>
           </div>
         </div>
 
-        {/* Recent decisions */}
-        <div style={{ ...card(16), padding: '20px 24px 14px', display: 'flex', flexDirection: 'column', ...rise(0.54, 0.55) }}>
-          <div style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
-            Recent decisions
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', marginTop: 9, flex: 1 }}>
-            {decisions.length === 0 && (
-              <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), padding: '11px 0', lineHeight: 1.5 }}>
-                No decisions logged for this window.
-              </div>
-            )}
-            {decisions.slice(0, 4).map((e, i) => {
-              const bcol = BADGE_COLOR[e.badge]
-              return (
-                <div
-                  key={i}
-                  style={{
-                    padding: '11px 0',
-                    borderTop: '1px solid rgba(255,255,255,.06)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={mono(10.5, 'rgba(232,234,242,.38)')}>{formatShortDate(e.date)}</span>
-                    <span
-                      style={{
-                        ...mono(9, bcol),
-                        letterSpacing: '.1em',
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        border: `1px solid ${rgba(bcol, 0.4)}`,
-                        background: rgba(bcol, 0.09),
-                      }}
-                    >
-                      {badgeLabel(e.badge)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'rgba(232,234,242,.78)', lineHeight: 1.45, textWrap: 'pretty' }}>
-                    {e.title}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <button
-            className="vs-ghost-btn"
-            onClick={() => router.push('/audit')}
-            style={{
-              ...mono(11, 'rgba(232,234,242,.5)'),
-              letterSpacing: '.1em',
-              textTransform: 'uppercase',
-              background: 'none',
-              border: 'none',
-              borderTop: '1px solid rgba(255,255,255,.06)',
-              padding: '14px 0 6px',
-              textAlign: 'left',
-              cursor: 'pointer',
-            }}
-          >
-            Open audit log &rarr;
-          </button>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+          <span style={mono(26, '#e8eaf2')}>
+            {band?.status !== 'data_gap' && band?.current != null ? meta.fmt(band.current) : '—'}
+          </span>
+          <span style={mono(13, 'rgba(232,234,242,.45)')}>
+            {band?.status === 'data_gap' ? `no data · ${band.gap_days} d` : meta.unit || (isSleep ? 'h' : '')}
+          </span>
+          {breakdown.bandRange && band?.status !== 'no_data' && band?.status !== 'data_gap' && (
+            <span style={{ fontSize: 13, color: 'rgba(232,234,242,.45)' }}>{breakdown.bandRange}</span>
+          )}
         </div>
+
+        <div style={{ marginTop: 10 }}>
+          <BandChart
+            values={series.values}
+            dates={series.dates}
+            lo={series.lo}
+            hi={series.hi}
+            color={meta.color}
+            width={940}
+            height={210}
+            fmt={fmtAxis}
+            unit={meta.unit || (isSleep ? 'h' : '')}
+            refLine={isSleep ? { value: 7, label: '7 h reference' } : undefined}
+            variant={meta.chartKind}
+            label={`${meta.name} — 90 days against your personal band`}
+          />
+        </div>
+
+        <MetricBreakdown breakdown={breakdown} accent={meta.color} />
+      </div>
+
+      {/* Decisions for selected metric */}
+      <div style={{ ...card(16), padding: '20px 24px 14px', marginTop: 14, ...rise(0.54, 0.55) }}>
+        <div style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+          {meta.name} &middot; decision log
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 9 }}>
+          {metricDecisions.length === 0 && (
+            <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), padding: '11px 0', lineHeight: 1.5 }}>
+              No decisions for {meta.name.toLowerCase()} in this window — it stayed inside your band.
+            </div>
+          )}
+          {metricDecisions.map((e, i) => {
+            const bcol = BADGE_COLOR[e.badge]
+            return (
+              <div
+                key={i}
+                style={{
+                  padding: '11px 0',
+                  borderTop: i > 0 ? '1px solid rgba(255,255,255,.06)' : undefined,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={mono(10.5, 'rgba(232,234,242,.38)')}>{formatShortDate(e.date)}</span>
+                  <span
+                    style={{
+                      ...mono(9, bcol),
+                      letterSpacing: '.1em',
+                      padding: '2px 8px',
+                      borderRadius: 999,
+                      border: `1px solid ${rgba(bcol, 0.4)}`,
+                      background: rgba(bcol, 0.09),
+                    }}
+                  >
+                    {badgeLabel(e.badge)}
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: 'rgba(232,234,242,.78)', lineHeight: 1.45, textWrap: 'pretty' }}>
+                  {e.title}
+                </div>
+                {e.lines.length > 0 && (
+                  <div style={{ ...mono(10.5, 'rgba(232,234,242,.45)'), lineHeight: 1.5 }}>
+                    {e.lines.map((ln) => ln.v).join(' · ')}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <button
+          className="vs-ghost-btn"
+          onClick={() => router.push('/audit')}
+          style={{
+            ...mono(11, 'rgba(232,234,242,.5)'),
+            letterSpacing: '.1em',
+            textTransform: 'uppercase',
+            background: 'none',
+            border: 'none',
+            borderTop: '1px solid rgba(255,255,255,.06)',
+            padding: '14px 0 6px',
+            marginTop: 8,
+            textAlign: 'left',
+            cursor: 'pointer',
+            width: '100%',
+          }}
+        >
+          Open full audit log &rarr;
+        </button>
       </div>
     </div>
   )

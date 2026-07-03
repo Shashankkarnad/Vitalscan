@@ -10,7 +10,8 @@ import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart from '@/components/vitalscan/BandChart'
 import Hypnogram from '@/components/vitalscan/Hypnogram'
-import { hasContract, getSeries, evidenceNote } from '@/lib/vitalscan/derive'
+import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
+import { hasContract, getSeries, evidenceNote, buildMetricBreakdown } from '@/lib/vitalscan/derive'
 import { METRICS, STATUS_WORD, STATUS_COLOR, formatStepsK } from '@/lib/vitalscan/metrics'
 import { rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
 import { card, kicker, h1, lede, rise, pill } from '@/components/vitalscan/styles'
@@ -49,6 +50,7 @@ export default function EvidencePage() {
             if (lo != null && hi != null) break
           }
           const fmtAxis = meta.key === 'steps' ? formatStepsK : meta.fmt
+          const breakdown = buildMetricBreakdown(result, meta.key)
           const bandText =
             lo != null && hi != null
               ? `your normal ${fmtAxis(lo)}–${fmtAxis(hi)}${meta.unit ? ' ' + meta.unit : meta.key === 'sleep_hours' ? '' : ''}`
@@ -131,6 +133,8 @@ export default function EvidencePage() {
               {note && (
                 <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), marginTop: 10, lineHeight: 1.5 }}>{note}</div>
               )}
+
+              <MetricBreakdown breakdown={breakdown} accent={meta.color} />
 
               {/* SLEEP carries its domain visualization: the hypnogram */}
               {isSleep && (

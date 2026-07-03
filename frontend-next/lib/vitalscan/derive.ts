@@ -258,6 +258,194 @@ export function buildDashboardTiles(result: VitalScanResult): DashboardTile[] {
   })
 }
 
+// ── Metric breakdown (personal narrative per signal) ─────────────────────
+
+export interface MetricStat {
+  label: string
+  value: string
+}
+
+export interface MetricBreakdown {
+  headline: string
+  why: string
+  stats: MetricStat[]
+  bandRange: string | null
+  activeDecision: Decision | null
+  detailLines: { k: string; v: string }[]
+}
+
+function countBandDays(series: MetricSeries): { inBand: number; withData: number; outBand: number } {
+  let inBand = 0
+  let withData = 0
+  let outBand = 0
+  for (let i = 0; i < series.values.length; i++) {
+    const v = series.values[i]
+    if (v == null) continue
+    withData++
+    const lo = series.lo[i]
+    const hi = series.hi[i]
+    if (lo != null && hi != null) {
+      if (v >= lo && v <= hi) inBand++
+      else outBand++
+    }
+  }
+  return { inBand, withData, outBand }
+}
+
+function recentMean(values: (number | null)[], days: number): number | null {
+  const nums: number[] = []
+  for (let i = values.length - 1; i >= 0 && nums.length < days; i--) {
+    if (values[i] != null) nums.push(values[i]!)
+  }
+  if (nums.length === 0) return null
+  return nums.reduce((a, b) => a + b, 0) / nums.length
+}
+
+function streakInBand(series: MetricSeries): number {
+  let streak = 0
+  for (let i = series.values.length - 1; i >= 0; i--) {
+    const v = series.values[i]
+    if (v == null) continue
+    const lo = series.lo[i]
+    const hi = series.hi[i]
+    if (lo == null || hi == null) break
+    if (v >= lo && v <= hi) streak++
+    else break
+  }
+  return streak
+}
+
+function latestBandEdges(series: MetricSeries): { lo: number; hi: number } | null {
+  for (let i = series.dates.length - 1; i >= 0; i--) {
+    if (series.lo[i] != null && series.hi[i] != null) {
+      return { lo: series.lo[i]!, hi: series.hi[i]! }
+    }
+  }
+  return null
+}
+
+function activeDecisionForMetric(decisions: Decision[], metric: MetricKey): Decision | null {
+  const sorted = [...decisions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  const newest = sorted.find((d) => d.metric === metric)
+  if (!newest) return null
+  if (newest.suppressed) return null
+  if (newest.badge === 'RESOLVED') return null
+  if (newest.badge === 'WATCHING' || newest.badge === 'ATTENTION' || newest.badge === 'DATA_GAP') {
+    return newest
+  }
+  return null
+}
+
+function trendLabel(current: number, avg: number, meta: (typeof METRICS)[number]): string {
+  const diff = current - avg
+  const tol =
+    meta.key === 'steps'
+      ? 500
+      : meta.key === 'sleep_hours'
+        ? 0.25
+        : meta.key === 'spo2'
+          ? 0.3
+          : meta.key === 'breathing'
+            ? 0.5
+            : 1
+  if (Math.abs(diff) <= tol) return 'Steady vs 7-day avg'
+  const dir = diff > 0 ? '↑' : '↓'
+  const unit = meta.unit ? ` ${meta.unit}` : meta.key === 'sleep_hours' ? ' h' : ''
+  return `${dir} ${meta.fmt(Math.abs(diff))}${unit} vs 7-day avg`
+}
+
+function formatBandRange(meta: (typeof METRICS)[number], lo: number, hi: number): string {
+  const fmt = meta.key === 'steps' ? (v: number) => Math.round(v).toLocaleString('en-US') : meta.fmt
+  const unit = meta.unit || (meta.key === 'sleep_hours' ? 'h' : '')
+  const suffix = unit ? ` ${unit}` : ''
+  return `your normal ${fmt(lo)}–${fmt(hi)}${suffix}`
+}
+
+/** Default hero metric: first watching signal, else first gap, else resting HR. */
+export function defaultDashboardMetric(result: VitalScanResult): MetricKey {
+  const weekly = result.weekly
+  if (weekly?.watching.length) return weekly.watching[0] as MetricKey
+  if (weekly?.gaps.length) return weekly.gaps[0] as MetricKey
+  return 'rhr'
+}
+
+export function buildMetricBreakdown(result: VitalScanResult, key: MetricKey): MetricBreakdown {
+  const meta = METRIC_BY_KEY[key]
+  const series = getSeries(result, key)
+  const band = series.band
+  const status = band?.status ?? 'no_data'
+  const decisions = result.decisions ?? []
+  const active = activeDecisionForMetric(decisions, key)
+  const edges = latestBandEdges(series)
+  const bandRange = edges ? formatBandRange(meta, edges.lo, edges.hi) : null
+  const { inBand, withData, outBand } = countBandDays(series)
+  const streak = streakInBand(series)
+  const avg7 = recentMean(series.values, 7)
+
+  const stats: MetricStat[] = []
+  if (withData > 0) {
+    stats.push({
+      label: 'In your band',
+      value: edges ? `${inBand} of ${withData} days` : `${withData} days recorded`,
+    })
+  }
+  if (outBand > 0) stats.push({ label: 'Outside band', value: `${outBand} day${outBand === 1 ? '' : 's'}` })
+  if (streak > 1 && status === 'in_range') {
+    stats.push({ label: 'Current streak', value: `${streak} days in band` })
+  }
+  if (band?.current != null && avg7 != null && status !== 'data_gap' && status !== 'no_data') {
+    stats.push({ label: 'Recent trend', value: trendLabel(band.current, avg7, meta) })
+  }
+  if (band?.z != null && status === 'watching') {
+    stats.push({
+      label: 'Distance from normal',
+      value: `z ${band.z >= 0 ? '+' : '−'}${Math.abs(band.z).toFixed(1)}`,
+    })
+  }
+
+  let headline: string
+  let why: string
+  const detailLines: { k: string; v: string }[] = []
+
+  if (status === 'no_data') {
+    headline = `No ${meta.name.toLowerCase()} data in this export.`
+    why = `VitalScan couldn't find ${meta.name.toLowerCase()} readings in your Apple Health export. The chart stays visible so you know this signal wasn't skipped.`
+  } else if (status === 'data_gap') {
+    const last = band?.last_sample ? formatShortDate(band.last_sample) : 'unknown'
+    const gap = band?.gap_days ?? 0
+    headline = `${meta.name} — no recent readings.`
+    why = `Last sample ${last}. That's a ${gap}-day gap with no new data. VitalScan won't guess what happened during the silence — it waits for fresh readings.`
+    if (active?.lines.length) detailLines.push(...active.lines)
+  } else if (status === 'watching') {
+    const dir = band!.z! < 0 ? 'below' : 'above'
+    headline = `${meta.name} is outside your personal normal.`
+    why = active
+      ? active.title + (active.lines.find((l) => l.k.toLowerCase() === 'corroboration') ? ' Another signal moved the same day — see details below.' : '.')
+      : `Today's reading sits ${dir} your rolling 60-day band${bandRange ? ` (${bandRange})` : ''}. Points outside the shaded band are what VitalScan watches.`
+    if (active?.lines.length) detailLines.push(...active.lines)
+    else if (band?.current != null && edges) {
+      detailLines.push({
+        k: 'Reading',
+        v: `${meta.fmt(band.current)} · band ${meta.fmt(edges.lo)}–${meta.fmt(edges.hi)} · z = ${band.z!.toFixed(1)}`,
+      })
+    }
+  } else {
+    headline = `${meta.name} is in your personal normal.`
+    const curTxt =
+      band?.current != null ? `Today's ${meta.fmt(band.current)}${meta.unit ? ' ' + meta.unit : ''}` : 'Your latest reading'
+    why =
+      bandRange && withData > 0
+        ? `${curTxt} sits inside ${bandRange} — your rolling 60-day median ± 2 robust SD, built from your own history, not population averages. ${inBand} of ${withData} recorded days stayed in band.`
+        : `${curTxt} is within range. The shaded band on the chart is your personal normal, recalculated daily from the last 60 days of your data.`
+    detailLines.push({
+      k: 'Your band',
+      v: 'Rolling 60-day median ± 2 robust SD — null until 14+ samples in the window.',
+    })
+  }
+
+  return { headline, why, stats, bandRange, activeDecision: active, detailLines }
+}
+
 // ── Evidence notes ────────────────────────────────────────────────────────
 
 export function evidenceNote(result: VitalScanResult, key: MetricKey): string {
