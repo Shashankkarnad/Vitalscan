@@ -202,6 +202,8 @@
 .vs-shell .vs-tile-hover:hover { border-color: rgba(255, 255, 255, .2) !important; background: rgba(255, 255, 255, .05) !important; }
 .vs-shell .vs-ghost-btn { transition: color .15s ease; }
 .vs-shell .vs-ghost-btn:hover { color: #e8eaf2 !important; }
+.vs-shell .vs-upload-cta:hover:not(:disabled) { border-color: rgba(255,255,255,.24) !important; background: rgba(255,255,255,.1) !important; }
+.vs-shell .vs-dropzone-idle:hover { border-color: rgba(255,255,255,.28) !important; background: rgba(255,255,255,.02) !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .vs-shell, .vs-shell * { animation: none !important; transition: none !important; }

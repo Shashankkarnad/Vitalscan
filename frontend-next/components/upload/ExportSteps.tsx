@@ -1,5 +1,7 @@
 'use client'
 
+import { COLOR, rgba } from '@/lib/vitalscan/tokens'
+
 const steps = [
   {
     num: 1,
@@ -20,15 +22,30 @@ const steps = [
 
 export default function ExportSteps() {
   return (
-    <ol className="flex flex-col gap-4 text-sm">
+    <ol style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 13.5 }}>
       {steps.map((s) => (
-        <li key={s.num} className="flex gap-3 items-start">
-          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-teal/10 text-teal flex items-center justify-center font-semibold text-xs border border-teal/20">
+        <li key={s.num} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span
+            style={{
+              flexShrink: 0,
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 600,
+              fontSize: 11.5,
+              color: COLOR.teal,
+              background: rgba(COLOR.teal, 0.12),
+              border: `1px solid ${rgba(COLOR.teal, 0.3)}`,
+            }}
+          >
             {s.num}
           </span>
           <div>
-            <p className="font-medium text-foreground">{s.title}</p>
-            <p className="text-muted-foreground leading-relaxed mt-0.5">{s.detail}</p>
+            <p style={{ fontWeight: 500, color: '#e8eaf2' }}>{s.title}</p>
+            <p style={{ color: 'rgba(232,234,242,.5)', lineHeight: 1.5, marginTop: 2 }}>{s.detail}</p>
           </div>
         </li>
       ))}

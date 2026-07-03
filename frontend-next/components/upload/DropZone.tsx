@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { formatBytes } from '@/lib/utils'
+import { COLOR, rgba } from '@/lib/vitalscan/tokens'
 
 interface Props {
   onFile: (file: File) => void
@@ -32,20 +33,29 @@ export default function DropZone({ onFile }: Props) {
     [handleFile],
   )
 
+  const borderColor = dragging ? rgba(COLOR.teal, 0.55) : picked ? rgba(COLOR.teal, 0.35) : 'rgba(255,255,255,.14)'
+  const background = dragging ? rgba(COLOR.teal, 0.06) : picked ? rgba(COLOR.teal, 0.04) : 'transparent'
+
   return (
     <button
       type="button"
       aria-label="Drop zone — click or drag your Apple Health export here"
-      className={[
-        'relative w-full rounded-2xl border-2 border-dashed transition-all duration-200',
-        'flex flex-col items-center justify-center gap-3 py-12 px-6 cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        dragging
-          ? 'border-teal bg-teal/5 scale-[1.01]'
-          : picked
-            ? 'border-clinical-green bg-clinical-green/5'
-            : 'border-border hover:border-teal/50 hover:bg-secondary/60',
-      ].join(' ')}
+      className={['vs-dropzone', !dragging && !picked ? 'vs-dropzone-idle' : ''].join(' ').trim()}
+      style={{
+        position: 'relative',
+        width: '100%',
+        borderRadius: 16,
+        border: `1.5px dashed ${borderColor}`,
+        background,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        padding: '44px 24px',
+        cursor: 'pointer',
+        transition: 'border-color .2s ease, background .2s ease',
+      }}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => {
         e.preventDefault()
@@ -64,9 +74,18 @@ export default function DropZone({ onFile }: Props) {
 
       {picked ? (
         <>
-          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-clinical-green/10">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              background: rgba(COLOR.teal, 0.12),
+            }}
+          >
             <svg
-              className="text-clinical-green"
               width="28"
               height="28"
               viewBox="0 0 24 24"
@@ -75,26 +94,32 @@ export default function DropZone({ onFile }: Props) {
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{ color: COLOR.teal }}
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <div className="text-center">
-            <p className="font-semibold text-foreground text-sm">{picked.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{formatBytes(picked.size)}</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#e8eaf2', fontWeight: 600, fontSize: 13.5 }}>{picked.name}</p>
+            <p style={{ color: 'rgba(232,234,242,.45)', fontSize: 12, marginTop: 2 }}>{formatBytes(picked.size)}</p>
           </div>
-          <p className="text-xs text-muted-foreground">Click to choose a different file</p>
+          <p style={{ color: 'rgba(232,234,242,.4)', fontSize: 12 }}>Click to choose a different file</p>
         </>
       ) : (
         <>
           <div
-            className={[
-              'flex items-center justify-center w-14 h-14 rounded-full transition-colors',
-              dragging ? 'bg-teal/15' : 'bg-secondary',
-            ].join(' ')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              background: dragging ? rgba(COLOR.teal, 0.15) : 'rgba(255,255,255,.05)',
+              transition: 'background .2s ease',
+            }}
           >
             <svg
-              className={dragging ? 'text-teal' : 'text-muted-foreground'}
               width="26"
               height="26"
               viewBox="0 0 24 24"
@@ -103,17 +128,20 @@ export default function DropZone({ onFile }: Props) {
               strokeWidth="1.75"
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{ color: dragging ? COLOR.teal : 'rgba(232,234,242,.45)' }}
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </div>
-          <div className="text-center">
-            <p className="font-semibold text-foreground text-sm">
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#e8eaf2', fontWeight: 600, fontSize: 13.5 }}>
               {dragging ? 'Drop to upload' : 'Drop your export.zip here'}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">or click to browse — only .zip files</p>
+            <p style={{ color: 'rgba(232,234,242,.45)', fontSize: 12, marginTop: 2 }}>
+              or click to browse — only .zip files
+            </p>
           </div>
         </>
       )}
