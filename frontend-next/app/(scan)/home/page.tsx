@@ -4,6 +4,7 @@
 // SYSTEMS grid of 4 category cards, FINDINGS expandable cards, STEADY footer.
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
@@ -104,15 +105,17 @@ export default function HomePage() {
                 label={`${cat.label} 90-day trend sparkline`}
               />
             </div>
-            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
               {cat.metrics.map((m) => (
-                <div
-                  key={m.name}
-                  style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}
+                <Link
+                  key={m.key}
+                  href={`/signal?m=${m.key}`}
+                  className="vs-row-hover"
+                  style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, padding: '6px 0', textDecoration: 'none', borderRadius: 6 }}
                 >
                   <span style={{ fontSize: 12.5, color: 'rgba(232,234,242,.6)' }}>{m.name}</span>
                   <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: '#e8eaf2' }}>{m.cur}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

@@ -5,7 +5,6 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import { Sparkline } from '@/components/vitalscan/BandChart'
@@ -32,7 +31,7 @@ import {
 } from '@/lib/vitalscan/metrics'
 import { COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
 import { card, kicker, h1, rise } from '@/components/vitalscan/styles'
-import type { MetricKey, Source, SourceGrade } from '@/lib/types'
+import type { Source, SourceGrade } from '@/lib/types'
 
 function sourceGrade(s: Source): { grade: string; color: string } {
   const grades = new Set<SourceGrade>(s.metrics.map((m) => m.grade))
@@ -49,18 +48,12 @@ function sourceGrade(s: Source): { grade: string; color: string } {
 export default function DashboardPage() {
   const router = useRouter()
   const { result, ready } = useScanResult()
-  const [selected, setSelected] = useState<MetricKey>('rhr')
-  const [picked, setPicked] = useState(false)
-
-  useEffect(() => {
-    if (result && hasContract(result) && !picked) {
-      setSelected(defaultDashboardMetric(result))
-    }
-  }, [result, picked])
 
   if (!ready || !result) return null
   if (!hasContract(result)) return <ContractNotice />
 
+  // Featured signal below the tiles (tiles themselves deep-dive on click).
+  const selected = defaultDashboardMetric(result)
   const tiles = buildDashboardTiles(result)
   const heatmap = buildZHeatmap(result)
   const episodes = result.combo?.episodes ?? []
@@ -113,10 +106,7 @@ export default function DashboardPage() {
             <button
               key={t.meta.key}
               type="button"
-              onClick={() => {
-                setPicked(true)
-                setSelected(t.meta.key)
-              }}
+              onClick={() => router.push(`/signal?m=${t.meta.key}`)}
               className="vs-tile-hover"
               style={{
                 textAlign: 'left',

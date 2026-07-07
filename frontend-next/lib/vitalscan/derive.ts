@@ -77,7 +77,7 @@ export interface CategoryCard {
   status: BandStatus
   statusWord: string
   statusColor: string
-  metrics: { name: string; cur: string }[]
+  metrics: { key: MetricKey; name: string; cur: string }[]
   series: MetricSeries
   color: string
   chartKind: 'line' | 'bar'
@@ -97,7 +97,7 @@ export function buildCategories(result: VitalScanResult): CategoryCard[] {
           : band?.current != null
             ? meta.fmt(band.current) + (meta.unit ? ' ' + meta.unit : '')
             : '—'
-      return { name: meta.name, cur }
+      return { key: k, name: meta.name, cur }
     })
     return {
       key: cat.key,
