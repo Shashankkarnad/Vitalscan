@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { loadResult } from '@/lib/store'
+import { SourceModeProvider } from '@/components/vitalscan/SourceModeContext'
 import { FONT_DISPLAY, FONT_MONO, FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
 
 const NAV = [
@@ -101,7 +102,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </div>
 
-        {children}
+        <SourceModeProvider>{children}</SourceModeProvider>
 
         <footer
           style={{

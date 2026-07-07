@@ -13,6 +13,7 @@ import MetricChart from '@/components/vitalscan/MetricChart'
 import ZHeatmap from '@/components/vitalscan/ZHeatmap'
 import EpisodeCards from '@/components/vitalscan/EpisodeCards'
 import IconChip from '@/components/vitalscan/IconChip'
+import SourcePicker from '@/components/vitalscan/SourcePicker'
 import {
   hasContract,
   buildDashboardTiles,
@@ -90,6 +91,8 @@ export default function DashboardPage() {
       <p style={{ fontSize: 14.5, color: 'rgba(232,234,242,.5)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
         Select a signal to see your personal chart and what it means for you.
       </p>
+
+      <SourcePicker />
 
       {/* Metric selector tiles */}
       <div

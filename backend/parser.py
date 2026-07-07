@@ -603,6 +603,8 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=
         'z_series':  v03['z_series'],
         'combo':     v03['combo'],
         'combo_full': v03['combo_full'],
+        'modes':        v03['modes'],
+        'source_modes': v03['source_modes'],
     }
 
 
@@ -722,6 +724,7 @@ def _empty_v03_blocks(record_count):
         'combo_full': {'dates': [], 'z': {}, 'dist': [], 'cutoff': [],
                        'alert': [], 'alerts': [], 'episodes': [],
                        'metrics': []},
+        'modes': {}, 'source_modes': [],
     }
 
 
@@ -830,7 +833,7 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
             })
 
     # ── 5. Trusted combined daily series (DISTRUST sources excluded) ────────
-    combined = {}
+    combined_auto = {}
     for metric in _DAILY_METRIC_KEYS:
         maps = per_source[metric]
         trusted = [s for s in maps if grades.get((s, metric)) != 'DISTRUST']
@@ -855,254 +858,13 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
                 for d, v in maps[s].items():
                     vals[d].append(v)
             comb = {d: sum(vs) / len(vs) for d, vs in vals.items()}
-        combined[metric] = comb
+        combined_auto[metric] = comb
 
-    # ── 6+7. daily block and bands block ─────────────────────────────────────
-    daily = {'dates': dates}
-    bands = {}
-    z_maps = {}          # {metric: {date: z}} within the window (for decisions)
-    band_mid = {}        # {metric: {date: (median, robust_sd)}} (for decision lines)
-    for metric in _DAILY_METRIC_KEYS:
-        comb = combined[metric]
-        daily[metric] = [_round_metric(metric, comb.get(d)) for d in dates]
-
-        items = sorted(comb.items())
-        keys_sorted = [k for k, _ in items]
-        vals_sorted = [v for _, v in items]
-
-        def window_samples(day_key):
-            start_key = (datetime.strptime(day_key, '%Y-%m-%d').date()
-                         - timedelta(days=_BAND_WINDOW_DAYS - 1)).isoformat()
-            i = bisect.bisect_left(keys_sorted, start_key)
-            j = bisect.bisect_right(keys_sorted, day_key)
-            return vals_sorted[i:j]
-
-        lo_arr, hi_arr = [], []
-        zmap, midmap = {}, {}
-        for d in dates:
-            samples = window_samples(d)
-            if len(samples) >= _BAND_MIN_SAMPLES:
-                med, rsd = _robust_stats(samples)
-                lo_arr.append(round(med - 2 * rsd, 2))
-                hi_arr.append(round(med + 2 * rsd, 2))
-                v = comb.get(d)
-                if v is not None:
-                    zmap[d] = (v - med) / rsd
-                    midmap[d] = (med, rsd)
-            else:
-                lo_arr.append(None)
-                hi_arr.append(None)
-
-        last_sample = keys_sorted[-1] if keys_sorted else None
-        current = vals_sorted[-1] if vals_sorted else None
-        z = None
-        if last_sample is not None:
-            samples = window_samples(last_sample)
-            if len(samples) >= _BAND_MIN_SAMPLES:
-                med, rsd = _robust_stats(samples)
-                z = (current - med) / rsd
-        gap_days = (end_dt - datetime.strptime(last_sample, '%Y-%m-%d').date()).days \
-            if last_sample else None
-
-        if last_sample is None:
-            status = 'no_data'
-        elif gap_days >= _GAP_DAYS_THRESHOLD:
-            status = 'data_gap'
-        elif z is not None and abs(z) >= _Z_THRESHOLD:
-            status = 'watching'
-        else:
-            status = 'in_range'
-
-        bands[metric] = {
-            'lo': lo_arr, 'hi': hi_arr,
-            'current': _round_metric(metric, current),
-            'z': round(z, 2) if z is not None else None,
-            'status': status,
-            'gap_days': gap_days,
-            'last_sample': last_sample,
-        }
-        z_maps[metric] = zmap
-        band_mid[metric] = midmap
-
-    # ── 7b. Range extras for richer charts: daily min/max HR, daily min SpO2 ──
-    # Raw, all-source (min/max don't warrant the source-trust merge). ponytail:
-    # all-source min/max, revisit if a distrusted source skews the extremes.
-    hr_lo, hr_hi, spo2_lo = {}, {}, {}
-    for d, v, _s in raw.get('HKQuantityTypeIdentifierHeartRate', []):
-        if 20 <= v <= 250:
-            day = d[:10]
-            if day not in hr_lo or v < hr_lo[day]: hr_lo[day] = v
-            if day not in hr_hi or v > hr_hi[day]: hr_hi[day] = v
-    for d, v, _s in raw.get('HKQuantityTypeIdentifierOxygenSaturation', []):
-        pct = v * 100
-        if 50 < pct <= 100:
-            day = d[:10]
-            if day not in spo2_lo or pct < spo2_lo[day]: spo2_lo[day] = pct
-    daily['mean_hr_min'] = [round(hr_lo[d]) if d in hr_lo else None for d in dates]
-    daily['mean_hr_max'] = [round(hr_hi[d]) if d in hr_hi else None for d in dates]
-    daily['spo2_min'] = [round(spo2_lo[d], 1) if d in spo2_lo else None for d in dates]
-
-    # ── 8. Decision engine ────────────────────────────────────────────────────
-    # Rules (spec): WATCHING when |z| ≥ 2 on one signal; ATTENTION when ≥2
-    # signals cross ±2 the same day or a signal stays out 3+ consecutive days;
-    # SUPPRESSED when a single signal crosses for a single day with no
-    # corroboration (still logged, suppressed:true); DATA_GAP when a gap
-    # reaches 7 days; RESOLVED when an escalated metric is back in band 3
-    # consecutive days; SOURCE_DISTRUSTED when a source-metric r < 0.40.
-    # Corroboration = any other metric with |z| ≥ 1 the same day (values logged).
-    decisions = []
-
-    def metric_source(metric):
-        maps = per_source[metric]
-        cands = [s for s in maps if grades.get((s, metric)) != 'DISTRUST']
-        if not cands:
-            return reference
-        return max(cands, key=lambda s: (s == reference, coverage_days(s, metric)))
-
-    def signal_name(metric, src=None):
-        return f'{_METRIC_LABELS[metric]} · {src or metric_source(metric)}'
-
-    for metric in _DAILY_METRIC_KEYS:
-        zmap = z_maps[metric]
-        if not zmap:
-            continue
-        out_days = [d for d in dates if d in zmap and abs(zmap[d]) >= _Z_THRESHOLD]
-
-        # group out-of-band days into runs of consecutive calendar days
-        runs = []
-        for d in out_days:
-            d_dt = datetime.strptime(d, '%Y-%m-%d').date()
-            if runs and (d_dt - datetime.strptime(runs[-1][-1], '%Y-%m-%d').date()).days == 1:
-                runs[-1].append(d)
-            else:
-                runs.append([d])
-
-        for run in runs:
-            first, length = run[0], len(run)
-            z0 = zmap[first]
-            v0 = combined[metric][first]
-            med, _rsd = band_mid[metric][first]
-
-            # corroboration on the first day of the run
-            weak = [(m2, z_maps[m2][first]) for m2 in _DAILY_METRIC_KEYS
-                    if m2 != metric and first in z_maps[m2]
-                    and abs(z_maps[m2][first]) >= _CORROBORATION_Z]
-            # ≥2 signals crossing ±2 on the same day (any day of the run)
-            strong = any(
-                any(m2 != metric and d in z_maps[m2] and abs(z_maps[m2][d]) >= _Z_THRESHOLD
-                    for m2 in _DAILY_METRIC_KEYS)
-                for d in run
-            )
-
-            if length >= _RESOLVE_DAYS or strong:
-                badge = 'ATTENTION'
-            elif length == 1 and not weak:
-                badge = 'SUPPRESSED'
-            else:
-                badge = 'WATCHING'
-            suppressed = badge == 'SUPPRESSED'
-
-            direction = 'below' if z0 < 0 else 'above'
-            lines = [{
-                'k': 'value',
-                'v': (f'{_fmt_metric_value(metric, v0)} · 60-day median '
-                      f'{_fmt_metric_value(metric, med)} · z = {z0:+.1f} · '
-                      f'threshold ±{_Z_THRESHOLD:.1f}'),
-            }]
-            if length > 1:
-                lines.append({'k': 'duration', 'v': f'{length} consecutive days out of band'})
-            for m2, z2 in weak:
-                lines.append({'k': 'corroboration',
-                              'v': f'{_METRIC_LABELS[m2]} z = {z2:+.1f} same day'})
-            if suppressed:
-                lines.append({'k': 'rule',
-                              'v': 'single day, no corroborating signal — logged only'})
-
-            decisions.append({
-                'date': first,
-                'signal': signal_name(metric),
-                'metric': metric,
-                'title': f'{_METRIC_LABELS[metric]} {abs(z0):.1f} SD {direction} 60-day band',
-                'badge': badge,
-                'suppressed': suppressed,
-                'lines': lines,
-            })
-
-            # RESOLVED: escalated metric back in band 3 consecutive days
-            if badge in ('WATCHING', 'ATTENTION'):
-                streak = 0
-                start_i = date_index[run[-1]] + 1
-                for d in dates[start_i:]:
-                    if d in zmap:
-                        if abs(zmap[d]) < _Z_THRESHOLD:
-                            streak += 1
-                            if streak == _RESOLVE_DAYS:
-                                zr = zmap[d]
-                                decisions.append({
-                                    'date': d,
-                                    'signal': signal_name(metric),
-                                    'metric': metric,
-                                    'title': f'{_METRIC_LABELS[metric]} back in band',
-                                    'badge': 'RESOLVED',
-                                    'suppressed': False,
-                                    'lines': [{
-                                        'k': 'status',
-                                        'v': (f'in band {_RESOLVE_DAYS} consecutive days · '
-                                              f'z = {zr:+.1f} · threshold ±{_Z_THRESHOLD:.1f}'),
-                                    }],
-                                })
-                                break
-                        else:
-                            break          # a new excursion starts; its own run logs it
-                    else:
-                        streak = 0         # missing day breaks consecutiveness
-
-    # DATA_GAP: interior gaps ≥7 days between samples, plus the trailing gap
-    for metric in _DAILY_METRIC_KEYS:
-        comb = combined[metric]
-        if not comb:
-            continue
-        keys_sorted = sorted(comb.keys())
-        gap_pairs = []
-        for i in range(1, len(keys_sorted)):
-            d1 = datetime.strptime(keys_sorted[i - 1], '%Y-%m-%d').date()
-            d2 = datetime.strptime(keys_sorted[i], '%Y-%m-%d').date()
-            missing = (d2 - d1).days - 1
-            if missing >= _GAP_DAYS_THRESHOLD:
-                gap_pairs.append((keys_sorted[i - 1], missing, keys_sorted[i]))
-        trailing = (end_dt - datetime.strptime(keys_sorted[-1], '%Y-%m-%d').date()).days
-        if trailing >= _GAP_DAYS_THRESHOLD:
-            gap_pairs.append((keys_sorted[-1], trailing, None))
-
-        for last_before, gap_len, next_after in gap_pairs:
-            detect = (datetime.strptime(last_before, '%Y-%m-%d').date()
-                      + timedelta(days=_GAP_DAYS_THRESHOLD)).isoformat()
-            if detect > end_key:
-                continue
-            if detect < dates[0]:
-                detect = dates[0]
-            lines = [{'k': 'gap',
-                      'v': (f'last sample {last_before} · '
-                            f'{gap_len} days without samples · threshold '
-                            f'{_GAP_DAYS_THRESHOLD} days')}]
-            if next_after:
-                lines.append({'k': 'resumed', 'v': f'samples resumed {next_after}'})
-            else:
-                lines.append({'k': 'status', 'v': 'gap ongoing at end of window'})
-            decisions.append({
-                'date': detect,
-                'signal': signal_name(metric),
-                'metric': metric,
-                'title': f'{_METRIC_LABELS[metric]} gap reached {_GAP_DAYS_THRESHOLD} days',
-                'badge': 'DATA_GAP',
-                'suppressed': False,
-                'lines': lines,
-            })
-
-    # SOURCE_DISTRUSTED: one entry per distrusted (source, metric)
+    # ── 5b. SOURCE_DISTRUSTED decisions (shared across all modes) ───────────
+    source_distrusted_decisions = []
     for src, metric, r, shared, last_shared in distrust_events:
         d = min(max(last_shared, dates[0]), end_key)
-        decisions.append({
+        source_distrusted_decisions.append({
             'date': d,
             'signal': f'{_METRIC_LABELS[metric]} · {src}',
             'metric': metric,
@@ -1118,74 +880,365 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
             ],
         })
 
-    # ── 8b. Multivariate combo detector (anomaly.py, full history) ──────────
-    combo_full = anomaly.detect(combined)
-    full_idx = {d: i for i, d in enumerate(combo_full['dates'])}
+    # ── combined_from: naive per-metric merge for non-auto modes ────────────
+    def combined_from(pick):
+        """pick(metric) -> list[source names] to merge for that metric."""
+        result = {}
+        for metric in _DAILY_METRIC_KEYS:
+            maps = per_source[metric]
+            vals = defaultdict(list)
+            for s in pick(metric):
+                for d, v in maps.get(s, {}).items():
+                    vals[d].append(v)
+            if metric in ('steps', 'sleep_hours'):
+                result[metric] = {d: max(vs) for d, vs in vals.items()}
+            else:
+                result[metric] = {d: sum(vs) / len(vs) for d, vs in vals.items()}
+        return result
 
-    def _win(arr, fill=None):
-        return [arr[full_idx[d]] if d in full_idx else fill for d in dates]
+    def build_blocks(combined):
+        """Pure function of `combined`: daily/bands/decisions/weekly/z_series/combo."""
+        # ── 6+7. daily block and bands block ─────────────────────────────────────
+        daily = {'dates': dates}
+        bands = {}
+        z_maps = {}          # {metric: {date: z}} within the window (for decisions)
+        band_mid = {}        # {metric: {date: (median, robust_sd)}} (for decision lines)
+        for metric in _DAILY_METRIC_KEYS:
+            comb = combined[metric]
+            daily[metric] = [_round_metric(metric, comb.get(d)) for d in dates]
 
-    z_series = {m: _win(combo_full['z'].get(m, []))
-                if m in combo_full['z'] else [None] * len(dates)
-                for m in _DAILY_METRIC_KEYS}
-    combo = {
-        'dist':   _win(combo_full['dist']),
-        'cutoff': _win(combo_full['cutoff']),
-        'alert':  _win(combo_full['alert'], fill=False),
-        'alerts': [a for a in combo_full['alerts'] if a['date'] in window_set],
-        'episodes': [e for e in combo_full['episodes']
-                     if e['end'] >= dates[0] and e['start'] <= end_key],
-    }
-    # One COMBO decision per episode (not per alert day — no alarm spam).
-    for e in combo['episodes']:
-        top = e['contributors'][0]['metric'] if e['contributors'] else 'combo'
-        span = (e['start'] if e['days'] == 1
-                else f"{e['start']} → {e['end']} · {e['days']} alert days")
-        lines = [{'k': 'episode', 'v': span},
-                 {'k': 'peak',
-                  'v': (f"combo distance {e['peak_dist']:.2f} on "
-                        f"{e['peak_date']} · gate: "
-                        + ', '.join(_METRIC_LABELS[g] for g in e['gate']))}]
-        lines += [{'k': 'contributor',
-                   'v': (f"{_METRIC_LABELS[c['metric']]} z = {c['z']:+.1f} · "
-                         f"{round(c['share'] * 100)}% of distance")}
-                  for c in e['contributors']]
-        decisions.append({
-            'date': max(e['start'], dates[0]),
-            'signal': 'Multivariate · personal baseline',
-            'metric': top,
-            'title': 'Combined deviation beyond personal baseline',
-            'badge': 'COMBO',
-            'suppressed': False,
-            'lines': lines,
-        })
+            items = sorted(comb.items())
+            keys_sorted = [k for k, _ in items]
+            vals_sorted = [v for _, v in items]
 
-    decisions.sort(key=lambda e: e['date'], reverse=True)
+            def window_samples(day_key):
+                start_key = (datetime.strptime(day_key, '%Y-%m-%d').date()
+                             - timedelta(days=_BAND_WINDOW_DAYS - 1)).isoformat()
+                i = bisect.bisect_left(keys_sorted, start_key)
+                j = bisect.bisect_right(keys_sorted, day_key)
+                return vals_sorted[i:j]
 
-    # ── 9. weekly ─────────────────────────────────────────────────────────────
-    monday = end_dt - timedelta(days=end_dt.weekday())
-    sunday = monday + timedelta(days=6)
-    if monday.year != sunday.year:
-        label = (f"Week of {monday.day} {monday.strftime('%b %Y')} – "
-                 f"{sunday.day} {sunday.strftime('%b %Y')}")
-    elif monday.month != sunday.month:
-        label = (f"Week of {monday.day} {monday.strftime('%b')} – "
-                 f"{sunday.day} {sunday.strftime('%b %Y')}")
-    else:
-        label = f"Week of {monday.day}–{sunday.day} {monday.strftime('%b %Y')}"
+            lo_arr, hi_arr = [], []
+            zmap, midmap = {}, {}
+            for d in dates:
+                samples = window_samples(d)
+                if len(samples) >= _BAND_MIN_SAMPLES:
+                    med, rsd = _robust_stats(samples)
+                    lo_arr.append(round(med - 2 * rsd, 2))
+                    hi_arr.append(round(med + 2 * rsd, 2))
+                    v = comb.get(d)
+                    if v is not None:
+                        zmap[d] = (v - med) / rsd
+                        midmap[d] = (med, rsd)
+                else:
+                    lo_arr.append(None)
+                    hi_arr.append(None)
 
-    weekly = {
-        'label': label,
-        'records_read': record_count,
-        'in_band':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'in_range'],
-        'watching': [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'watching'],
-        'gaps':     [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'data_gap'],
-        'no_data':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'no_data'],
-    }
+            last_sample = keys_sorted[-1] if keys_sorted else None
+            current = vals_sorted[-1] if vals_sorted else None
+            z = None
+            if last_sample is not None:
+                samples = window_samples(last_sample)
+                if len(samples) >= _BAND_MIN_SAMPLES:
+                    med, rsd = _robust_stats(samples)
+                    z = (current - med) / rsd
+            gap_days = (end_dt - datetime.strptime(last_sample, '%Y-%m-%d').date()).days \
+                if last_sample else None
 
-    return {'daily': daily, 'bands': bands, 'sources': sources_block,
-            'decisions': decisions, 'weekly': weekly,
-            'z_series': z_series, 'combo': combo, 'combo_full': combo_full}
+            if last_sample is None:
+                status = 'no_data'
+            elif gap_days >= _GAP_DAYS_THRESHOLD:
+                status = 'data_gap'
+            elif z is not None and abs(z) >= _Z_THRESHOLD:
+                status = 'watching'
+            else:
+                status = 'in_range'
+
+            bands[metric] = {
+                'lo': lo_arr, 'hi': hi_arr,
+                'current': _round_metric(metric, current),
+                'z': round(z, 2) if z is not None else None,
+                'status': status,
+                'gap_days': gap_days,
+                'last_sample': last_sample,
+            }
+            z_maps[metric] = zmap
+            band_mid[metric] = midmap
+
+        # ── 7b. Range extras for richer charts: daily min/max HR, daily min SpO2 ──
+        # Raw, all-source (min/max don't warrant the source-trust merge). ponytail:
+        # all-source min/max, revisit if a distrusted source skews the extremes.
+        hr_lo, hr_hi, spo2_lo = {}, {}, {}
+        for d, v, _s in raw.get('HKQuantityTypeIdentifierHeartRate', []):
+            if 20 <= v <= 250:
+                day = d[:10]
+                if day not in hr_lo or v < hr_lo[day]: hr_lo[day] = v
+                if day not in hr_hi or v > hr_hi[day]: hr_hi[day] = v
+        for d, v, _s in raw.get('HKQuantityTypeIdentifierOxygenSaturation', []):
+            pct = v * 100
+            if 50 < pct <= 100:
+                day = d[:10]
+                if day not in spo2_lo or pct < spo2_lo[day]: spo2_lo[day] = pct
+        daily['mean_hr_min'] = [round(hr_lo[d]) if d in hr_lo else None for d in dates]
+        daily['mean_hr_max'] = [round(hr_hi[d]) if d in hr_hi else None for d in dates]
+        daily['spo2_min'] = [round(spo2_lo[d], 1) if d in spo2_lo else None for d in dates]
+
+        # ── 8. Decision engine ────────────────────────────────────────────────────
+        # Rules (spec): WATCHING when |z| ≥ 2 on one signal; ATTENTION when ≥2
+        # signals cross ±2 the same day or a signal stays out 3+ consecutive days;
+        # SUPPRESSED when a single signal crosses for a single day with no
+        # corroboration (still logged, suppressed:true); DATA_GAP when a gap
+        # reaches 7 days; RESOLVED when an escalated metric is back in band 3
+        # consecutive days; SOURCE_DISTRUSTED when a source-metric r < 0.40.
+        # Corroboration = any other metric with |z| ≥ 1 the same day (values logged).
+        decisions = []
+
+        def metric_source(metric):
+            maps = per_source[metric]
+            cands = [s for s in maps if grades.get((s, metric)) != 'DISTRUST']
+            if not cands:
+                return reference
+            return max(cands, key=lambda s: (s == reference, coverage_days(s, metric)))
+
+        def signal_name(metric, src=None):
+            return f'{_METRIC_LABELS[metric]} · {src or metric_source(metric)}'
+
+        for metric in _DAILY_METRIC_KEYS:
+            zmap = z_maps[metric]
+            if not zmap:
+                continue
+            out_days = [d for d in dates if d in zmap and abs(zmap[d]) >= _Z_THRESHOLD]
+
+            # group out-of-band days into runs of consecutive calendar days
+            runs = []
+            for d in out_days:
+                d_dt = datetime.strptime(d, '%Y-%m-%d').date()
+                if runs and (d_dt - datetime.strptime(runs[-1][-1], '%Y-%m-%d').date()).days == 1:
+                    runs[-1].append(d)
+                else:
+                    runs.append([d])
+
+            for run in runs:
+                first, length = run[0], len(run)
+                z0 = zmap[first]
+                v0 = combined[metric][first]
+                med, _rsd = band_mid[metric][first]
+
+                # corroboration on the first day of the run
+                weak = [(m2, z_maps[m2][first]) for m2 in _DAILY_METRIC_KEYS
+                        if m2 != metric and first in z_maps[m2]
+                        and abs(z_maps[m2][first]) >= _CORROBORATION_Z]
+                # ≥2 signals crossing ±2 on the same day (any day of the run)
+                strong = any(
+                    any(m2 != metric and d in z_maps[m2] and abs(z_maps[m2][d]) >= _Z_THRESHOLD
+                        for m2 in _DAILY_METRIC_KEYS)
+                    for d in run
+                )
+
+                if length >= _RESOLVE_DAYS or strong:
+                    badge = 'ATTENTION'
+                elif length == 1 and not weak:
+                    badge = 'SUPPRESSED'
+                else:
+                    badge = 'WATCHING'
+                suppressed = badge == 'SUPPRESSED'
+
+                direction = 'below' if z0 < 0 else 'above'
+                lines = [{
+                    'k': 'value',
+                    'v': (f'{_fmt_metric_value(metric, v0)} · 60-day median '
+                          f'{_fmt_metric_value(metric, med)} · z = {z0:+.1f} · '
+                          f'threshold ±{_Z_THRESHOLD:.1f}'),
+                }]
+                if length > 1:
+                    lines.append({'k': 'duration', 'v': f'{length} consecutive days out of band'})
+                for m2, z2 in weak:
+                    lines.append({'k': 'corroboration',
+                                  'v': f'{_METRIC_LABELS[m2]} z = {z2:+.1f} same day'})
+                if suppressed:
+                    lines.append({'k': 'rule',
+                                  'v': 'single day, no corroborating signal — logged only'})
+
+                decisions.append({
+                    'date': first,
+                    'signal': signal_name(metric),
+                    'metric': metric,
+                    'title': f'{_METRIC_LABELS[metric]} {abs(z0):.1f} SD {direction} 60-day band',
+                    'badge': badge,
+                    'suppressed': suppressed,
+                    'lines': lines,
+                })
+
+                # RESOLVED: escalated metric back in band 3 consecutive days
+                if badge in ('WATCHING', 'ATTENTION'):
+                    streak = 0
+                    start_i = date_index[run[-1]] + 1
+                    for d in dates[start_i:]:
+                        if d in zmap:
+                            if abs(zmap[d]) < _Z_THRESHOLD:
+                                streak += 1
+                                if streak == _RESOLVE_DAYS:
+                                    zr = zmap[d]
+                                    decisions.append({
+                                        'date': d,
+                                        'signal': signal_name(metric),
+                                        'metric': metric,
+                                        'title': f'{_METRIC_LABELS[metric]} back in band',
+                                        'badge': 'RESOLVED',
+                                        'suppressed': False,
+                                        'lines': [{
+                                            'k': 'status',
+                                            'v': (f'in band {_RESOLVE_DAYS} consecutive days · '
+                                                  f'z = {zr:+.1f} · threshold ±{_Z_THRESHOLD:.1f}'),
+                                        }],
+                                    })
+                                    break
+                            else:
+                                break          # a new excursion starts; its own run logs it
+                        else:
+                            streak = 0         # missing day breaks consecutiveness
+
+        # DATA_GAP: interior gaps ≥7 days between samples, plus the trailing gap
+        for metric in _DAILY_METRIC_KEYS:
+            comb = combined[metric]
+            if not comb:
+                continue
+            keys_sorted = sorted(comb.keys())
+            gap_pairs = []
+            for i in range(1, len(keys_sorted)):
+                d1 = datetime.strptime(keys_sorted[i - 1], '%Y-%m-%d').date()
+                d2 = datetime.strptime(keys_sorted[i], '%Y-%m-%d').date()
+                missing = (d2 - d1).days - 1
+                if missing >= _GAP_DAYS_THRESHOLD:
+                    gap_pairs.append((keys_sorted[i - 1], missing, keys_sorted[i]))
+            trailing = (end_dt - datetime.strptime(keys_sorted[-1], '%Y-%m-%d').date()).days
+            if trailing >= _GAP_DAYS_THRESHOLD:
+                gap_pairs.append((keys_sorted[-1], trailing, None))
+
+            for last_before, gap_len, next_after in gap_pairs:
+                detect = (datetime.strptime(last_before, '%Y-%m-%d').date()
+                          + timedelta(days=_GAP_DAYS_THRESHOLD)).isoformat()
+                if detect > end_key:
+                    continue
+                if detect < dates[0]:
+                    detect = dates[0]
+                lines = [{'k': 'gap',
+                          'v': (f'last sample {last_before} · '
+                                f'{gap_len} days without samples · threshold '
+                                f'{_GAP_DAYS_THRESHOLD} days')}]
+                if next_after:
+                    lines.append({'k': 'resumed', 'v': f'samples resumed {next_after}'})
+                else:
+                    lines.append({'k': 'status', 'v': 'gap ongoing at end of window'})
+                decisions.append({
+                    'date': detect,
+                    'signal': signal_name(metric),
+                    'metric': metric,
+                    'title': f'{_METRIC_LABELS[metric]} gap reached {_GAP_DAYS_THRESHOLD} days',
+                    'badge': 'DATA_GAP',
+                    'suppressed': False,
+                    'lines': lines,
+                })
+
+        # ── 8b. Multivariate combo detector (anomaly.py, full history) ──────────
+        combo_full = anomaly.detect(combined)
+        full_idx = {d: i for i, d in enumerate(combo_full['dates'])}
+
+        def _win(arr, fill=None):
+            return [arr[full_idx[d]] if d in full_idx else fill for d in dates]
+
+        z_series = {m: _win(combo_full['z'].get(m, []))
+                    if m in combo_full['z'] else [None] * len(dates)
+                    for m in _DAILY_METRIC_KEYS}
+        combo = {
+            'dist':   _win(combo_full['dist']),
+            'cutoff': _win(combo_full['cutoff']),
+            'alert':  _win(combo_full['alert'], fill=False),
+            'alerts': [a for a in combo_full['alerts'] if a['date'] in window_set],
+            'episodes': [e for e in combo_full['episodes']
+                         if e['end'] >= dates[0] and e['start'] <= end_key],
+        }
+        # One COMBO decision per episode (not per alert day — no alarm spam).
+        for e in combo['episodes']:
+            top = e['contributors'][0]['metric'] if e['contributors'] else 'combo'
+            span = (e['start'] if e['days'] == 1
+                    else f"{e['start']} → {e['end']} · {e['days']} alert days")
+            lines = [{'k': 'episode', 'v': span},
+                     {'k': 'peak',
+                      'v': (f"combo distance {e['peak_dist']:.2f} on "
+                            f"{e['peak_date']} · gate: "
+                            + ', '.join(_METRIC_LABELS[g] for g in e['gate']))}]
+            lines += [{'k': 'contributor',
+                       'v': (f"{_METRIC_LABELS[c['metric']]} z = {c['z']:+.1f} · "
+                             f"{round(c['share'] * 100)}% of distance")}
+                      for c in e['contributors']]
+            decisions.append({
+                'date': max(e['start'], dates[0]),
+                'signal': 'Multivariate · personal baseline',
+                'metric': top,
+                'title': 'Combined deviation beyond personal baseline',
+                'badge': 'COMBO',
+                'suppressed': False,
+                'lines': lines,
+            })
+
+        decisions.sort(key=lambda e: e['date'], reverse=True)
+
+        # ── 9. weekly ─────────────────────────────────────────────────────────────
+        monday = end_dt - timedelta(days=end_dt.weekday())
+        sunday = monday + timedelta(days=6)
+        if monday.year != sunday.year:
+            label = (f"Week of {monday.day} {monday.strftime('%b %Y')} – "
+                     f"{sunday.day} {sunday.strftime('%b %Y')}")
+        elif monday.month != sunday.month:
+            label = (f"Week of {monday.day} {monday.strftime('%b')} – "
+                     f"{sunday.day} {sunday.strftime('%b %Y')}")
+        else:
+            label = f"Week of {monday.day}–{sunday.day} {monday.strftime('%b %Y')}"
+
+        weekly = {
+            'label': label,
+            'records_read': record_count,
+            'in_band':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'in_range'],
+            'watching': [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'watching'],
+            'gaps':     [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'data_gap'],
+            'no_data':  [m for m in _DAILY_METRIC_KEYS if bands[m]['status'] == 'no_data'],
+        }
+
+        return {'daily': daily, 'bands': bands, 'decisions': decisions,
+                'weekly': weekly, 'z_series': z_series, 'combo': combo,
+                'combo_full': combo_full}
+
+    # ── modes: auto (today's behaviour), one per candidate source, and all ──
+    def _finalize(blocks):
+        decisions = sorted(blocks['decisions'] + source_distrusted_decisions,
+                            key=lambda e: e['date'], reverse=True)
+        return {'daily': blocks['daily'], 'bands': blocks['bands'],
+                'sources': sources_block, 'decisions': decisions,
+                'weekly': blocks['weekly'], 'z_series': blocks['z_series'],
+                'combo': blocks['combo']}
+
+    auto_blocks = build_blocks(combined_auto)
+    modes = {'auto': _finalize(auto_blocks)}
+    source_modes = [{'key': 'auto', 'label': 'Auto', 'kind': 'auto'}]
+
+    for entry in sources_block:
+        s = entry['name']
+        if not any(me['coverage_pct'] > 0 for me in entry['metrics']):
+            continue
+        modes[s] = _finalize(build_blocks(
+            combined_from(lambda m, s=s: [s] if s in per_source[m] else [])))
+        source_modes.append({'key': s, 'label': s, 'kind': 'source'})
+
+    modes['all'] = _finalize(build_blocks(
+        combined_from(lambda m: list(per_source[m].keys()))))
+    source_modes.append({'key': 'all', 'label': 'Combine all', 'kind': 'all'})
+
+    return {'daily': auto_blocks['daily'], 'bands': auto_blocks['bands'],
+            'sources': sources_block, 'decisions': modes['auto']['decisions'],
+            'weekly': auto_blocks['weekly'], 'z_series': auto_blocks['z_series'],
+            'combo': auto_blocks['combo'], 'combo_full': auto_blocks['combo_full'],
+            'modes': modes, 'source_modes': source_modes}
 
 
 def _get_months(raw, steps_daily, sleep):

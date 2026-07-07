@@ -204,4 +204,25 @@ export interface VitalScanResult {
   weekly?: Weekly
   z_series?: ZSeries
   combo?: Combo
+
+  // Wearable instrument source picker — optional, absent on old cached results
+  modes?: Record<string, ModeBlocks>
+  source_modes?: SourceModeOption[]
+}
+
+/** Recompute of the daily/bands/decisions/etc. blocks for one instrument source mode. */
+export interface ModeBlocks {
+  daily: DailyData
+  bands: Bands
+  sources: Source[]
+  decisions: Decision[]
+  weekly: Weekly
+  z_series: ZSeries
+  combo: Combo
+}
+
+export interface SourceModeOption {
+  key: string
+  label: string
+  kind: 'auto' | 'source' | 'all'
 }
