@@ -603,6 +603,79 @@ export function buildSleepStages(result: VitalScanResult) {
   return { dates, deep: pick('deep'), rem: pick('rem'), core: pick('core'), awake: pick('awake') }
 }
 
+// ── Readiness verdict (the WHOOP-recovery answer, transparent) ────────────
+// No opaque 0-100 score: a level + the exact drivers, each linkable to its
+// signal's evidence. Computed purely from existing z_series/combo/bands.
+
+export interface Readiness {
+  level: 'primed' | 'steady' | 'strained' | 'unknown'
+  word: string
+  color: string
+  headline: string
+  drivers: { key: MetricKey; text: string; concerning: boolean }[]
+  asOf: string | null
+}
+
+export function buildReadiness(result: VitalScanResult): Readiness {
+  const dates = result.daily?.dates ?? []
+  const zs = result.z_series ?? {}
+  let idx = -1
+  for (let i = dates.length - 1; i >= 0 && idx < 0; i--)
+    if (METRICS.some((m) => zs[m.key]?.[i] != null)) idx = i
+  if (idx < 0 || idx < dates.length - 5)
+    return {
+      level: 'unknown', word: 'No recent data', color: COLOR.slate,
+      headline: 'Not enough recent data to read your body — sync a fresh export.',
+      drivers: [], asOf: idx >= 0 ? dates[idx] : null,
+    }
+
+  const drivers: Readiness['drivers'] = []
+  let worst = 0
+  for (const m of METRICS) {
+    const dir = CONCERN_DIRECTION[m.key]
+    if (dir === 0) continue
+    const arr = zs[m.key]
+    if (!arr) continue
+    let j = idx
+    while (j > 0 && j > idx - 3 && arr[j] == null) j--
+    const z = arr[j]
+    if (z == null) continue
+    const c = dir * z
+    if (c > worst) worst = c
+    if (Math.abs(z) >= 1)
+      drivers.push({
+        key: m.key,
+        text: `${METRIC_BY_KEY[m.key].name} ran ${magWord(z)} ${z > 0 ? 'above' : 'below'} your normal`,
+        concerning: c >= 1,
+      })
+  }
+
+  // Sleep-debt driver: trailing 7-day average vs your own band midpoint.
+  const sh = result.daily?.sleep_hours ?? []
+  const sb = result.bands?.sleep_hours
+  const last7 = sh.slice(-14).filter((v): v is number => v != null).slice(-7)
+  let mid: number | null = null
+  for (let i = (sb?.lo.length ?? 0) - 1; i >= 0 && mid == null; i--)
+    if (sb!.lo[i] != null && sb!.hi[i] != null) mid = (sb!.lo[i]! + sb!.hi[i]!) / 2
+  if (mid != null && last7.length >= 4) {
+    const avg = last7.reduce((a, b) => a + b, 0) / last7.length
+    const debt = mid - avg
+    if (debt >= 0.75) {
+      drivers.push({ key: 'sleep_hours', text: `Sleeping ~${debt.toFixed(1)} h/night less than your normal this week`, concerning: true })
+      worst = Math.max(worst, 1.5)
+    }
+  }
+
+  const alertRecent = (result.combo?.alert ?? []).slice(-3).some(Boolean)
+  drivers.sort((a, b) => Number(b.concerning) - Number(a.concerning))
+  const top = drivers.slice(0, 3)
+  if (alertRecent || worst >= 2.5)
+    return { level: 'strained', word: 'Strained', color: COLOR.coral, headline: 'Several signals are off your baseline — go easy today.', drivers: top, asOf: dates[idx] }
+  if (worst >= 1.2)
+    return { level: 'steady', word: 'Steady', color: COLOR.amber, headline: 'Mostly your normal, one thing drifting — nothing urgent.', drivers: top, asOf: dates[idx] }
+  return { level: 'primed', word: 'Primed', color: COLOR.teal, headline: 'All signals near your baseline — a good day to push.', drivers: top, asOf: dates[idx] }
+}
+
 // ── Plain-language episode explainer (what moved, why, what to do) ────────
 
 export interface EpisodeExplainer {
