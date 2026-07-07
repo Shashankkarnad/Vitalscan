@@ -85,6 +85,27 @@ function SignalDetail() {
         )}
       </div>
 
+      {/* Reliability chip — coverage + source agreement (see combined-source caveats) */}
+      {(() => {
+        const arr = result.daily?.[selected] ?? []
+        const cov = arr.length ? Math.round((100 * arr.filter((v) => v != null).length) / arr.length) : 0
+        const excluded = (result.sources ?? []).filter((s) => s.metrics.some((m) => m.metric === selected && m.grade === 'DISTRUST')).length
+        const good = cov >= 70 && excluded === 0
+        const col = good ? COLOR.teal : excluded > 0 || cov < 40 ? COLOR.amber : 'rgba(232,234,242,.5)'
+        return (
+          <div style={{ ...mono(10.5, col), letterSpacing: '.08em', marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ padding: '3px 9px', borderRadius: 999, border: `1px solid ${rgba(col, 0.4)}`, background: rgba(col, 0.08) }}>
+              {cov}% COVERAGE
+            </span>
+            <span style={{ color: 'rgba(232,234,242,.45)' }}>
+              {excluded > 0
+                ? `${excluded} instrument${excluded === 1 ? '' : 's'} excluded — disagrees with your reference device`
+                : 'instruments agree · deviation vs your own baseline, not a clinical value'}
+            </span>
+          </div>
+        )
+      })()}
+
       {/* Chart */}
       <div style={{ ...card(18), padding: '24px 26px 20px', marginTop: 24, ...rise(0.18, 0.55) }}>
         <MetricChart result={result} metricKey={selected} height={230} />

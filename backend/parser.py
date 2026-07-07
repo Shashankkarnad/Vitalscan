@@ -623,6 +623,23 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=
 
 _DAILY_METRIC_KEYS = ['rhr', 'mean_hr', 'hrv', 'steps', 'sleep_hours', 'spo2', 'breathing']
 _HEART_METRICS = ('rhr', 'mean_hr', 'hrv')   # reference = most coverage on these
+
+# Device-accuracy priors: which instrument class is better-validated for a
+# metric. Used to pick the per-metric reference (quality first, then coverage)
+# so a well-validated sensor isn't discarded just for logging fewer days.
+_DEVICE_PRIOR = {
+    'watch':   {'rhr': 2, 'hrv': 2, 'mean_hr': 1, 'spo2': 1, 'breathing': 1},
+    'whoop':   {'rhr': 2, 'hrv': 2, 'breathing': 1},
+    'oura':    {'rhr': 2, 'hrv': 2, 'sleep_hours': 1},
+    'zepp':    {'steps': 1, 'sleep_hours': 1},
+    'amazfit': {'steps': 1, 'sleep_hours': 1},
+    'band':    {'steps': 1, 'sleep_hours': 1},
+}
+
+
+def _device_prior(src, metric):
+    s = src.lower()
+    return max((b.get(metric, 0) for k, b in _DEVICE_PRIOR.items() if k in s), default=0)
 _METRIC_LABELS = {
     'rhr': 'Resting HR', 'mean_hr': 'Mean HR', 'hrv': 'HRV', 'steps': 'Steps',
     'sleep_hours': 'Sleep', 'spo2': 'SpO2', 'breathing': 'Breathing rate',
@@ -771,12 +788,18 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
     sources_all = set()
     for maps in per_source.values():
         sources_all.update(maps.keys())
-    reference = max(
-        sources_all,
-        key=lambda s: (sum(coverage_days(s, m) for m in _HEART_METRICS),
-                       sum(coverage_days(s, m) for m in _DAILY_METRIC_KEYS),
-                       s),
-    )
+    # Per-metric reference: device-quality prior first, then coverage.
+    ref_for = {}
+    for metric in _DAILY_METRIC_KEYS:
+        cands = [s for s in sources_all if per_source[metric].get(s)]
+        if cands:
+            ref_for[metric] = max(cands, key=lambda s: (_device_prior(s, metric),
+                                                        coverage_days(s, metric), s))
+    # Global reference (role label / ordering) = device that leads the most metrics.
+    _refc = Counter(ref_for.values())
+    reference = _refc.most_common(1)[0][0] if _refc else max(
+        sources_all, key=lambda s: (sum(coverage_days(s, m) for m in _HEART_METRICS), s),
+        default=None)
 
     # ── 4. Grades per (source, metric): Pearson r vs reference over shared days
     grades = {}            # (src, metric) -> grade string
@@ -789,11 +812,11 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
             if not days:
                 continue
             cov_pct = round(100 * coverage_days(src, metric) / _DAILY_WINDOW_DAYS)
-            if src == reference:
+            if src == ref_for.get(metric):
                 grade, r, shared = 'TRUSTED', None, None
-                note = 'reference instrument'
+                note = 'reference instrument for this metric'
             else:
-                ref_days = per_source[metric].get(reference, {})
+                ref_days = per_source[metric].get(ref_for.get(metric), {})
                 shared_keys = sorted(set(days) & set(ref_days))
                 shared = len(shared_keys)
                 if shared < _SHARED_DAYS_MIN:
