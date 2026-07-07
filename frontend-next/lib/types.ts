@@ -54,6 +54,10 @@ export interface DailyData {
   sleep_hours: (number | null)[]
   spo2: (number | null)[]
   breathing: (number | null)[]
+  // Range extras for richer charts (optional — absent on old cached results).
+  mean_hr_min?: (number | null)[]
+  mean_hr_max?: (number | null)[]
+  spo2_min?: (number | null)[]
 }
 
 export type MetricKey = 'rhr' | 'mean_hr' | 'hrv' | 'steps' | 'sleep_hours' | 'spo2' | 'breathing'

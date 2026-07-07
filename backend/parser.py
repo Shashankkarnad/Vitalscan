@@ -705,7 +705,7 @@ def _fmt_metric_value(metric, v):
 
 def _empty_v03_blocks(record_count):
     """Shape-complete v0.3 blocks for exports with no usable daily data."""
-    daily = {'dates': []}
+    daily = {'dates': [], 'mean_hr_min': [], 'mean_hr_max': [], 'spo2_min': []}
     bands = {}
     for m in _DAILY_METRIC_KEYS:
         daily[m] = []
@@ -923,6 +923,24 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
         }
         z_maps[metric] = zmap
         band_mid[metric] = midmap
+
+    # ── 7b. Range extras for richer charts: daily min/max HR, daily min SpO2 ──
+    # Raw, all-source (min/max don't warrant the source-trust merge). ponytail:
+    # all-source min/max, revisit if a distrusted source skews the extremes.
+    hr_lo, hr_hi, spo2_lo = {}, {}, {}
+    for d, v, _s in raw.get('HKQuantityTypeIdentifierHeartRate', []):
+        if 20 <= v <= 250:
+            day = d[:10]
+            if day not in hr_lo or v < hr_lo[day]: hr_lo[day] = v
+            if day not in hr_hi or v > hr_hi[day]: hr_hi[day] = v
+    for d, v, _s in raw.get('HKQuantityTypeIdentifierOxygenSaturation', []):
+        pct = v * 100
+        if 50 < pct <= 100:
+            day = d[:10]
+            if day not in spo2_lo or pct < spo2_lo[day]: spo2_lo[day] = pct
+    daily['mean_hr_min'] = [round(hr_lo[d]) if d in hr_lo else None for d in dates]
+    daily['mean_hr_max'] = [round(hr_hi[d]) if d in hr_hi else None for d in dates]
+    daily['spo2_min'] = [round(spo2_lo[d], 1) if d in spo2_lo else None for d in dates]
 
     # ── 8. Decision engine ────────────────────────────────────────────────────
     # Rules (spec): WATCHING when |z| ≥ 2 on one signal; ATTENTION when ≥2

@@ -568,6 +568,24 @@ export interface ZHeatmap {
   hasData: boolean
 }
 
+// ── Chart enrichment helpers ─────────────────────────────────────────────
+
+/** Trailing rolling average, aligned to input; null until a value exists in the window. */
+export function rollingAvg(vals: (number | null)[], win = 7): (number | null)[] {
+  return vals.map((_, i) => {
+    const slice = vals.slice(Math.max(0, i - win + 1), i + 1).filter((v): v is number => v != null)
+    return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null
+  })
+}
+
+/** Per-night sleep stages (hours) aligned to daily.dates, from result.sleep_nights. */
+export function buildSleepStages(result: VitalScanResult) {
+  const dates = result.daily?.dates ?? []
+  const nights = result.sleep_nights ?? {}
+  const pick = (k: 'deep' | 'rem' | 'core' | 'awake') => dates.map((d) => nights[d]?.[k] ?? null)
+  return { dates, deep: pick('deep'), rem: pick('rem'), core: pick('core'), awake: pick('awake') }
+}
+
 // ── Plain-language episode explainer (what moved, why, what to do) ────────
 
 export interface EpisodeExplainer {

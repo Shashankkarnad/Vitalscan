@@ -12,11 +12,14 @@ import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
 import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
 import ZHeatmap from '@/components/vitalscan/ZHeatmap'
 import EpisodeCards from '@/components/vitalscan/EpisodeCards'
+import StageBars from '@/components/vitalscan/StageBars'
 import {
   hasContract,
   buildDashboardTiles,
   buildMetricBreakdown,
   buildZHeatmap,
+  buildSleepStages,
+  rollingAvg,
   defaultDashboardMetric,
   getSeries,
 } from '@/lib/vitalscan/derive'
@@ -29,7 +32,7 @@ import {
   capitalize,
   formatShortDate,
 } from '@/lib/vitalscan/metrics'
-import { COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
+import { COLOR, rgba, FONT_MONO, SLEEP_STAGE } from '@/lib/vitalscan/tokens'
 import { card, kicker, h1, rise } from '@/components/vitalscan/styles'
 import type { MetricKey, Source, SourceGrade } from '@/lib/types'
 
@@ -73,6 +76,8 @@ export default function DashboardPage() {
   const breakdown = buildMetricBreakdown(result, selected)
   const fmtAxis = selected === 'steps' ? formatStepsK : meta.fmt
   const isSleep = selected === 'sleep_hours'
+  const alerts = result.combo?.alert ?? []
+  const trend = selected === 'hrv' || selected === 'steps' ? rollingAvg(series.values) : undefined
 
   const metricDecisions = decisions.filter((d) => d.metric === selected).slice(0, 4)
 
@@ -329,7 +334,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS · YOUR BAND</span>
+            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS</span>
             <Link
               href={`/evidence#${selected}`}
               style={{
@@ -357,20 +362,67 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ marginTop: 10 }}>
-          <BandChart
-            values={series.values}
-            dates={series.dates}
-            lo={series.lo}
-            hi={series.hi}
-            color={meta.color}
-            width={940}
-            height={210}
-            fmt={fmtAxis}
-            unit={meta.unit || (isSleep ? 'h' : '')}
-            refLine={isSleep ? { value: 7, label: '7 h reference' } : undefined}
-            variant={meta.chartKind}
-            label={`${meta.name} — 90 days against your personal band`}
-          />
+          {meta.richChart === 'stage' ? (
+            <>
+              <StageBars {...buildSleepStages(result)} alerts={alerts} width={940} height={210} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', marginTop: 10 }}>
+                {(['deep', 'core', 'rem', 'awake'] as const).map((s) => (
+                  <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 12, height: 10, borderRadius: 2, background: SLEEP_STAGE[s] }} />
+                    <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: 'rgba(232,234,242,.5)', textTransform: 'capitalize' }}>{s}</span>
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : meta.richChart === 'range' ? (
+            <BandChart
+              values={series.values}
+              dates={series.dates}
+              lo={result.daily?.mean_hr_min ?? []}
+              hi={result.daily?.mean_hr_max ?? []}
+              color={meta.color}
+              width={940}
+              height={210}
+              fmt={meta.fmt}
+              unit="bpm"
+              variant="range"
+              alerts={alerts}
+              refLine={band?.current != null ? { value: result.bands?.rhr?.current ?? band.current, label: 'resting' } : undefined}
+              label="Mean heart rate — daily low to high with the mean, over 90 days"
+            />
+          ) : meta.richChart === 'dip' ? (
+            <BandChart
+              values={result.daily?.spo2_min ?? []}
+              dates={series.dates}
+              lo={[]}
+              hi={[]}
+              color={meta.color}
+              width={940}
+              height={210}
+              fmt={meta.fmt}
+              unit="%"
+              variant="line"
+              alerts={alerts}
+              refLine={{ value: 95, label: '95% reference' }}
+              label="Blood oxygen — daily minimum over 90 days"
+            />
+          ) : (
+            <BandChart
+              values={series.values}
+              dates={series.dates}
+              lo={series.lo}
+              hi={series.hi}
+              color={meta.color}
+              width={940}
+              height={210}
+              fmt={fmtAxis}
+              unit={meta.unit || (isSleep ? 'h' : '')}
+              variant={meta.chartKind}
+              trend={trend}
+              alerts={alerts}
+              label={`${meta.name} — 90 days against your personal band`}
+            />
+          )}
         </div>
 
         <MetricBreakdown breakdown={breakdown} accent={meta.color} />

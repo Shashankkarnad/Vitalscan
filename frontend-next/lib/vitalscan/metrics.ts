@@ -17,6 +17,12 @@ export interface MetricMeta {
    * change over time more naturally than discrete bars.
    */
   chartKind: 'line' | 'bar'
+  /**
+   * Richer main-chart form when this metric is selected on the dashboard.
+   * 'stage' = stacked sleep stages, 'range' = daily min→max band + mean,
+   * 'dip' = daily-minimum line (emphasize lows). Absent → use chartKind.
+   */
+  richChart?: 'stage' | 'range' | 'dip'
 }
 
 export const METRICS: MetricMeta[] = [
@@ -46,6 +52,7 @@ export const METRICS: MetricMeta[] = [
     color: COLOR.blue,
     fmt: (v) => formatHours(v),
     chartKind: 'bar',
+    richChart: 'stage',
   },
   {
     key: 'steps',
@@ -64,6 +71,7 @@ export const METRICS: MetricMeta[] = [
     color: COLOR.coral,
     fmt: (v) => String(Math.round(v)),
     chartKind: 'line',
+    richChart: 'range',
   },
   {
     key: 'breathing',
@@ -82,6 +90,7 @@ export const METRICS: MetricMeta[] = [
     color: COLOR.teal,
     fmt: (v) => v.toFixed(1),
     chartKind: 'line',
+    richChart: 'dip',
   },
 ]
 

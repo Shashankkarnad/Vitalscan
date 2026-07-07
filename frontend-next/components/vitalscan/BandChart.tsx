@@ -7,7 +7,7 @@
 // dashed overlay. Adds a pure-SVG/DOM hover layer (crosshair + tooltip).
 
 import { useCallback, useRef, useState } from 'react'
-import { INK, SURFACE, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
+import { INK, SURFACE, COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
 
 const PL = 46
 const PR = 14
@@ -36,9 +36,15 @@ export interface BandChartProps {
   /**
    * 'bar' renders each day as a baseline-anchored, rounded-top bar instead of
    * a connected line — suited to discrete daily totals (steps, sleep hours).
+   * 'range' draws a faint min→max vertical bar per day (lo=min, hi=max) with
+   * `values` as the mean line on top — richer than a lone mean for heart rate.
    * Defaults to 'line'.
    */
-  variant?: 'line' | 'bar'
+  variant?: 'line' | 'bar' | 'range'
+  /** Faint secondary line (e.g. a 7-day rolling average) over the raw series. */
+  trend?: (number | null)[]
+  /** Days the multivariate detector escalated — marked with a tick at the top. */
+  alerts?: boolean[]
 }
 
 /** Rounded-top, baseline-anchored bar path (mark spec: 4px rounded data-ends). */
@@ -59,6 +65,9 @@ interface Geometry {
   overlayPath: string
   dots: { x: number; y: number }[]
   bars: { x: number; w: number; yTop: number; yBase: number; outlier: boolean }[]
+  ranges: { x: number; yTop: number; yBottom: number }[]
+  trendPath: string
+  alertX: number[]
   ticks: { x: number; label: string }[]
   yHi: { y: number; text: string } | null
   yLo: { y: number; text: string } | null
@@ -84,6 +93,7 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
   scan(p.hi)
   scan(p.values)
   if (p.overlay) scan(p.overlay.values)
+  if (p.trend) scan(p.trend)
   if (p.refLine) {
     mn = Math.min(mn, p.refLine.value)
     mx = Math.max(mx, p.refLine.value)
@@ -153,6 +163,32 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
     })
   }
 
+  // Min→max vertical range bars (range variant): lo=daily min, hi=daily max
+  const ranges: Geometry['ranges'] = []
+  if (p.variant === 'range') {
+    for (let i = 0; i < N; i++) {
+      if (p.lo[i] != null && p.hi[i] != null) ranges.push({ x: x(i), yTop: y(p.hi[i]!), yBottom: y(p.lo[i]!) })
+    }
+  }
+
+  // Trend overlay (e.g. 7-day rolling average) — pen lifts across nulls
+  let trendPath = ''
+  if (p.trend) {
+    let tp = false
+    p.trend.forEach((v, i) => {
+      if (v == null) {
+        tp = false
+        return
+      }
+      trendPath += (tp ? 'L' : 'M') + x(i) + ' ' + y(v) + ' '
+      tp = true
+    })
+  }
+
+  // Alert tick x-positions
+  const alertX: number[] = []
+  if (p.alerts) p.alerts.forEach((a, i) => a && alertX.push(x(i)))
+
   // Month ticks — first of each month
   const ticks: { x: number; label: string }[] = []
   p.dates.forEach((d, i) => {
@@ -169,6 +205,21 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
     if (hiVal == null && p.hi[i] != null) hiVal = p.hi[i]
     if (loVal == null && p.lo[i] != null) loVal = p.lo[i]
     if (hiVal != null && loVal != null) break
+  }
+  // No personal band (e.g. the SpO2 daily-minimum chart)? Label the data range
+  // so the axis still carries a scale.
+  if (hiVal == null && loVal == null) {
+    let vmn = Infinity
+    let vmx = -Infinity
+    for (const v of p.values) {
+      if (v == null) continue
+      if (v < vmn) vmn = v
+      if (v > vmx) vmx = v
+    }
+    if (isFinite(vmn)) {
+      hiVal = vmx
+      loVal = vmn
+    }
   }
   const yHi = hiVal != null ? { y: y(hiVal) + 3, text: fmt(hiVal) } : null
   const yLo = loVal != null ? { y: y(loVal) + 3, text: fmt(loVal) } : null
@@ -210,6 +261,9 @@ function buildGeometry(p: BandChartProps, W: number, H: number): Geometry | null
     overlayPath,
     dots,
     bars,
+    ranges,
+    trendPath,
+    alertX,
     ticks,
     yHi,
     yLo,
@@ -290,8 +344,18 @@ export default function BandChart(props: BandChartProps) {
         role="img"
         aria-label={props.label}
       >
-        {geo.bandPaths.map((d, i) => (
-          <path key={i} d={d} fill={rgba(props.color, 0.08)} />
+        {props.variant !== 'range' &&
+          geo.bandPaths.map((d, i) => <path key={i} d={d} fill={rgba(props.color, 0.08)} />)}
+        {geo.ranges.map((r, i) => (
+          <rect
+            key={`r${i}`}
+            x={r.x - 1.6}
+            y={r.yTop}
+            width={3.2}
+            height={Math.max(1, r.yBottom - r.yTop)}
+            rx={1.6}
+            fill={rgba(props.color, 0.28)}
+          />
         ))}
         {geo.gap && (
           <>
@@ -344,11 +408,18 @@ export default function BandChart(props: BandChartProps) {
         ) : (
           <>
             <path d={geo.linePath} fill="none" stroke={props.color} strokeWidth="1.8" strokeLinejoin="round" />
-            {geo.dots.map((dt, i) => (
-              <circle key={i} cx={dt.x} cy={dt.y} r="3.4" fill={props.color} stroke={SURFACE} strokeWidth="1.4" />
-            ))}
+            {props.variant === 'line' &&
+              geo.dots.map((dt, i) => (
+                <circle key={i} cx={dt.x} cy={dt.y} r="3.4" fill={props.color} stroke={SURFACE} strokeWidth="1.4" />
+              ))}
           </>
         )}
+        {geo.trendPath && (
+          <path d={geo.trendPath} fill="none" stroke={rgba(props.color, 0.5)} strokeWidth="1.5" strokeDasharray="4 3" strokeLinejoin="round" />
+        )}
+        {geo.alertX.map((ax, i) => (
+          <path key={`a${i}`} d={`M${ax - 3} ${PT - 9} L${ax + 3} ${PT - 9} L${ax} ${PT - 3} Z`} fill={COLOR.coral} />
+        ))}
         {geo.yHi && (
           <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(232,234,242,.35)">
             {geo.yHi.text}

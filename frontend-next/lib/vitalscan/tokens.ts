@@ -14,6 +14,15 @@ export const COLOR = {
 export const SURFACE = '#0a0a10'
 export const INK = '#e8eaf2'
 
+// Apple Health sleep-stage palette (indigo → blue → cyan → orange), so the
+// stacked bars and the hypnogram read the way users already know sleep stages.
+export const SLEEP_STAGE = {
+  deep: '#3a3d9e',
+  core: '#3e74e8',
+  rem: '#4fc3e8',
+  awake: '#e9964a',
+} as const
+
 export function rgba(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16)
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`

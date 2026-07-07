@@ -9,14 +9,15 @@
 import { useCallback, useState } from 'react'
 import type { SleepSegment, SleepNight } from '@/lib/types'
 import { formatHours } from '@/lib/utils'
-import { FONT_MONO } from '@/lib/vitalscan/tokens'
+import { FONT_MONO, SLEEP_STAGE } from '@/lib/vitalscan/tokens'
 
-// Blue-family lanes on the dark surface; each lane carries its own text label.
+// Apple sleep-stage palette (shared with the stacked StageBars); each lane
+// carries its own text label — identity never by color alone.
 const STAGE_CONFIG = {
-  awake: { y: 0, color: 'rgba(108,140,255,.28)', label: 'AWAKE' },
-  rem: { y: 1, color: '#8ea6ff', label: 'REM' },
-  core: { y: 2, color: 'rgba(108,140,255,.55)', label: 'CORE' },
-  deep: { y: 3, color: '#5468d4', label: 'DEEP' },
+  awake: { y: 0, color: SLEEP_STAGE.awake, label: 'AWAKE' },
+  rem: { y: 1, color: SLEEP_STAGE.rem, label: 'REM' },
+  core: { y: 2, color: SLEEP_STAGE.core, label: 'CORE' },
+  deep: { y: 3, color: SLEEP_STAGE.deep, label: 'DEEP' },
 } as const
 
 const ROW_H = 30
