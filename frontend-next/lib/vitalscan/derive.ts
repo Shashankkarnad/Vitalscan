@@ -614,6 +614,8 @@ export interface Readiness {
   headline: string
   drivers: { key: MetricKey; text: string; concerning: boolean }[]
   asOf: string | null
+  /** Yesterday's exertion vs your own normal — closes the load↔recovery loop. */
+  load: string | null
 }
 
 export function buildReadiness(result: VitalScanResult): Readiness {
@@ -626,8 +628,18 @@ export function buildReadiness(result: VitalScanResult): Readiness {
     return {
       level: 'unknown', word: 'No recent data', color: COLOR.slate,
       headline: 'Not enough recent data to read your body — sync a fresh export.',
-      drivers: [], asOf: idx >= 0 ? dates[idx] : null,
+      drivers: [], asOf: idx >= 0 ? dates[idx] : null, load: null,
     }
+
+  // Yesterday's load: steps + active-HR z on the last day with steps data.
+  let load: string | null = null
+  const sz = zs.steps
+  if (sz) {
+    let j = idx
+    while (j > 0 && sz[j] == null) j--
+    const l = (sz[j] ?? 0) + Math.max(0, zs.mean_hr?.[j] ?? 0)
+    load = l >= 1.5 ? 'Recent load: heavier than your normal' : l <= -1.5 ? 'Recent load: lighter than your normal' : 'Recent load: typical for you'
+  }
 
   const drivers: Readiness['drivers'] = []
   let worst = 0
@@ -670,10 +682,10 @@ export function buildReadiness(result: VitalScanResult): Readiness {
   drivers.sort((a, b) => Number(b.concerning) - Number(a.concerning))
   const top = drivers.slice(0, 3)
   if (alertRecent || worst >= 2.5)
-    return { level: 'strained', word: 'Strained', color: COLOR.coral, headline: 'Several signals are off your baseline — go easy today.', drivers: top, asOf: dates[idx] }
+    return { level: 'strained', word: 'Strained', color: COLOR.coral, headline: 'Several signals are off your baseline — go easy today.', drivers: top, asOf: dates[idx], load }
   if (worst >= 1.2)
-    return { level: 'steady', word: 'Steady', color: COLOR.amber, headline: 'Mostly your normal, one thing drifting — nothing urgent.', drivers: top, asOf: dates[idx] }
-  return { level: 'primed', word: 'Primed', color: COLOR.teal, headline: 'All signals near your baseline — a good day to push.', drivers: top, asOf: dates[idx] }
+    return { level: 'steady', word: 'Steady', color: COLOR.amber, headline: 'Mostly your normal, one thing drifting — nothing urgent.', drivers: top, asOf: dates[idx], load }
+  return { level: 'primed', word: 'Primed', color: COLOR.teal, headline: 'All signals near your baseline — a good day to push.', drivers: top, asOf: dates[idx], load }
 }
 
 // ── Plain-language episode explainer (what moved, why, what to do) ────────

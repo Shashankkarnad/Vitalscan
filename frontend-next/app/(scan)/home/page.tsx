@@ -9,6 +9,7 @@ import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
 import IconChip from '@/components/vitalscan/IconChip'
+import ReadinessCard from '@/components/vitalscan/ReadinessCard'
 import { hasContract, buildCategories, buildVerdict, buildFindings } from '@/lib/vitalscan/derive'
 import { COLOR, rgba, FONT_DISPLAY, FONT_MONO, CARD_SHADOW } from '@/lib/vitalscan/tokens'
 import { card, sectionLabel, pill, rise } from '@/components/vitalscan/styles'
@@ -66,6 +67,8 @@ export default function HomePage() {
       >
         {verdict.verdictSub}
       </p>
+
+      <ReadinessCard result={result} />
 
       {/* SYSTEMS */}
       <div style={{ ...sectionLabel, marginTop: 44, ...rise(0.16) }}>SYSTEMS</div>
