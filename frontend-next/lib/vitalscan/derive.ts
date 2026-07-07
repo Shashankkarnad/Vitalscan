@@ -542,6 +542,16 @@ export function buildAudit(decisions: Decision[], showSuppressed: boolean): Audi
   }))
 }
 
+/** Per-source grade/agreement for one metric — "instruments for this signal". */
+export function instrumentsForMetric(result: VitalScanResult, key: MetricKey) {
+  const out: { source: string; grade: string; r: number | null; note: string; color: string }[] = []
+  for (const s of result.sources ?? []) {
+    const sm = s.metrics.find((m) => m.metric === key)
+    if (sm) out.push({ source: s.name, grade: sm.grade, r: sm.r, note: sm.note, color: GRADE_COLOR[sm.grade] ?? COLOR.slate })
+  }
+  return out
+}
+
 // ── Z-score deviation heatmap (multivariate detector) ─────────────────────
 
 /**

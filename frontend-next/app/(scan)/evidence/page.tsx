@@ -6,6 +6,7 @@
 // sleep hypnogram (charts-per-vital-section requirement). Cards carry
 // id anchors so Dashboard tiles can deep-link.
 
+import Link from 'next/link'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart from '@/components/vitalscan/BandChart'
@@ -83,7 +84,12 @@ export default function EvidencePage() {
                     </span>
                   )}
                 </div>
-                <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS</span>
+                <Link
+                  href={`/signal?m=${meta.key}`}
+                  style={{ ...mono(10, meta.color), letterSpacing: '.1em', textTransform: 'uppercase', textDecoration: 'none' }}
+                >
+                  Deep dive &rarr;
+                </Link>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12 }}>
