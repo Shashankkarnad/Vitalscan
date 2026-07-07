@@ -310,7 +310,7 @@ export default function BandChart(props: BandChartProps) {
           fontFamily: FONT_MONO,
           fontSize: 11,
           letterSpacing: '.12em',
-          color: 'rgba(237,234,226,.4)',
+          color: 'rgba(234,234,234,.4)',
         }}
       >
         NO DATA
@@ -359,7 +359,7 @@ export default function BandChart(props: BandChartProps) {
         ))}
         {geo.gap && (
           <>
-            <rect x={geo.gap.x} y={PT} width={geo.gap.w} height={H - PT - PB} fill="rgba(237,234,226,.035)" />
+            <rect x={geo.gap.x} y={PT} width={geo.gap.w} height={H - PT - PB} fill="rgba(234,234,234,.035)" />
             <text
               x={geo.gap.cx}
               y={(PT + H - PB) / 2}
@@ -367,7 +367,7 @@ export default function BandChart(props: BandChartProps) {
               fontFamily="IBM Plex Mono"
               fontSize="9.5"
               letterSpacing="2"
-              fill="rgba(237,234,226,.4)"
+              fill="rgba(234,234,234,.4)"
             >
               {`NO DATA · ${geo.gap.days} D`}
             </text>
@@ -381,14 +381,14 @@ export default function BandChart(props: BandChartProps) {
               x2={geo.gap ? geo.gap.x : W - PR}
               y1={geo.refY}
               y2={geo.refY}
-              stroke="rgba(237,234,226,.22)"
+              stroke="rgba(234,234,234,.22)"
               strokeDasharray="3 4"
               strokeWidth="1"
             />
             {/* Label omitted when a trailing gap is present — it would crowd the NO DATA text;
                 the truncated dashed line's y-position still reads against the axis. */}
             {!geo.gap && (
-              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(237,234,226,.4)">
+              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(234,234,234,.4)">
                 {props.refLine.label}
               </text>
             )}
@@ -421,24 +421,24 @@ export default function BandChart(props: BandChartProps) {
           <path key={`a${i}`} d={`M${ax - 3} ${PT - 9} L${ax + 3} ${PT - 9} L${ax} ${PT - 3} Z`} fill={COLOR.coral} />
         ))}
         {geo.yHi && (
-          <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(237,234,226,.35)">
+          <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(234,234,234,.35)">
             {geo.yHi.text}
           </text>
         )}
         {geo.yLo && (
-          <text x="6" y={geo.yLo.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(237,234,226,.35)">
+          <text x="6" y={geo.yLo.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(234,234,234,.35)">
             {geo.yLo.text}
           </text>
         )}
         {geo.ticks.map((tk, i) => (
-          <text key={i} x={tk.x} y={H - 7} fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(237,234,226,.3)">
+          <text key={i} x={tk.x} y={H - 7} fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(234,234,234,.3)">
             {tk.label}
           </text>
         ))}
 
         {/* Hover crosshair */}
         {hv && (
-          <line x1={geo.x(hv.i)} x2={geo.x(hv.i)} y1={PT} y2={H - PB} stroke="rgba(237,234,226,.25)" strokeWidth="1" />
+          <line x1={geo.x(hv.i)} x2={geo.x(hv.i)} y1={PT} y2={H - PB} stroke="rgba(234,234,234,.25)" strokeWidth="1" />
         )}
         {hv && hvValue != null && (
           <circle cx={geo.x(hv.i)} cy={geo.y(hvValue)} r="3.2" fill={INK} stroke={SURFACE} strokeWidth="1.2" />
@@ -465,23 +465,23 @@ export default function BandChart(props: BandChartProps) {
             transform: 'translateY(-2px)',
             pointerEvents: 'none',
             background: 'rgba(10,10,16,.92)',
-            border: '1px solid rgba(237,234,226,.12)',
+            border: '1px solid rgba(234,234,234,.12)',
             borderRadius: 8,
             padding: '7px 10px',
             fontFamily: FONT_MONO,
             fontSize: 10.5,
             lineHeight: 1.55,
-            color: 'rgba(237,234,226,.85)',
+            color: 'rgba(234,234,234,.85)',
             whiteSpace: 'nowrap',
             zIndex: 2,
           }}
         >
-          <div style={{ color: 'rgba(237,234,226,.5)' }}>{hvDate}</div>
+          <div style={{ color: 'rgba(234,234,234,.5)' }}>{hvDate}</div>
           <div>
             {hvValue != null ? `${fmt(hvValue)}${props.unit ? ' ' + props.unit : ''}` : 'no data'}
           </div>
           {hvLo != null && hvHi != null && (
-            <div style={{ color: 'rgba(237,234,226,.55)' }}>
+            <div style={{ color: 'rgba(234,234,234,.55)' }}>
               band {fmt(hvLo)}–{fmt(hvHi)}
               {hvZ != null ? ` · z ${hvZ >= 0 ? '+' : '−'}${Math.abs(hvZ).toFixed(1)}` : ''}
             </div>

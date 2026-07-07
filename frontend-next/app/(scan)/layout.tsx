@@ -36,7 +36,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: `radial-gradient(1200px 600px at 78% -8%, rgba(226,101,79,.07), transparent 60%), radial-gradient(1000px 700px at 5% 8%, rgba(59,181,140,.05), transparent 55%), ${SURFACE}`,
+        background: SURFACE,
         color: INK,
         fontFamily: FONT_SANS,
         position: 'relative',
@@ -64,7 +64,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
                 fontFamily: FONT_MONO,
                 fontSize: 10.5,
                 letterSpacing: '.18em',
-                color: 'rgba(237,234,226,.36)',
+                color: 'rgba(234,234,234,.36)',
                 textTransform: 'uppercase',
               }}
             >
@@ -89,9 +89,9 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
                     borderRadius: 9,
                     cursor: 'pointer',
                     textDecoration: 'none',
-                    border: `1px solid ${active ? 'rgba(237,234,226,.14)' : 'transparent'}`,
-                    background: active ? 'rgba(237,234,226,.08)' : 'transparent',
-                    color: active ? '#edeae2' : 'rgba(237,234,226,.48)',
+                    border: `1px solid ${active ? 'rgba(234,234,234,.14)' : 'transparent'}`,
+                    background: active ? 'rgba(234,234,234,.08)' : 'transparent',
+                    color: active ? '#eaeaea' : 'rgba(234,234,234,.48)',
                     transition: 'color .15s ease, background .15s ease',
                   }}
                 >
@@ -108,14 +108,14 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
           style={{
             marginTop: 72,
             paddingTop: 22,
-            borderTop: '1px solid rgba(237,234,226,.07)',
+            borderTop: '1px solid rgba(234,234,234,.07)',
             display: 'flex',
             justifyContent: 'space-between',
             gap: 16,
             flexWrap: 'wrap',
             fontFamily: FONT_MONO,
             fontSize: 11,
-            color: 'rgba(237,234,226,.35)',
+            color: 'rgba(234,234,234,.35)',
           }}
         >
           <div>VitalScan &middot; organises evidence, not a diagnosis</div>

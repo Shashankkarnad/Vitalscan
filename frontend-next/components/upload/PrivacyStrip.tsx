@@ -10,11 +10,11 @@ export default function PrivacyStrip() {
         alignItems: 'flex-start',
         gap: 10,
         borderRadius: 10,
-        background: 'rgba(237,234,226,.04)',
-        border: '1px solid rgba(237,234,226,.06)',
+        background: 'rgba(234,234,234,.04)',
+        border: '1px solid rgba(234,234,234,.06)',
         padding: '12px 14px',
         fontSize: 12,
-        color: 'rgba(237,234,226,.55)',
+        color: 'rgba(234,234,234,.55)',
       }}
     >
       <svg
@@ -31,7 +31,7 @@ export default function PrivacyStrip() {
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       </svg>
       <p>
-        <strong style={{ fontWeight: 600, color: '#edeae2' }}>100% on-device processing.</strong>{' '}
+        <strong style={{ fontWeight: 600, color: '#eaeaea' }}>100% on-device processing.</strong>{' '}
         Your export is parsed locally — raw health data stays on this device.
       </p>
     </div>

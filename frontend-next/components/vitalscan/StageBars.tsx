@@ -120,20 +120,20 @@ export default function StageBars(p: StageBarsProps) {
 
         {/* y label at the 95th-percentile gridline */}
         {p95 > 0 && (
-          <text x="6" y={y(p95) + 3} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(237,234,226,.35)">
+          <text x="6" y={y(p95) + 3} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(234,234,234,.35)">
             {formatHours(p95)}
           </text>
         )}
 
         {/* Month ticks */}
         {ticks.map((tk, i) => (
-          <text key={i} x={tk.x} y={H - 7} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(237,234,226,.3)">
+          <text key={i} x={tk.x} y={H - 7} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(234,234,234,.3)">
             {tk.label}
           </text>
         ))}
 
         {/* Hover crosshair */}
-        {hi != null && <line x1={x(hi) + slot / 2} x2={x(hi) + slot / 2} y1={PT} y2={yBase} stroke="rgba(237,234,226,.22)" strokeWidth="1" />}
+        {hi != null && <line x1={x(hi) + slot / 2} x2={x(hi) + slot / 2} y1={PT} y2={yBase} stroke="rgba(234,234,234,.22)" strokeWidth="1" />}
 
         {/* Hover capture */}
         <rect x={PL} y={PT} width={W - PL - PR} height={H - PT - PB} fill="transparent" onPointerMove={onMove} onPointerLeave={() => setHi(null)} />
@@ -147,18 +147,18 @@ export default function StageBars(p: StageBarsProps) {
             top: 0,
             pointerEvents: 'none',
             background: 'rgba(10,10,16,.94)',
-            border: '1px solid rgba(237,234,226,.12)',
+            border: '1px solid rgba(234,234,234,.12)',
             borderRadius: 8,
             padding: '8px 11px',
             fontFamily: FONT_MONO,
             fontSize: 10.5,
             lineHeight: 1.6,
-            color: 'rgba(237,234,226,.85)',
+            color: 'rgba(234,234,234,.85)',
             whiteSpace: 'nowrap',
             zIndex: 2,
           }}
         >
-          <div style={{ color: 'rgba(237,234,226,.5)' }}>{hvDate}</div>
+          <div style={{ color: 'rgba(234,234,234,.5)' }}>{hvDate}</div>
           <div style={{ marginBottom: 2 }}>{formatHours(total(hi))} total</div>
           {STAGES.map((s) => (
             <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>

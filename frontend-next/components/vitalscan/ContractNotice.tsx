@@ -11,7 +11,7 @@ export default function ContractNotice() {
         marginTop: 48,
         borderRadius: 18,
         border: `1px solid ${rgba(COLOR.slate, 0.28)}`,
-        background: 'rgba(237,234,226,.03)',
+        background: 'rgba(234,234,234,.03)',
         boxShadow: CARD_SHADOW,
         padding: '28px 32px',
         animation: 'rise .5s cubic-bezier(.2,.7,.3,1) both',
@@ -32,13 +32,13 @@ export default function ContractNotice() {
       >
         Older result
       </span>
-      <h2 style={{ fontSize: 19, fontWeight: 600, margin: '16px 0 0', letterSpacing: '-.01em', color: '#edeae2' }}>
+      <h2 style={{ fontSize: 19, fontWeight: 600, margin: '16px 0 0', letterSpacing: '-.01em', color: '#eaeaea' }}>
         Re-upload your export to unlock the new dashboard.
       </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(237,234,226,.66)', margin: '10px 0 0', maxWidth: 640 }}>
+      <p style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(234,234,234,.66)', margin: '10px 0 0', maxWidth: 640 }}>
         This result was analysed before per-day bands, source grading, and the decision log existed. Upload your Apple
         Health export again and VitalScan will compute them. Your previous report is still available under{' '}
-        <a href="/results" style={{ color: 'rgba(237,234,226,.85)' }}>
+        <a href="/results" style={{ color: 'rgba(234,234,234,.85)' }}>
           Results
         </a>
         .
@@ -52,9 +52,9 @@ export default function ContractNotice() {
           fontSize: 11,
           letterSpacing: '.1em',
           textTransform: 'uppercase',
-          color: 'rgba(237,234,226,.8)',
-          border: '1px solid rgba(237,234,226,.14)',
-          background: 'rgba(237,234,226,.06)',
+          color: 'rgba(234,234,234,.8)',
+          border: '1px solid rgba(234,234,234,.14)',
+          background: 'rgba(234,234,234,.06)',
           borderRadius: 9,
           padding: '9px 16px',
           textDecoration: 'none',

@@ -40,9 +40,9 @@ export default function AuditPage() {
             fontSize: 11,
             letterSpacing: '.08em',
             textTransform: 'uppercase',
-            color: 'rgba(237,234,226,.5)',
-            background: 'rgba(237,234,226,.04)',
-            border: '1px solid rgba(237,234,226,.1)',
+            color: 'rgba(234,234,234,.5)',
+            background: 'rgba(234,234,234,.04)',
+            border: '1px solid rgba(234,234,234,.1)',
             borderRadius: 9,
             padding: '7px 13px',
             marginTop: 18,
@@ -55,7 +55,7 @@ export default function AuditPage() {
         </button>
       )}
       {!showSuppressed && suppressedCount > 0 && (
-        <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: 'rgba(237,234,226,.38)', marginTop: 12 }}>
+        <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: 'rgba(234,234,234,.38)', marginTop: 12 }}>
           {`${suppressedCount} suppressed decision${suppressedCount === 1 ? '' : 's'} hidden — suppressions are logged, not shown.`}
         </div>
       )}
@@ -64,13 +64,13 @@ export default function AuditPage() {
         <div
           style={{
             ...card(16),
-            border: '1px solid rgba(237,234,226,.09)',
+            border: '1px solid rgba(234,234,234,.09)',
             padding: '20px 24px',
             marginTop: 32,
             fontFamily: FONT_MONO,
             fontSize: 11.5,
             lineHeight: 1.6,
-            color: 'rgba(237,234,226,.42)',
+            color: 'rgba(234,234,234,.42)',
             ...rise(0.14, 0.55),
           }}
         >
@@ -84,7 +84,7 @@ export default function AuditPage() {
             key={`${a.decision.metric}-${a.decision.date}-${i}`}
             style={{
               ...card(16),
-              border: '1px solid rgba(237,234,226,.09)',
+              border: '1px solid rgba(234,234,234,.09)',
               padding: '20px 24px',
               opacity: a.decision.suppressed ? 0.66 : 1,
               ...rise(0.14 + Math.min(i, 8) * 0.06, 0.55),
@@ -107,13 +107,13 @@ export default function AuditPage() {
                     fontSize: 11,
                     letterSpacing: '.12em',
                     textTransform: 'uppercase',
-                    color: 'rgba(237,234,226,.5)',
+                    color: 'rgba(234,234,234,.5)',
                   }}
                 >
                   {a.decision.signal}
                 </span>
               </div>
-              <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: 'rgba(237,234,226,.36)' }}>
+              <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: 'rgba(234,234,234,.36)' }}>
                 {formatShortDate(a.date)}
               </span>
             </div>
@@ -148,7 +148,7 @@ export default function AuditPage() {
                 fontFamily: FONT_MONO,
                 fontSize: 12,
                 background: 'rgba(0,0,0,.28)',
-                border: '1px solid rgba(237,234,226,.06)',
+                border: '1px solid rgba(234,234,234,.06)',
                 borderRadius: 12,
                 padding: '13px 17px',
                 marginTop: 14,
@@ -156,8 +156,8 @@ export default function AuditPage() {
             >
               {a.decision.lines.map((ln, k) => (
                 <div key={k} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12, padding: '3px 0' }}>
-                  <div style={{ color: 'rgba(237,234,226,.38)' }}>{ln.k}</div>
-                  <div style={{ color: 'rgba(237,234,226,.72)' }}>{ln.v}</div>
+                  <div style={{ color: 'rgba(234,234,234,.38)' }}>{ln.k}</div>
+                  <div style={{ color: 'rgba(234,234,234,.72)' }}>{ln.v}</div>
                 </div>
               ))}
             </div>

@@ -101,7 +101,7 @@ export default function UploadPage() {
           {/* Header */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ ...kicker, textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'rgba(237,234,226,.42)' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'rgba(234,234,234,.42)' }}>
                 <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" />
               </svg>
               VitalScan · Apple Health export
@@ -129,9 +129,9 @@ export default function UploadPage() {
                 textAlign: 'center',
                 borderRadius: 9,
                 padding: '13px 16px',
-                border: `1px solid ${!file || loading ? 'rgba(237,234,226,.08)' : 'rgba(237,234,226,.14)'}`,
-                background: !file || loading ? 'rgba(237,234,226,.02)' : 'rgba(237,234,226,.06)',
-                color: !file || loading ? 'rgba(237,234,226,.32)' : INK,
+                border: `1px solid ${!file || loading ? 'rgba(234,234,234,.08)' : 'rgba(234,234,234,.14)'}`,
+                background: !file || loading ? 'rgba(234,234,234,.02)' : 'rgba(234,234,234,.06)',
+                color: !file || loading ? 'rgba(234,234,234,.32)' : INK,
                 cursor: !file || loading ? 'not-allowed' : 'pointer',
                 transition: 'background .15s ease, border-color .15s ease',
               }}

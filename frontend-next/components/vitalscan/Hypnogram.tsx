@@ -79,7 +79,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
 
   if (!selectedDate || !timeline[selectedDate]?.length) {
     return (
-      <p style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), padding: '14px 0', margin: 0 }}>
+      <p style={{ ...mono(11.5, 'rgba(234,234,234,.42)'), padding: '14px 0', margin: 0 }}>
         No hypnogram data for this night.
       </p>
     )
@@ -94,7 +94,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
 
   if (!totalMs || !isFinite(totalMs)) {
     return (
-      <p style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), padding: '14px 0', margin: 0 }}>
+      <p style={{ ...mono(11.5, 'rgba(234,234,234,.42)'), padding: '14px 0', margin: 0 }}>
         Sleep data incomplete for this night.
       </p>
     )
@@ -139,9 +139,9 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 padding: '6px 11px',
                 borderRadius: 8,
                 cursor: 'pointer',
-                border: `1px solid ${active ? 'rgba(237,234,226,.14)' : 'transparent'}`,
-                background: active ? 'rgba(237,234,226,.08)' : 'transparent',
-                color: active ? '#edeae2' : 'rgba(237,234,226,.48)',
+                border: `1px solid ${active ? 'rgba(234,234,234,.14)' : 'transparent'}`,
+                background: active ? 'rgba(234,234,234,.08)' : 'transparent',
+                color: active ? '#eaeaea' : 'rgba(234,234,234,.48)',
                 transition: 'color .15s ease, background .15s ease',
               }}
             >
@@ -170,7 +170,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               fontFamily="IBM Plex Mono"
               fontSize={9.5}
               letterSpacing="1"
-              fill="rgba(237,234,226,.45)"
+              fill="rgba(234,234,234,.45)"
             >
               {cfg.label}
             </text>
@@ -184,7 +184,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               y1={PADDING.top + row * ROW_H + ROW_H}
               x2={PADDING.left + CHART_W}
               y2={PADDING.top + row * ROW_H + ROW_H}
-              stroke="rgba(237,234,226,.06)"
+              stroke="rgba(234,234,234,.06)"
               strokeWidth={1}
             />
           ))}
@@ -226,7 +226,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 height={38}
                 rx={8}
                 fill="rgba(10,10,16,.92)"
-                stroke="rgba(237,234,226,.12)"
+                stroke="rgba(234,234,234,.12)"
                 strokeWidth={1}
               />
               <text
@@ -234,7 +234,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 y={Math.max(0, tooltip.y - 44) + 16}
                 fontFamily="IBM Plex Mono"
                 fontSize={9.5}
-                fill="#edeae2"
+                fill="#eaeaea"
               >
                 {tooltip.label}
               </text>
@@ -243,7 +243,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 y={Math.max(0, tooltip.y - 44) + 30}
                 fontFamily="IBM Plex Mono"
                 fontSize={9.5}
-                fill="rgba(237,234,226,.55)"
+                fill="rgba(234,234,234,.55)"
               >
                 {tooltip.detail}
               </text>
@@ -258,7 +258,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 y1={PADDING.top + CHART_H}
                 x2={t.x}
                 y2={PADDING.top + CHART_H + 4}
-                stroke="rgba(237,234,226,.14)"
+                stroke="rgba(234,234,234,.14)"
                 strokeWidth={1}
               />
               <text
@@ -268,7 +268,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 fontFamily="IBM Plex Mono"
                 fontSize={9}
                 letterSpacing="1"
-                fill="rgba(237,234,226,.3)"
+                fill="rgba(234,234,234,.3)"
               >
                 {t.label}
               </text>
@@ -288,8 +288,8 @@ export default function Hypnogram({ timeline, nights }: Props) {
             { label: 'AWAKE', value: formatHours(night.awake) },
           ].map((s) => (
             <div key={s.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={mono(9.5, 'rgba(237,234,226,.38)')}>{s.label}</span>
-              <span style={mono(12.5, '#edeae2')}>{s.value}</span>
+              <span style={mono(9.5, 'rgba(234,234,234,.38)')}>{s.label}</span>
+              <span style={mono(12.5, '#eaeaea')}>{s.value}</span>
             </div>
           ))}
         </div>
@@ -298,9 +298,9 @@ export default function Hypnogram({ timeline, nights }: Props) {
       {/* Honesty note */}
       <p
         style={{
-          ...mono(11, 'rgba(237,234,226,.4)'),
+          ...mono(11, 'rgba(234,234,234,.4)'),
           lineHeight: 1.6,
-          borderTop: '1px solid rgba(237,234,226,.07)',
+          borderTop: '1px solid rgba(234,234,234,.07)',
           paddingTop: 12,
           margin: 0,
         }}

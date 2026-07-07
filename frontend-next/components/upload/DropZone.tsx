@@ -33,7 +33,7 @@ export default function DropZone({ onFile }: Props) {
     [handleFile],
   )
 
-  const borderColor = dragging ? rgba(COLOR.teal, 0.55) : picked ? rgba(COLOR.teal, 0.35) : 'rgba(237,234,226,.14)'
+  const borderColor = dragging ? rgba(COLOR.teal, 0.55) : picked ? rgba(COLOR.teal, 0.35) : 'rgba(234,234,234,.14)'
   const background = dragging ? rgba(COLOR.teal, 0.06) : picked ? rgba(COLOR.teal, 0.04) : 'transparent'
 
   return (
@@ -100,10 +100,10 @@ export default function DropZone({ onFile }: Props) {
             </svg>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#edeae2', fontWeight: 600, fontSize: 13.5 }}>{picked.name}</p>
-            <p style={{ color: 'rgba(237,234,226,.45)', fontSize: 12, marginTop: 2 }}>{formatBytes(picked.size)}</p>
+            <p style={{ color: '#eaeaea', fontWeight: 600, fontSize: 13.5 }}>{picked.name}</p>
+            <p style={{ color: 'rgba(234,234,234,.45)', fontSize: 12, marginTop: 2 }}>{formatBytes(picked.size)}</p>
           </div>
-          <p style={{ color: 'rgba(237,234,226,.4)', fontSize: 12 }}>Click to choose a different file</p>
+          <p style={{ color: 'rgba(234,234,234,.4)', fontSize: 12 }}>Click to choose a different file</p>
         </>
       ) : (
         <>
@@ -115,7 +115,7 @@ export default function DropZone({ onFile }: Props) {
               width: 52,
               height: 52,
               borderRadius: '50%',
-              background: dragging ? rgba(COLOR.teal, 0.15) : 'rgba(237,234,226,.05)',
+              background: dragging ? rgba(COLOR.teal, 0.15) : 'rgba(234,234,234,.05)',
               transition: 'background .2s ease',
             }}
           >
@@ -128,7 +128,7 @@ export default function DropZone({ onFile }: Props) {
               strokeWidth="1.75"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ color: dragging ? COLOR.teal : 'rgba(237,234,226,.45)' }}
+              style={{ color: dragging ? COLOR.teal : 'rgba(234,234,234,.45)' }}
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -136,10 +136,10 @@ export default function DropZone({ onFile }: Props) {
             </svg>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#edeae2', fontWeight: 600, fontSize: 13.5 }}>
+            <p style={{ color: '#eaeaea', fontWeight: 600, fontSize: 13.5 }}>
               {dragging ? 'Drop to upload' : 'Drop your export.zip here'}
             </p>
-            <p style={{ color: 'rgba(237,234,226,.45)', fontSize: 12, marginTop: 2 }}>
+            <p style={{ color: 'rgba(234,234,234,.45)', fontSize: 12, marginTop: 2 }}>
               or click to browse — only .zip files
             </p>
           </div>

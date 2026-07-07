@@ -11,8 +11,8 @@ export const COLOR = {
   slate: '#9a978e', // neutral / data-gap / suppressed — warm gray
 } as const
 
-export const SURFACE = '#0c0b09'
-export const INK = '#edeae2'
+export const SURFACE = '#0b0b0d'
+export const INK = '#eaeaea'
 
 // Apple Health sleep-stage palette (indigo → blue → cyan → orange), so the
 // stacked bars and the hypnogram read the way users already know sleep stages.
@@ -32,6 +32,6 @@ export const FONT_DISPLAY = "'Fraunces', var(--font-fraunces), Georgia, serif"
 export const FONT_SANS = "'IBM Plex Sans', var(--font-ibm-plex-sans), sans-serif"
 export const FONT_MONO = "'IBM Plex Mono', var(--font-ibm-plex-mono), monospace"
 
-export const CARD_SHADOW = '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(237,234,226,.06)'
-export const CARD_BORDER = 'rgba(237,234,226,.09)'
-export const CARD_BG = 'rgba(237,234,226,.035)'
+export const CARD_SHADOW = '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(234,234,234,.06)'
+export const CARD_BORDER = 'rgba(234,234,234,.09)'
+export const CARD_BG = 'rgba(234,234,234,.035)'
