@@ -499,9 +499,11 @@ export function buildTrust(sources: Source[]): TrustGroup[] {
     const rows: TrustRow[] = s.metrics.map((m) => {
       const meta = METRIC_BY_KEY[m.metric as MetricKey]
       const rText =
-        m.grade === 'UNGRADED'
-          ? `n = ${m.shared_days} d overlap`
-          : `r = ${m.r != null ? m.r.toFixed(2) : '—'} · n = ${m.shared_days} d`
+        m.r == null && m.shared_days == null
+          ? 'reference · sets the baseline'
+          : m.grade === 'UNGRADED'
+            ? `${m.shared_days ?? 0} d overlap`
+            : `r = ${m.r != null ? m.r.toFixed(2) : '—'} · ${m.shared_days ?? 0} d shared`
       return {
         metric: meta?.name ?? m.metric,
         color: meta?.color ?? COLOR.slate,
