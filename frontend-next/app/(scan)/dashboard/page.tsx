@@ -10,10 +10,12 @@ import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
 import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
+import ZHeatmap from '@/components/vitalscan/ZHeatmap'
 import {
   hasContract,
   buildDashboardTiles,
   buildMetricBreakdown,
+  buildZHeatmap,
   defaultDashboardMetric,
   getSeries,
 } from '@/lib/vitalscan/derive'
@@ -58,6 +60,8 @@ export default function DashboardPage() {
   if (!hasContract(result)) return <ContractNotice />
 
   const tiles = buildDashboardTiles(result)
+  const heatmap = buildZHeatmap(result)
+  const episodes = result.combo?.episodes ?? []
   const weekly = result.weekly!
   const sources = result.sources ?? []
   const decisions = result.decisions ?? []
@@ -237,6 +241,56 @@ export default function DashboardPage() {
           </div>
         </Link>
       </div>
+
+      {/* Multivariate deviation map */}
+      {heatmap.hasData && (
+        <div style={{ ...card(16), padding: '22px 26px 18px', marginTop: 14, ...rise(0.46, 0.55) }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: COLOR.coral }} />
+              <span style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+                Deviation map
+              </span>
+            </div>
+            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>
+              {episodes.length === 0
+                ? 'NO COMBINED ALERTS · 90 DAYS'
+                : `${episodes.length} EPISODE${episodes.length === 1 ? '' : 'S'} · 90 DAYS`}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: 'rgba(232,234,242,.5)', margin: '8px 0 4px', maxWidth: 620, lineHeight: 1.5 }}>
+            Each cell is how far a signal sat from <em>your own</em> rolling baseline that day (robust z).
+            Coral = moved the concerning way, teal = the reassuring way. The strip marks days the
+            multivariate detector escalated — a coherent pattern across signals, not one noisy metric.
+          </p>
+
+          <div style={{ marginTop: 12 }}>
+            <ZHeatmap data={heatmap} combo={result.combo} width={940} />
+          </div>
+
+          {/* Legend — identity never by color alone */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', marginTop: 14, alignItems: 'center' }}>
+            {[
+              { c: rgba(COLOR.teal, 0.85), t: 'reassuring' },
+              { c: rgba(COLOR.slate, 0.12), t: '≈ baseline' },
+              { c: rgba(COLOR.coral, 0.85), t: 'concerning' },
+            ].map((l) => (
+              <span key={l.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 14, height: 12, borderRadius: 2, background: l.c }} />
+                <span style={mono(10, 'rgba(232,234,242,.5)')}>{l.t}</span>
+              </span>
+            ))}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 12, borderRadius: 2, background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(232,234,242,.18) 2px, rgba(232,234,242,.18) 3px)', border: '1px solid rgba(255,255,255,.06)' }} />
+              <span style={mono(10, 'rgba(232,234,242,.5)')}>no data</span>
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 8, borderRadius: 2, background: COLOR.coral }} />
+              <span style={mono(10, 'rgba(232,234,242,.5)')}>combined alert</span>
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Selected metric — chart + personal breakdown */}
       <div style={{ ...card(16), padding: '22px 26px', marginTop: 14, ...rise(0.48, 0.55) }}>

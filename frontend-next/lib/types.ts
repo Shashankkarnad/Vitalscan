@@ -98,6 +98,7 @@ export type DecisionBadge =
   | 'SUPPRESSED'
   | 'RESOLVED'
   | 'SOURCE_DISTRUSTED'
+  | 'COMBO'
 
 export interface DecisionLine {
   k: string
@@ -112,6 +113,47 @@ export interface Decision {
   badge: DecisionBadge
   suppressed: boolean
   lines: DecisionLine[]
+}
+
+// ── Multivariate combo detector (anomaly.py) ──
+
+/** Per-metric rolling robust-z series, aligned to daily.dates. null = no z (missing value or too little baseline). */
+export type ZSeries = Partial<Record<MetricKey, (number | null)[]>>
+
+export interface ComboContributor {
+  metric: MetricKey
+  z: number
+  /** Fraction of the Mahalanobis distance this metric accounts for. */
+  share: number
+}
+
+/** One combo alert day: distance beyond the self-calibrated personal cutoff, with a concerning-direction gate. */
+export interface ComboAlert {
+  date: string
+  dist: number
+  cutoff: number
+  gate: MetricKey[]
+  contributors: ComboContributor[]
+}
+
+/** A sustained deviation: alert days <= 3 calendar days apart merged into one event. */
+export interface ComboEpisode {
+  start: string
+  end: string
+  days: number
+  peak_date: string
+  peak_dist: number
+  gate: MetricKey[]
+  contributors: ComboContributor[]
+}
+
+/** Combo detector output within the 90-day window (arrays aligned to daily.dates). */
+export interface Combo {
+  dist: (number | null)[]
+  cutoff: (number | null)[]
+  alert: boolean[]
+  alerts: ComboAlert[]
+  episodes: ComboEpisode[]
 }
 
 export interface Weekly {
@@ -156,4 +198,6 @@ export interface VitalScanResult {
   sources?: Source[]
   decisions?: Decision[]
   weekly?: Weekly
+  z_series?: ZSeries
+  combo?: Combo
 }

@@ -127,6 +127,7 @@ export const BADGE_COLOR: Record<DecisionBadge, string> = {
   SUPPRESSED: COLOR.slate,
   RESOLVED: COLOR.teal,
   SOURCE_DISTRUSTED: COLOR.coral,
+  COMBO: COLOR.coral,
 }
 
 export function badgeLabel(b: DecisionBadge): string {

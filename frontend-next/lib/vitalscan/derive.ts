@@ -533,3 +533,52 @@ export function buildAudit(decisions: Decision[], showSuppressed: boolean): Audi
     date: d.date,
   }))
 }
+
+// ── Z-score deviation heatmap (multivariate detector) ─────────────────────
+
+/**
+ * Per-metric concern direction: +1 = high is concerning (RHR, mean HR,
+ * breathing), -1 = low is concerning (HRV, SpO2, sleep), 0 = contextual only
+ * (steps — neither tail alarms). Cell hue keys off direction * z so a coral
+ * cell always means "moved the concerning way", teal "the reassuring way".
+ */
+export const CONCERN_DIRECTION: Record<MetricKey, 1 | -1 | 0> = {
+  rhr: 1,
+  mean_hr: 1,
+  breathing: 1,
+  hrv: -1,
+  spo2: -1,
+  sleep_hours: -1,
+  steps: 0,
+}
+
+export interface HeatmapRow {
+  key: MetricKey
+  label: string
+  direction: 1 | -1 | 0
+  z: (number | null)[]
+}
+
+export interface ZHeatmap {
+  dates: string[]
+  rows: HeatmapRow[]
+  /** True where the multivariate combo fired that day (aligned to dates). */
+  comboAlert: boolean[]
+  hasData: boolean
+}
+
+/** Assemble the z-heatmap grid from result.z_series, keeping METRICS row order. */
+export function buildZHeatmap(result: VitalScanResult): ZHeatmap {
+  const dates = result.daily?.dates ?? []
+  const zs = result.z_series ?? {}
+  const rows: HeatmapRow[] = []
+  for (const m of METRICS) {
+    const z = zs[m.key]
+    if (!z || z.length !== dates.length) continue
+    if (!z.some((v) => v != null)) continue // no z anywhere — omit the row
+    rows.push({ key: m.key, label: m.shortName ?? m.name, direction: CONCERN_DIRECTION[m.key], z })
+  }
+  const alert = result.combo?.alert ?? []
+  const comboAlert = dates.map((_, i) => alert[i] === true)
+  return { dates, rows, comboAlert, hasData: rows.length > 0 }
+}

@@ -40,6 +40,11 @@ import zipfile
 import io
 import os
 import math
+
+try:
+    import anomaly
+except ImportError:                      # package-style import (e.g. tests)
+    from . import anomaly
 import bisect
 
 
@@ -595,6 +600,9 @@ def _compile_output(me_attrs, raw, steps_daily, sleep, hrv_daily, sleep_records=
         'sources':   v03['sources'],
         'decisions': v03['decisions'],
         'weekly':    v03['weekly'],
+        'z_series':  v03['z_series'],
+        'combo':     v03['combo'],
+        'combo_full': v03['combo_full'],
     }
 
 
@@ -708,6 +716,12 @@ def _empty_v03_blocks(record_count):
         'weekly': {'label': None, 'records_read': record_count,
                    'in_band': [], 'watching': [], 'gaps': [],
                    'no_data': list(_DAILY_METRIC_KEYS)},
+        'z_series': {m: [] for m in _DAILY_METRIC_KEYS},
+        'combo': {'dist': [], 'cutoff': [], 'alert': [], 'alerts': [],
+                  'episodes': []},
+        'combo_full': {'dates': [], 'z': {}, 'dist': [], 'cutoff': [],
+                       'alert': [], 'alerts': [], 'episodes': [],
+                       'metrics': []},
     }
 
 
@@ -1086,6 +1100,48 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
             ],
         })
 
+    # ── 8b. Multivariate combo detector (anomaly.py, full history) ──────────
+    combo_full = anomaly.detect(combined)
+    full_idx = {d: i for i, d in enumerate(combo_full['dates'])}
+
+    def _win(arr, fill=None):
+        return [arr[full_idx[d]] if d in full_idx else fill for d in dates]
+
+    z_series = {m: _win(combo_full['z'].get(m, []))
+                if m in combo_full['z'] else [None] * len(dates)
+                for m in _DAILY_METRIC_KEYS}
+    combo = {
+        'dist':   _win(combo_full['dist']),
+        'cutoff': _win(combo_full['cutoff']),
+        'alert':  _win(combo_full['alert'], fill=False),
+        'alerts': [a for a in combo_full['alerts'] if a['date'] in window_set],
+        'episodes': [e for e in combo_full['episodes']
+                     if e['end'] >= dates[0] and e['start'] <= end_key],
+    }
+    # One COMBO decision per episode (not per alert day — no alarm spam).
+    for e in combo['episodes']:
+        top = e['contributors'][0]['metric'] if e['contributors'] else 'combo'
+        span = (e['start'] if e['days'] == 1
+                else f"{e['start']} → {e['end']} · {e['days']} alert days")
+        lines = [{'k': 'episode', 'v': span},
+                 {'k': 'peak',
+                  'v': (f"combo distance {e['peak_dist']:.2f} on "
+                        f"{e['peak_date']} · gate: "
+                        + ', '.join(_METRIC_LABELS[g] for g in e['gate']))}]
+        lines += [{'k': 'contributor',
+                   'v': (f"{_METRIC_LABELS[c['metric']]} z = {c['z']:+.1f} · "
+                         f"{round(c['share'] * 100)}% of distance")}
+                  for c in e['contributors']]
+        decisions.append({
+            'date': max(e['start'], dates[0]),
+            'signal': 'Multivariate · personal baseline',
+            'metric': top,
+            'title': 'Combined deviation beyond personal baseline',
+            'badge': 'COMBO',
+            'suppressed': False,
+            'lines': lines,
+        })
+
     decisions.sort(key=lambda e: e['date'], reverse=True)
 
     # ── 9. weekly ─────────────────────────────────────────────────────────────
@@ -1110,7 +1166,8 @@ def _build_v03_blocks(raw, steps_daily, sleep, hrv_daily,
     }
 
     return {'daily': daily, 'bands': bands, 'sources': sources_block,
-            'decisions': decisions, 'weekly': weekly}
+            'decisions': decisions, 'weekly': weekly,
+            'z_series': z_series, 'combo': combo, 'combo_full': combo_full}
 
 
 def _get_months(raw, steps_daily, sleep):
