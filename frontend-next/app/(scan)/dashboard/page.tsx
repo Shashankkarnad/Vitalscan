@@ -89,7 +89,7 @@ export default function DashboardPage() {
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Dashboard &middot; last 90 days</div>
       <h1 style={h1(36)}>{dashTitle}</h1>
-      <p style={{ fontSize: 14.5, color: 'rgba(232,234,242,.5)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14.5, color: 'rgba(237,234,226,.5)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
         Select a signal to see your personal chart and what it means for you.
       </p>
 
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 textAlign: 'left',
                 display: 'block',
                 width: '100%',
-                color: '#e8eaf2',
+                color: '#edeae2',
                 ...card(16),
                 padding: '16px 16px 14px',
                 cursor: 'pointer',
@@ -133,7 +133,7 @@ export default function DashboardPage() {
                   <IconChip path={t.meta.iconPath} color={t.meta.color} size={26} />
                   <span
                     style={{
-                      ...mono(10, active ? t.meta.color : 'rgba(232,234,242,.45)'),
+                      ...mono(10, active ? t.meta.color : 'rgba(237,234,226,.45)'),
                       letterSpacing: '.14em',
                       textTransform: 'uppercase',
                     }}
@@ -144,8 +144,8 @@ export default function DashboardPage() {
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.statusColor }} />
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                <span style={{ ...mono(24, '#e8eaf2'), letterSpacing: '-.01em' }}>{t.cur}</span>
-                <span style={mono(11.5, 'rgba(232,234,242,.45)')}>{t.meta.unit}</span>
+                <span style={{ ...mono(24, '#edeae2'), letterSpacing: '-.01em' }}>{t.cur}</span>
+                <span style={mono(11.5, 'rgba(237,234,226,.45)')}>{t.meta.unit}</span>
               </div>
               <div style={{ marginTop: 12 }}>
                 <Sparkline
@@ -162,7 +162,7 @@ export default function DashboardPage() {
                 <span style={{ ...mono(10, t.statusColor), letterSpacing: '.1em', textTransform: 'uppercase' }}>
                   {t.statusWord}
                 </span>
-                <span style={mono(10.5, 'rgba(232,234,242,.4)')}>{t.zTxt}</span>
+                <span style={mono(10.5, 'rgba(237,234,226,.4)')}>{t.zTxt}</span>
               </div>
             </button>
           )
@@ -176,7 +176,7 @@ export default function DashboardPage() {
             textAlign: 'left',
             display: 'block',
             width: '100%',
-            color: '#e8eaf2',
+            color: '#edeae2',
             textDecoration: 'none',
             ...card(16),
             padding: '16px 16px 14px',
@@ -185,7 +185,7 @@ export default function DashboardPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ ...mono(10, 'rgba(232,234,242,.45)'), letterSpacing: '.14em', textTransform: 'uppercase' }}>
+            <span style={{ ...mono(10, 'rgba(237,234,226,.45)'), letterSpacing: '.14em', textTransform: 'uppercase' }}>
               Instruments
             </span>
             <span
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             />
           </div>
           {sources.length === 0 ? (
-            <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), marginTop: 15, lineHeight: 1.5 }}>
+            <div style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), marginTop: 15, lineHeight: 1.5 }}>
               No per-source data in this export.
             </div>
           ) : (
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                     key={s.name}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
                   >
-                    <span style={{ fontSize: 12.5, color: 'rgba(232,234,242,.7)' }}>{s.name}</span>
+                    <span style={{ fontSize: 12.5, color: 'rgba(237,234,226,.7)' }}>{s.name}</span>
                     <span
                       style={{
                         ...mono(9, g.color),
@@ -230,14 +230,14 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 16 }}>
             <span
               style={{
-                ...mono(10, distrusted > 0 ? COLOR.coral : 'rgba(232,234,242,.4)'),
+                ...mono(10, distrusted > 0 ? COLOR.coral : 'rgba(237,234,226,.4)'),
                 letterSpacing: '.1em',
                 textTransform: 'uppercase',
               }}
             >
               {distrusted > 0 ? `${distrusted} pair${distrusted === 1 ? '' : 's'} distrusted` : 'no pairs distrusted'}
             </span>
-            <span style={mono(10.5, 'rgba(232,234,242,.4)')}>graded per export</span>
+            <span style={mono(10.5, 'rgba(237,234,226,.4)')}>graded per export</span>
           </div>
         </Link>
       </div>
@@ -248,15 +248,15 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLOR.coral }} />
-              <span style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+              <span style={{ ...mono(11, 'rgba(237,234,226,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
                 Episodes
               </span>
             </div>
-            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>
+            <span style={{ ...mono(10.5, 'rgba(237,234,226,.32)'), letterSpacing: '.12em' }}>
               {`${episodes.length} IN 90 DAYS`}
             </span>
           </div>
-          <p style={{ fontSize: 13.5, color: 'rgba(232,234,242,.5)', margin: '8px 0 14px', maxWidth: 620, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13.5, color: 'rgba(237,234,226,.5)', margin: '8px 0 14px', maxWidth: 620, lineHeight: 1.5 }}>
             Stretches where several of your signals drifted from their personal baselines together. Tap one to
             see what moved and what it may mean — deviations from <em>your</em> normal, not a diagnosis.
           </p>
@@ -270,15 +270,15 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: COLOR.coral }} />
-              <span style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+              <span style={{ ...mono(11, 'rgba(237,234,226,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
                 Deviation map
               </span>
             </div>
-            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>
+            <span style={{ ...mono(10.5, 'rgba(237,234,226,.32)'), letterSpacing: '.12em' }}>
               EVIDENCE · 90 DAYS
             </span>
           </div>
-          <p style={{ fontSize: 13, color: 'rgba(232,234,242,.5)', margin: '8px 0 4px', maxWidth: 620, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'rgba(237,234,226,.5)', margin: '8px 0 4px', maxWidth: 620, lineHeight: 1.5 }}>
             The evidence behind the episodes above. Each cell is how far a signal sat from <em>your own</em>{' '}
             rolling baseline that day — coral = moved the concerning way, teal = the reassuring way. The strip
             marks the days the detector escalated.
@@ -297,16 +297,16 @@ export default function DashboardPage() {
             ].map((l) => (
               <span key={l.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 14, height: 12, borderRadius: 2, background: l.c }} />
-                <span style={mono(10, 'rgba(232,234,242,.5)')}>{l.t}</span>
+                <span style={mono(10, 'rgba(237,234,226,.5)')}>{l.t}</span>
               </span>
             ))}
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 14, height: 12, borderRadius: 2, background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(232,234,242,.18) 2px, rgba(232,234,242,.18) 3px)', border: '1px solid rgba(255,255,255,.06)' }} />
-              <span style={mono(10, 'rgba(232,234,242,.5)')}>no data</span>
+              <span style={{ width: 14, height: 12, borderRadius: 2, background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(237,234,226,.18) 2px, rgba(237,234,226,.18) 3px)', border: '1px solid rgba(237,234,226,.06)' }} />
+              <span style={mono(10, 'rgba(237,234,226,.5)')}>no data</span>
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 14, height: 8, borderRadius: 2, background: COLOR.coral }} />
-              <span style={mono(10, 'rgba(232,234,242,.5)')}>combined alert</span>
+              <span style={mono(10, 'rgba(237,234,226,.5)')}>combined alert</span>
             </span>
           </div>
         </div>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
             <IconChip path={meta.iconPath} color={meta.color} size={30} />
             <span
               style={{
-                ...mono(11, 'rgba(232,234,242,.55)'),
+                ...mono(11, 'rgba(237,234,226,.55)'),
                 letterSpacing: '.16em',
                 textTransform: 'uppercase',
               }}
@@ -328,7 +328,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>90 DAYS</span>
+            <span style={{ ...mono(10.5, 'rgba(237,234,226,.32)'), letterSpacing: '.12em' }}>90 DAYS</span>
             <Link
               href={`/signal?m=${selected}`}
               style={{
@@ -344,14 +344,14 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-          <span style={mono(26, '#e8eaf2')}>
+          <span style={mono(26, '#edeae2')}>
             {band?.status !== 'data_gap' && band?.current != null ? meta.fmt(band.current) : '—'}
           </span>
-          <span style={mono(13, 'rgba(232,234,242,.45)')}>
+          <span style={mono(13, 'rgba(237,234,226,.45)')}>
             {band?.status === 'data_gap' ? `no data · ${band.gap_days} d` : meta.unit || (isSleep ? 'h' : '')}
           </span>
           {breakdown.bandRange && band?.status !== 'no_data' && band?.status !== 'data_gap' && (
-            <span style={{ fontSize: 13, color: 'rgba(232,234,242,.45)' }}>{breakdown.bandRange}</span>
+            <span style={{ fontSize: 13, color: 'rgba(237,234,226,.45)' }}>{breakdown.bandRange}</span>
           )}
         </div>
 
@@ -364,12 +364,12 @@ export default function DashboardPage() {
 
       {/* Decisions for selected metric */}
       <div style={{ ...card(16), padding: '20px 24px 14px', marginTop: 14, ...rise(0.54, 0.55) }}>
-        <div style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+        <div style={{ ...mono(11, 'rgba(237,234,226,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
           {meta.name} &middot; decision log
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 9 }}>
           {metricDecisions.length === 0 && (
-            <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), padding: '11px 0', lineHeight: 1.5 }}>
+            <div style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), padding: '11px 0', lineHeight: 1.5 }}>
               No decisions for {meta.name.toLowerCase()} in this window — it stayed inside your band.
             </div>
           )}
@@ -380,14 +380,14 @@ export default function DashboardPage() {
                 key={i}
                 style={{
                   padding: '11px 0',
-                  borderTop: i > 0 ? '1px solid rgba(255,255,255,.06)' : undefined,
+                  borderTop: i > 0 ? '1px solid rgba(237,234,226,.06)' : undefined,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 6,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={mono(10.5, 'rgba(232,234,242,.38)')}>{formatShortDate(e.date)}</span>
+                  <span style={mono(10.5, 'rgba(237,234,226,.38)')}>{formatShortDate(e.date)}</span>
                   <span
                     style={{
                       ...mono(9, bcol),
@@ -401,11 +401,11 @@ export default function DashboardPage() {
                     {badgeLabel(e.badge)}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: 'rgba(232,234,242,.78)', lineHeight: 1.45, textWrap: 'pretty' }}>
+                <div style={{ fontSize: 13, color: 'rgba(237,234,226,.78)', lineHeight: 1.45, textWrap: 'pretty' }}>
                   {e.title}
                 </div>
                 {e.lines.length > 0 && (
-                  <div style={{ ...mono(10.5, 'rgba(232,234,242,.45)'), lineHeight: 1.5 }}>
+                  <div style={{ ...mono(10.5, 'rgba(237,234,226,.45)'), lineHeight: 1.5 }}>
                     {e.lines.map((ln) => ln.v).join(' · ')}
                   </div>
                 )}
@@ -417,12 +417,12 @@ export default function DashboardPage() {
           className="vs-ghost-btn"
           onClick={() => router.push('/audit')}
           style={{
-            ...mono(11, 'rgba(232,234,242,.5)'),
+            ...mono(11, 'rgba(237,234,226,.5)'),
             letterSpacing: '.1em',
             textTransform: 'uppercase',
             background: 'none',
             border: 'none',
-            borderTop: '1px solid rgba(255,255,255,.06)',
+            borderTop: '1px solid rgba(237,234,226,.06)',
             padding: '14px 0 6px',
             marginTop: 8,
             textAlign: 'left',

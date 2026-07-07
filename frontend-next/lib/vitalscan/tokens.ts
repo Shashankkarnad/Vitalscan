@@ -4,15 +4,15 @@
 // status dots/badges).
 
 export const COLOR = {
-  coral: '#ff5b46', // cardiac
-  teal: '#34d6c0', // recovery / good
-  amber: '#f3b13e', // activity / watching
-  blue: '#6c8cff', // sleep
-  slate: '#98a2b8', // neutral / data-gap / suppressed
+  coral: '#e2654f', // cardiac — terracotta
+  teal: '#3bb58c', // recovery / good — sage
+  amber: '#ce8f2e', // activity / watching — gold
+  blue: '#7b8fd4', // sleep — periwinkle
+  slate: '#9a978e', // neutral / data-gap / suppressed — warm gray
 } as const
 
-export const SURFACE = '#0a0a10'
-export const INK = '#e8eaf2'
+export const SURFACE = '#0c0b09'
+export const INK = '#edeae2'
 
 // Apple Health sleep-stage palette (indigo → blue → cyan → orange), so the
 // stacked bars and the hypnogram read the way users already know sleep stages.
@@ -28,10 +28,10 @@ export function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }
 
-export const FONT_DISPLAY = "'Space Grotesk', var(--font-space-grotesk), 'IBM Plex Sans', sans-serif"
+export const FONT_DISPLAY = "'Fraunces', var(--font-fraunces), Georgia, serif"
 export const FONT_SANS = "'IBM Plex Sans', var(--font-ibm-plex-sans), sans-serif"
 export const FONT_MONO = "'IBM Plex Mono', var(--font-ibm-plex-mono), monospace"
 
-export const CARD_SHADOW = '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06)'
-export const CARD_BORDER = 'rgba(255,255,255,.08)'
-export const CARD_BG = 'rgba(255,255,255,.03)'
+export const CARD_SHADOW = '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(237,234,226,.06)'
+export const CARD_BORDER = 'rgba(237,234,226,.09)'
+export const CARD_BG = 'rgba(237,234,226,.035)'

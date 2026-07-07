@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
+import { Inter, Fraunces, Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 // New-design fonts (VitalScan redesign: /home, /dashboard, /evidence, /instruments, /audit).
 // Loaded globally as CSS variables so the (app) route group can reference them without
 // affecting the Inter-based legacy pages (/, /processing, /verdict, /results).
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-fraunces',
+})
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
@@ -38,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased ${fraunces.variable}`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>

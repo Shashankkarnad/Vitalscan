@@ -194,19 +194,19 @@
   to   { opacity: 1; transform: none; }
 }
 
-.vs-shell ::selection { background: rgba(108, 140, 255, .35); }
-.vs-shell .vs-nav-link:hover { color: #e8eaf2 !important; }
+.vs-shell ::selection { background: rgba(59,181,140,.30); }
+.vs-shell .vs-nav-link:hover { color: #edeae2 !important; }
 .vs-shell .vs-card-hover { transition: border-color .15s ease, background .15s ease; }
-.vs-shell .vs-card-hover:hover { border-color: rgba(255, 255, 255, .18) !important; }
+.vs-shell .vs-card-hover:hover { border-color: rgba(237,234,226, .18) !important; }
 .vs-shell .vs-tile-hover { transition: border-color .15s ease, background .15s ease; }
-.vs-shell .vs-tile-hover:hover { border-color: rgba(255, 255, 255, .2) !important; background: rgba(255, 255, 255, .05) !important; }
+.vs-shell .vs-tile-hover:hover { border-color: rgba(237,234,226, .2) !important; background: rgba(237,234,226, .05) !important; }
 .vs-shell .vs-ghost-btn { transition: color .15s ease; }
-.vs-shell .vs-ghost-btn:hover { color: #e8eaf2 !important; }
+.vs-shell .vs-ghost-btn:hover { color: #edeae2 !important; }
 .vs-shell .vs-row-hover { transition: background .15s ease; }
-.vs-shell .vs-row-hover:hover { background: rgba(255, 255, 255, .04) !important; }
-.vs-shell .vs-row-hover:hover span:first-child { color: #e8eaf2 !important; }
-.vs-shell .vs-upload-cta:hover:not(:disabled) { border-color: rgba(255,255,255,.24) !important; background: rgba(255,255,255,.1) !important; }
-.vs-shell .vs-dropzone-idle:hover { border-color: rgba(255,255,255,.28) !important; background: rgba(255,255,255,.02) !important; }
+.vs-shell .vs-row-hover:hover { background: rgba(237,234,226, .04) !important; }
+.vs-shell .vs-row-hover:hover span:first-child { color: #edeae2 !important; }
+.vs-shell .vs-upload-cta:hover:not(:disabled) { border-color: rgba(237,234,226,.24) !important; background: rgba(237,234,226,.1) !important; }
+.vs-shell .vs-dropzone-idle:hover { border-color: rgba(237,234,226,.28) !important; background: rgba(237,234,226,.02) !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .vs-shell, .vs-shell * { animation: none !important; transition: none !important; }

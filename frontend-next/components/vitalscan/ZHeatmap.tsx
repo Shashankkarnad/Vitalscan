@@ -80,7 +80,7 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
           fontFamily: FONT_MONO,
           fontSize: 11,
           letterSpacing: '.12em',
-          color: 'rgba(232,234,242,.4)',
+          color: 'rgba(237,234,226,.4)',
         }}
       >
         NOT ENOUGH DATA FOR A DEVIATION MAP
@@ -115,8 +115,8 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
       >
         <defs>
           <pattern id="vs-nodata" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="5" height="5" fill="rgba(255,255,255,.015)" />
-            <line x1="0" y1="0" x2="0" y2="5" stroke="rgba(232,234,242,.14)" strokeWidth="1" />
+            <rect width="5" height="5" fill="rgba(237,234,226,.015)" />
+            <line x1="0" y1="0" x2="0" y2="5" stroke="rgba(237,234,226,.14)" strokeWidth="1" />
           </pattern>
         </defs>
 
@@ -134,7 +134,7 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
               textAnchor="end"
               fontFamily="IBM Plex Mono"
               fontSize="10"
-              fill="rgba(232,234,242,.62)"
+              fill="rgba(237,234,226,.62)"
             >
               {row.label}
             </text>
@@ -159,7 +159,7 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
         ))}
 
         {/* Combo alert strip */}
-        <text x={PL - 10} y={stripY + STRIP_H - 1} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="8.5" letterSpacing="1" fill="rgba(232,234,242,.4)">
+        <text x={PL - 10} y={stripY + STRIP_H - 1} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="8.5" letterSpacing="1" fill="rgba(237,234,226,.4)">
           ALERT
         </text>
         {comboAlert.map((on, i) =>
@@ -168,13 +168,13 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
 
         {/* Month ticks */}
         {ticks.map((tk, i) => (
-          <text key={i} x={tk.x} y={H - 6} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(232,234,242,.3)">
+          <text key={i} x={tk.x} y={H - 6} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(237,234,226,.3)">
             {tk.label}
           </text>
         ))}
 
         {/* Hover crosshair */}
-        {hi != null && <rect x={x(hi)} y={PT} width={cw} height={R * (ROW_H + ROW_GAP) + STRIP_H} fill="none" stroke="rgba(232,234,242,.35)" strokeWidth="1" rx={2} />}
+        {hi != null && <rect x={x(hi)} y={PT} width={cw} height={R * (ROW_H + ROW_GAP) + STRIP_H} fill="none" stroke="rgba(237,234,226,.35)" strokeWidth="1" rx={2} />}
 
         {/* Hover capture */}
         <rect x={PL} y={PT} width={gridW} height={R * (ROW_H + ROW_GAP) + STRIP_H} fill="transparent" onPointerMove={onMove} onPointerLeave={() => setHi(null)} />
@@ -189,25 +189,25 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
             transform: 'translateY(-2px)',
             pointerEvents: 'none',
             background: 'rgba(10,10,16,.94)',
-            border: `1px solid ${alertDay ? rgba(COLOR.coral, 0.4) : 'rgba(255,255,255,.12)'}`,
+            border: `1px solid ${alertDay ? rgba(COLOR.coral, 0.4) : 'rgba(237,234,226,.12)'}`,
             borderRadius: 8,
             padding: '8px 11px',
             fontFamily: FONT_MONO,
             fontSize: 10.5,
             lineHeight: 1.6,
-            color: 'rgba(232,234,242,.85)',
+            color: 'rgba(237,234,226,.85)',
             whiteSpace: 'nowrap',
             zIndex: 2,
             minWidth: 150,
           }}
         >
-          <div style={{ color: 'rgba(232,234,242,.5)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ color: 'rgba(237,234,226,.5)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
             <span>{hvDate}</span>
             {alertDay && <span style={{ color: COLOR.coral }}>COMBO ALERT</span>}
           </div>
           {episode ? (
             <>
-              <div style={{ color: 'rgba(232,234,242,.6)', marginTop: 2 }}>
+              <div style={{ color: 'rgba(237,234,226,.6)', marginTop: 2 }}>
                 dist {episode.dist.toFixed(2)} &middot; cutoff {episode.cutoff.toFixed(2)}
               </div>
               {episode.contributors.map((c) => (
@@ -225,8 +225,8 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
               const z = row.z[hi]
               return (
                 <div key={row.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: 'rgba(232,234,242,.6)' }}>{row.label}</span>
-                  <span style={{ color: z == null ? 'rgba(232,234,242,.3)' : signZColor(z, row.key) }}>
+                  <span style={{ color: 'rgba(237,234,226,.6)' }}>{row.label}</span>
+                  <span style={{ color: z == null ? 'rgba(237,234,226,.3)' : signZColor(z, row.key) }}>
                     {z == null ? 'no data' : `z ${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(1)}`}
                   </span>
                 </div>
@@ -242,6 +242,6 @@ export default function ZHeatmap({ data, combo, width = 940 }: ZHeatmapProps) {
 /** Tooltip z text color — mirrors the cell's direction-aware hue. */
 function signZColor(z: number, metric: string): string {
   const dir = CONCERN_DIRECTION[metric as MetricKey] ?? 0
-  if (Math.abs(z) < 0.4 || dir === 0) return 'rgba(232,234,242,.75)'
+  if (Math.abs(z) < 0.4 || dir === 0) return 'rgba(237,234,226,.75)'
   return dir * z > 0 ? COLOR.coral : COLOR.teal
 }

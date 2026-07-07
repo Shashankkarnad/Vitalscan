@@ -20,20 +20,20 @@ export default function ReadinessCard({ result }: { result: VitalScanResult }) {
         <span style={{ fontFamily: FONT_MONO, fontSize: 22, letterSpacing: '.06em', textTransform: 'uppercase', color: r.color }}>
           {r.word}
         </span>
-        <span style={{ fontSize: 14.5, color: 'rgba(232,234,242,.7)' }}>{r.headline}</span>
-        {r.asOf && <span style={mono(10, 'rgba(232,234,242,.35)')}>as of {formatShortDate(r.asOf)}</span>}
+        <span style={{ fontSize: 14.5, color: 'rgba(237,234,226,.7)' }}>{r.headline}</span>
+        {r.asOf && <span style={mono(10, 'rgba(237,234,226,.35)')}>as of {formatShortDate(r.asOf)}</span>}
       </div>
       {(r.drivers.length > 0 || r.load) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 18px', marginTop: 10 }}>
           {r.drivers.map((d) => (
-            <Link key={d.key + d.text} href={`/signal?m=${d.key}`} style={{ ...mono(11, d.concerning ? r.color : 'rgba(232,234,242,.55)'), textDecoration: 'none' }}>
+            <Link key={d.key + d.text} href={`/signal?m=${d.key}`} style={{ ...mono(11, d.concerning ? r.color : 'rgba(237,234,226,.55)'), textDecoration: 'none' }}>
               • {d.text} →
             </Link>
           ))}
-          {r.load && <span style={mono(11, 'rgba(232,234,242,.5)')}>• {r.load}</span>}
+          {r.load && <span style={mono(11, 'rgba(237,234,226,.5)')}>• {r.load}</span>}
         </div>
       )}
-      <div style={{ ...mono(9.5, 'rgba(232,234,242,.32)'), letterSpacing: '.08em', marginTop: 10 }}>
+      <div style={{ ...mono(9.5, 'rgba(237,234,226,.32)'), letterSpacing: '.08em', marginTop: 10 }}>
         FROM YOUR OWN BASELINES — NOT A SCORE, EVERY DRIVER OPENS ITS EVIDENCE
       </div>
     </div>

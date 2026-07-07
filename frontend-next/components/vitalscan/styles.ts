@@ -13,7 +13,7 @@ export const kicker: CSSProperties = {
   fontSize: 11,
   letterSpacing: '.18em',
   textTransform: 'uppercase',
-  color: 'rgba(232,234,242,.42)',
+  color: 'rgba(237,234,226,.42)',
   animation: 'rise .5s cubic-bezier(.2,.7,.3,1) both',
 }
 
@@ -22,14 +22,14 @@ export const h1 = (size = 36): CSSProperties => ({
   fontWeight: 300,
   fontSize: size,
   lineHeight: 1.15,
-  letterSpacing: '-0.01em',
+  letterSpacing: '-0.005em',
   margin: '16px 0 0',
   animation: 'rise .55s cubic-bezier(.2,.7,.3,1) .06s both',
 })
 
 export const lede: CSSProperties = {
   fontSize: 15.5,
-  color: 'rgba(232,234,242,.58)',
+  color: 'rgba(237,234,226,.58)',
   maxWidth: 640,
   margin: '12px 0 0',
   lineHeight: 1.55,
@@ -40,7 +40,7 @@ export const sectionLabel: CSSProperties = {
   fontFamily: FONT_MONO,
   fontSize: 10.5,
   letterSpacing: '.18em',
-  color: 'rgba(232,234,242,.4)',
+  color: 'rgba(237,234,226,.4)',
 }
 
 export const pill = (color: string, bd: string, bg: string): CSSProperties => ({

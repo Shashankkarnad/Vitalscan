@@ -23,7 +23,7 @@ export default function SourcePicker() {
           fontSize: 10,
           letterSpacing: '.18em',
           textTransform: 'uppercase',
-          color: 'rgba(232,234,242,.4)',
+          color: 'rgba(237,234,226,.4)',
           marginBottom: 8,
         }}
       >
@@ -36,8 +36,8 @@ export default function SourcePicker() {
           gap: 6,
           padding: 4,
           borderRadius: 12,
-          border: '1px solid rgba(255,255,255,.08)',
-          background: 'rgba(255,255,255,.03)',
+          border: '1px solid rgba(237,234,226,.08)',
+          background: 'rgba(237,234,226,.03)',
           width: 'fit-content',
         }}
       >
@@ -57,7 +57,7 @@ export default function SourcePicker() {
                 borderRadius: 9,
                 border: `1px solid ${active ? rgba(COLOR.teal, 0.5) : 'transparent'}`,
                 background: active ? rgba(COLOR.teal, 0.14) : 'transparent',
-                color: active ? COLOR.teal : 'rgba(232,234,242,.55)',
+                color: active ? COLOR.teal : 'rgba(237,234,226,.55)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 transition: 'color .15s ease, background .15s ease, border-color .15s ease',

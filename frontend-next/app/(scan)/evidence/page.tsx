@@ -66,7 +66,7 @@ export default function EvidencePage() {
               className="vs-card-hover"
               style={{
                 ...card(18),
-                border: '1px solid rgba(255,255,255,.1)',
+                border: '1px solid rgba(237,234,226,.1)',
                 padding: '22px 26px',
                 scrollMarginTop: 24,
                 ...rise(0.16 + i * 0.06, 0.55),
@@ -75,7 +75,7 @@ export default function EvidencePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
-                  <span style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+                  <span style={{ ...mono(11, 'rgba(237,234,226,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
                     {meta.name}
                   </span>
                   {(status === 'watching' || status === 'data_gap' || status === 'no_data') && (
@@ -93,13 +93,13 @@ export default function EvidencePage() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12 }}>
-                <span style={mono(26, '#e8eaf2')}>
+                <span style={mono(26, '#edeae2')}>
                   {status !== 'data_gap' && band?.current != null ? meta.fmt(band.current) : '—'}
                 </span>
-                <span style={mono(13, 'rgba(232,234,242,.45)')}>
+                <span style={mono(13, 'rgba(237,234,226,.45)')}>
                   {status === 'data_gap' ? `no data · ${band?.gap_days ?? 0} d` : band?.current != null ? meta.unit : ''}
                 </span>
-                <span style={{ fontSize: 13, color: 'rgba(232,234,242,.45)', marginLeft: 8 }}>{bandText}</span>
+                <span style={{ fontSize: 13, color: 'rgba(237,234,226,.45)', marginLeft: 8 }}>{bandText}</span>
               </div>
 
               <div style={{ marginTop: 10 }}>
@@ -111,8 +111,8 @@ export default function EvidencePage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: 12,
-                      background: 'rgba(255,255,255,.025)',
-                      ...mono(10, 'rgba(232,234,242,.38)'),
+                      background: 'rgba(237,234,226,.025)',
+                      ...mono(10, 'rgba(237,234,226,.38)'),
                       letterSpacing: '.18em',
                     }}
                   >
@@ -137,17 +137,17 @@ export default function EvidencePage() {
               </div>
 
               {note && (
-                <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), marginTop: 10, lineHeight: 1.5 }}>{note}</div>
+                <div style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), marginTop: 10, lineHeight: 1.5 }}>{note}</div>
               )}
 
               <MetricBreakdown breakdown={breakdown} accent={meta.color} />
 
               {/* SLEEP carries its domain visualization: the hypnogram */}
               {isSleep && (
-                <div style={{ marginTop: 20, borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 18 }}>
+                <div style={{ marginTop: 20, borderTop: '1px solid rgba(237,234,226,.08)', paddingTop: 18 }}>
                   <div
                     style={{
-                      ...mono(10.5, 'rgba(232,234,242,.4)'),
+                      ...mono(10.5, 'rgba(237,234,226,.4)'),
                       letterSpacing: '.18em',
                       textTransform: 'uppercase',
                       marginBottom: 14,
@@ -158,7 +158,7 @@ export default function EvidencePage() {
                   {result.sleep_timeline && Object.keys(result.sleep_timeline).length > 0 ? (
                     <Hypnogram timeline={result.sleep_timeline} nights={result.sleep_nights ?? {}} />
                   ) : (
-                    <div style={{ ...mono(11.5, 'rgba(232,234,242,.42)'), lineHeight: 1.5 }}>
+                    <div style={{ ...mono(11.5, 'rgba(237,234,226,.42)'), lineHeight: 1.5 }}>
                       No staged sleep in this export — the hypnogram needs the watch worn overnight.
                     </div>
                   )}

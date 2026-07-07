@@ -27,7 +27,7 @@ export default function MetricChart({ result, metricKey, height = 210 }: { resul
           {(['deep', 'core', 'rem', 'awake'] as const).map((s) => (
             <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 12, height: 10, borderRadius: 2, background: SLEEP_STAGE[s] }} />
-              <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: 'rgba(232,234,242,.5)', textTransform: 'capitalize' }}>{s}</span>
+              <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: 'rgba(237,234,226,.5)', textTransform: 'capitalize' }}>{s}</span>
             </span>
           ))}
         </div>

@@ -44,8 +44,8 @@ export default function ExportSteps() {
             {s.num}
           </span>
           <div>
-            <p style={{ fontWeight: 500, color: '#e8eaf2' }}>{s.title}</p>
-            <p style={{ color: 'rgba(232,234,242,.5)', lineHeight: 1.5, marginTop: 2 }}>{s.detail}</p>
+            <p style={{ fontWeight: 500, color: '#edeae2' }}>{s.title}</p>
+            <p style={{ color: 'rgba(237,234,226,.5)', lineHeight: 1.5, marginTop: 2 }}>{s.detail}</p>
           </div>
         </li>
       ))}

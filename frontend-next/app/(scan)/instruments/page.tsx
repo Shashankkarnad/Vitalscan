@@ -31,13 +31,13 @@ export default function InstrumentsPage() {
         <div
           style={{
             ...card(18),
-            border: '1px solid rgba(255,255,255,.1)',
+            border: '1px solid rgba(237,234,226,.1)',
             padding: '22px 26px',
             marginTop: 36,
             fontFamily: FONT_MONO,
             fontSize: 11.5,
             lineHeight: 1.6,
-            color: 'rgba(232,234,242,.42)',
+            color: 'rgba(237,234,226,.42)',
             ...rise(0.16, 0.55),
           }}
         >
@@ -51,7 +51,7 @@ export default function InstrumentsPage() {
             key={g.source}
             style={{
               ...card(18),
-              border: '1px solid rgba(255,255,255,.1)',
+              border: '1px solid rgba(237,234,226,.1)',
               padding: '22px 26px',
               ...rise(0.16 + i * 0.08, 0.55),
             }}
@@ -66,7 +66,7 @@ export default function InstrumentsPage() {
               }}
             >
               <div style={{ fontSize: 16.5, fontWeight: 600 }}>{g.source}</div>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: '.08em', color: 'rgba(232,234,242,.4)' }}>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: '.08em', color: 'rgba(237,234,226,.4)' }}>
                 {g.role}
               </div>
             </div>
@@ -80,15 +80,15 @@ export default function InstrumentsPage() {
                     gap: 14,
                     alignItems: 'center',
                     padding: '11px 0',
-                    borderTop: '1px solid rgba(255,255,255,.06)',
+                    borderTop: '1px solid rgba(237,234,226,.06)',
                     opacity: r.opacity,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: r.color }} />
-                    <span style={{ fontSize: 14, color: 'rgba(232,234,242,.85)' }}>{r.metric}</span>
+                    <span style={{ fontSize: 14, color: 'rgba(237,234,226,.85)' }}>{r.metric}</span>
                   </div>
-                  <div style={{ fontFamily: FONT_MONO, fontSize: 12, color: 'rgba(232,234,242,.5)' }}>{r.rText}</div>
+                  <div style={{ fontFamily: FONT_MONO, fontSize: 12, color: 'rgba(237,234,226,.5)' }}>{r.rText}</div>
                   <div>
                     <span
                       style={{
@@ -104,7 +104,7 @@ export default function InstrumentsPage() {
                       {r.grade}
                     </span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'rgba(232,234,242,.48)' }}>{r.note}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(237,234,226,.48)' }}>{r.note}</div>
                 </div>
               ))}
             </div>
@@ -117,7 +117,7 @@ export default function InstrumentsPage() {
           fontFamily: FONT_MONO,
           fontSize: 11.5,
           lineHeight: 1.7,
-          color: 'rgba(232,234,242,.38)',
+          color: 'rgba(237,234,226,.38)',
           marginTop: 22,
           maxWidth: 720,
           ...rise(0.4, 0.55),

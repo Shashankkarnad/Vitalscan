@@ -33,7 +33,7 @@ export default function HomePage() {
           fontSize: 11,
           letterSpacing: '.18em',
           textTransform: 'uppercase',
-          color: 'rgba(232,234,242,.42)',
+          color: 'rgba(237,234,226,.42)',
           animation: 'rise .5s cubic-bezier(.2,.7,.3,1) both',
         }}
       >
@@ -57,7 +57,7 @@ export default function HomePage() {
       <p
         style={{
           fontSize: 16.5,
-          color: 'rgba(232,234,242,.6)',
+          color: 'rgba(237,234,226,.6)',
           maxWidth: 660,
           margin: '16px 0 0',
           lineHeight: 1.55,
@@ -89,7 +89,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
                 <IconChip path={cat.icon} color={cat.color} />
-                <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 600, letterSpacing: '.005em', color: '#e8eaf2' }}>
+                <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 600, letterSpacing: '.005em', color: '#edeae2' }}>
                   {cat.title}
                 </span>
               </span>
@@ -116,8 +116,8 @@ export default function HomePage() {
                   className="vs-row-hover"
                   style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, padding: '6px 0', textDecoration: 'none', borderRadius: 6 }}
                 >
-                  <span style={{ fontSize: 12.5, color: 'rgba(232,234,242,.6)' }}>{m.name}</span>
-                  <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: '#e8eaf2' }}>{m.cur}</span>
+                  <span style={{ fontSize: 12.5, color: 'rgba(237,234,226,.6)' }}>{m.name}</span>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: '#edeae2' }}>{m.cur}</span>
                 </Link>
               ))}
             </div>
@@ -137,7 +137,7 @@ export default function HomePage() {
               style={{
                 borderRadius: 18,
                 border: `1px solid ${rgba(f.color, 0.28)}`,
-                background: 'rgba(255,255,255,.03)',
+                background: 'rgba(237,234,226,.03)',
                 boxShadow: CARD_SHADOW,
                 padding: '24px 28px',
                 ...rise(0.18 + i * 0.09, 0.55),
@@ -158,7 +158,7 @@ export default function HomePage() {
                 >
                   {f.level}
                 </span>
-                <span style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: '.1em', color: 'rgba(232,234,242,.38)' }}>
+                <span style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: '.1em', color: 'rgba(237,234,226,.38)' }}>
                   {f.date}
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function HomePage() {
                   style={{
                     fontSize: 15,
                     lineHeight: 1.6,
-                    color: 'rgba(232,234,242,.66)',
+                    color: 'rgba(237,234,226,.66)',
                     margin: '10px 0 0',
                     maxWidth: 760,
                     textWrap: 'pretty',
@@ -185,7 +185,7 @@ export default function HomePage() {
                   fontSize: 11,
                   letterSpacing: '.1em',
                   textTransform: 'uppercase',
-                  color: 'rgba(232,234,242,.5)',
+                  color: 'rgba(237,234,226,.5)',
                   background: 'none',
                   border: 'none',
                   padding: 0,
@@ -196,7 +196,7 @@ export default function HomePage() {
                 {isOpen ? 'Hide evidence ▴' : 'Show evidence — chart + rationale ▾'}
               </button>
               {isOpen && (
-                <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 18 }}>
+                <div style={{ marginTop: 18, borderTop: '1px solid rgba(237,234,226,.08)', paddingTop: 18 }}>
                   {f.meta && (
                     <BandChart
                       values={f.series.values}
@@ -217,7 +217,7 @@ export default function HomePage() {
                       fontFamily: FONT_MONO,
                       fontSize: 12,
                       background: 'rgba(0,0,0,.28)',
-                      border: '1px solid rgba(255,255,255,.06)',
+                      border: '1px solid rgba(237,234,226,.06)',
                       borderRadius: 12,
                       padding: '14px 18px',
                       marginTop: 14,
@@ -228,8 +228,8 @@ export default function HomePage() {
                         key={k}
                         style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, padding: '3px 0' }}
                       >
-                        <div style={{ color: 'rgba(232,234,242,.38)' }}>{ln.k}</div>
-                        <div style={{ color: 'rgba(232,234,242,.72)' }}>{ln.v}</div>
+                        <div style={{ color: 'rgba(237,234,226,.38)' }}>{ln.k}</div>
+                        <div style={{ color: 'rgba(237,234,226,.72)' }}>{ln.v}</div>
                       </div>
                     ))}
                   </div>
@@ -245,7 +245,7 @@ export default function HomePage() {
         style={{
           marginTop: 42,
           paddingTop: 22,
-          borderTop: '1px solid rgba(255,255,255,.07)',
+          borderTop: '1px solid rgba(237,234,226,.07)',
           display: 'flex',
           alignItems: 'baseline',
           gap: 14,
@@ -255,9 +255,9 @@ export default function HomePage() {
         <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, letterSpacing: '.16em', color: COLOR.teal, whiteSpace: 'nowrap' }}>
           STEADY
         </span>
-        <span style={{ fontSize: 14.5, lineHeight: 1.6, color: 'rgba(232,234,242,.55)' }}>{verdict.steady}</span>
+        <span style={{ fontSize: 14.5, lineHeight: 1.6, color: 'rgba(237,234,226,.55)' }}>{verdict.steady}</span>
       </div>
-      <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: 'rgba(232,234,242,.32)', marginTop: 14, ...rise(0.46, 0.55) }}>
+      <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: 'rgba(237,234,226,.32)', marginTop: 14, ...rise(0.46, 0.55) }}>
         {verdict.nextNote}
       </div>
     </div>
