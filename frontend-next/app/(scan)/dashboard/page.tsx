@@ -13,6 +13,7 @@ import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
 import ZHeatmap from '@/components/vitalscan/ZHeatmap'
 import EpisodeCards from '@/components/vitalscan/EpisodeCards'
 import StageBars from '@/components/vitalscan/StageBars'
+import IconChip from '@/components/vitalscan/IconChip'
 import {
   hasContract,
   buildDashboardTiles,
@@ -138,14 +139,17 @@ export default function DashboardPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span
-                  style={{
-                    ...mono(10, active ? t.meta.color : 'rgba(232,234,242,.45)'),
-                    letterSpacing: '.14em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {t.meta.name}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                  <IconChip path={t.meta.iconPath} color={t.meta.color} size={26} />
+                  <span
+                    style={{
+                      ...mono(10, active ? t.meta.color : 'rgba(232,234,242,.45)'),
+                      letterSpacing: '.14em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {t.meta.name}
+                  </span>
                 </span>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.statusColor }} />
               </div>
@@ -321,8 +325,8 @@ export default function DashboardPage() {
       {/* Selected metric — chart + personal breakdown */}
       <div style={{ ...card(16), padding: '22px 26px', marginTop: 14, ...rise(0.48, 0.55) }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <IconChip path={meta.iconPath} color={meta.color} size={30} />
             <span
               style={{
                 ...mono(11, 'rgba(232,234,242,.55)'),

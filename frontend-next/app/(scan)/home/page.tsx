@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
+import IconChip from '@/components/vitalscan/IconChip'
 import { hasContract, buildCategories, buildVerdict, buildFindings } from '@/lib/vitalscan/derive'
 import { COLOR, rgba, FONT_DISPLAY, FONT_MONO, CARD_SHADOW } from '@/lib/vitalscan/tokens'
 import { card, sectionLabel, pill, rise } from '@/components/vitalscan/styles'
@@ -82,8 +83,11 @@ export default function HomePage() {
             style={{ ...card(16), padding: '18px 18px 16px', ...rise(0.2 + i * 0.05) }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: '.15em', color: 'rgba(232,234,242,.45)' }}>
-                {cat.label}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+                <IconChip path={cat.icon} color={cat.color} />
+                <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 600, letterSpacing: '.005em', color: '#e8eaf2' }}>
+                  {cat.title}
+                </span>
               </span>
               <span style={pill(cat.statusColor, rgba(cat.statusColor, 0.4), rgba(cat.statusColor, 0.09))}>
                 {cat.statusWord}

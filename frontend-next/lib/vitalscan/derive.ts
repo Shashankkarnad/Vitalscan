@@ -55,20 +55,25 @@ export function getSeries(result: VitalScanResult, key: MetricKey): MetricSeries
 export interface CategoryMeta {
   key: string
   label: string
+  title: string
+  icon: string
   metricKeys: MetricKey[]
   color: string
 }
 
+// Icon paths are from the VitalScan.dc.html design (24x24, stroke).
 export const CATEGORIES: CategoryMeta[] = [
-  { key: 'cardiac', label: 'CARDIAC', metricKeys: ['rhr', 'mean_hr'], color: COLOR.coral },
-  { key: 'recovery', label: 'RECOVERY', metricKeys: ['hrv', 'breathing', 'spo2'], color: COLOR.teal },
-  { key: 'activity', label: 'ACTIVITY', metricKeys: ['steps'], color: COLOR.amber },
-  { key: 'sleep', label: 'SLEEP', metricKeys: ['sleep_hours'], color: COLOR.blue },
+  { key: 'cardiac', label: 'CARDIAC', title: 'Cardiac', icon: 'M2 12h3.5l2-5.5 3.5 11 2.5-7 1.5 3H21', metricKeys: ['rhr', 'mean_hr'], color: COLOR.coral },
+  { key: 'recovery', label: 'RECOVERY', title: 'Recovery', icon: 'M5 21c-1-8 3-15 15-16 1 11-6 16-13 15zm2-2c2-5 5-8 9-10', metricKeys: ['hrv', 'breathing', 'spo2'], color: COLOR.teal },
+  { key: 'activity', label: 'ACTIVITY', title: 'Activity', icon: 'M13 2 4 14h6l-1 8 9-12h-6z', metricKeys: ['steps'], color: COLOR.amber },
+  { key: 'sleep', label: 'SLEEP', title: 'Sleep', icon: 'M20.5 15A8.5 8.5 0 0 1 9 3.5 8.5 8.5 0 1 0 20.5 15z', metricKeys: ['sleep_hours'], color: COLOR.blue },
 ]
 
 export interface CategoryCard {
   key: string
   label: string
+  title: string
+  icon: string
   status: BandStatus
   statusWord: string
   statusColor: string
@@ -97,6 +102,8 @@ export function buildCategories(result: VitalScanResult): CategoryCard[] {
     return {
       key: cat.key,
       label: cat.label,
+      title: cat.title,
+      icon: cat.icon,
       status,
       statusWord: STATUS_WORD[status],
       statusColor: STATUS_COLOR[status],

@@ -23,11 +23,14 @@ export interface MetricMeta {
    * 'dip' = daily-minimum line (emphasize lows). Absent → use chartKind.
    */
   richChart?: 'stage' | 'range' | 'dip'
+  /** 24x24 stroke icon path from the VitalScan.dc.html design. */
+  iconPath: string
 }
 
 export const METRICS: MetricMeta[] = [
   {
     key: 'rhr',
+    iconPath: 'M2 12h3.5l2-5.5 3.5 11 2.5-7 1.5 3H21',
     name: 'Resting heart rate',
     shortName: 'Resting HR',
     unit: 'bpm',
@@ -37,6 +40,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'hrv',
+    iconPath: 'M5 21c-1-8 3-15 15-16 1 11-6 16-13 15zm2-2c2-5 5-8 9-10',
     name: 'Morning HRV',
     shortName: 'HRV',
     unit: 'ms',
@@ -46,6 +50,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'sleep_hours',
+    iconPath: 'M20.5 15A8.5 8.5 0 0 1 9 3.5 8.5 8.5 0 1 0 20.5 15z',
     name: 'Sleep',
     shortName: 'Sleep',
     unit: '',
@@ -56,6 +61,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'steps',
+    iconPath: 'M13 2 4 14h6l-1 8 9-12h-6z',
     name: 'Steps',
     shortName: 'Steps',
     unit: 'steps',
@@ -65,6 +71,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'mean_hr',
+    iconPath: 'M12 20s-7-4.4-9.3-8.5C1 8.4 2.5 5 6 5c2.1 0 3.4 1.2 6 3.8C14.6 6.2 15.9 5 18 5c3.5 0 5 3.4 3.3 6.5C19 15.6 12 20 12 20z',
     name: 'Mean heart rate',
     shortName: 'Mean HR',
     unit: 'bpm',
@@ -75,6 +82,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'breathing',
+    iconPath: 'M3 8h9a3 3 0 1 0-3-3M3 16h6a3 3 0 1 1-3 3M3 12h15a3 3 0 1 0-3-3',
     name: 'Breathing rate',
     shortName: 'Breathing',
     unit: '/min',
@@ -84,6 +92,7 @@ export const METRICS: MetricMeta[] = [
   },
   {
     key: 'spo2',
+    iconPath: 'M12 3s6.5 6.8 6.5 11.5A6.5 6.5 0 1 1 5.5 14.5C5.5 9.8 12 3 12 3z',
     name: 'Blood oxygen',
     shortName: 'SpO₂',
     unit: '%',
