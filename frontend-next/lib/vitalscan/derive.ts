@@ -5,6 +5,7 @@ import type {
   Decision,
   Source,
   BandStatus,
+  ComboEpisode,
 } from '@/lib/types'
 import {
   METRICS,
@@ -565,6 +566,62 @@ export interface ZHeatmap {
   /** True where the multivariate combo fired that day (aligned to dates). */
   comboAlert: boolean[]
   hasData: boolean
+}
+
+// ── Plain-language episode explainer (what moved, why, what to do) ────────
+
+export interface EpisodeExplainer {
+  start: string
+  end: string
+  days: number
+  benign: boolean
+  /** One-line collapsed summary — the biggest movers by name. */
+  summary: string
+  signals: { text: string; concerning: boolean }[]
+  meaning: string
+  action: string
+}
+
+const magWord = (z: number) => (Math.abs(z) >= 5 ? 'far' : Math.abs(z) >= 3.5 ? 'well' : 'slightly')
+
+/** Turn one combo episode into a normal-person explanation from its contributors. */
+export function buildEpisodeExplainer(ep: ComboEpisode): EpisodeExplainer {
+  const cs = ep.contributors
+  const zOf = (m: MetricKey) => cs.find((c) => c.metric === m)?.z ?? 0
+  // Exertion looks like: steps well up while HRV holds (recovery capacity intact).
+  const benign = zOf('steps') > 2 && zOf('hrv') > -1.5
+  // "moved the concerning way" for a metric among the contributors
+  const concern = (m: MetricKey) => CONCERN_DIRECTION[m] * zOf(m) >= 2
+
+  const signals = cs.map((c) => ({
+    text: `${METRIC_BY_KEY[c.metric]?.name ?? c.metric} ran ${magWord(c.z)} ${c.z > 0 ? 'above' : 'below'} your normal`,
+    concerning: !benign && CONCERN_DIRECTION[c.metric] * c.z >= 2,
+  }))
+
+  let meaning: string
+  let action: string
+  if (benign) {
+    meaning = 'This looks like the aftermath of hard exertion — a workout, not strain on your body.'
+    action = 'Nothing to act on — this reads as exercise, not a warning sign.'
+  } else {
+    const nConcerning = signals.filter((s) => s.concerning).length
+    if ((concern('rhr') || concern('mean_hr')) && (concern('breathing') || concern('sleep_hours')))
+      meaning = 'Your body was working harder at rest than usual — a pattern that often shows up with illness onset, poor sleep, alcohol, or overtraining.'
+    else if (concern('rhr') && concern('hrv'))
+      meaning = 'Signs of reduced recovery — your body was under more strain than it usually bounces back from overnight.'
+    else if (concern('spo2'))
+      meaning = 'Your blood oxygen dipped below its usual level while other signals responded — worth noting, especially if you felt short of breath or unwell.'
+    else if (nConcerning <= 1)
+      meaning = 'One signal moved well beyond your usual range while the rest stayed near normal — as often a transient blip or a noisy reading as a real strain.'
+    else meaning = 'Several signals drifted from your usual range together on these days.'
+    action = 'Rest, hydrate, and notice how you feel. If it persists or you feel unwell, mention it to a clinician.'
+  }
+
+  const summary =
+    signals.filter((s) => s.concerning).slice(0, 2).map((s) => s.text.split(' ran ')[0]).join(', ') ||
+    METRIC_BY_KEY[cs[0]?.metric]?.name ||
+    'Multiple signals'
+  return { start: ep.start, end: ep.end, days: ep.days, benign, summary, signals, meaning, action }
 }
 
 /** Assemble the z-heatmap grid from result.z_series, keeping METRICS row order. */

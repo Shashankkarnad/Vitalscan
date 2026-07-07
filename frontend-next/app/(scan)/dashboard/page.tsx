@@ -11,6 +11,7 @@ import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart, { Sparkline } from '@/components/vitalscan/BandChart'
 import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
 import ZHeatmap from '@/components/vitalscan/ZHeatmap'
+import EpisodeCards from '@/components/vitalscan/EpisodeCards'
 import {
   hasContract,
   buildDashboardTiles,
@@ -242,7 +243,29 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Multivariate deviation map */}
+      {/* Episodes — the narrative: what moved, why, what to do */}
+      {episodes.length > 0 && (
+        <div style={{ ...card(16), padding: '22px 26px 20px', marginTop: 14, ...rise(0.44, 0.55) }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLOR.coral }} />
+              <span style={{ ...mono(11, 'rgba(232,234,242,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
+                Episodes
+              </span>
+            </div>
+            <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>
+              {`${episodes.length} IN 90 DAYS`}
+            </span>
+          </div>
+          <p style={{ fontSize: 13.5, color: 'rgba(232,234,242,.5)', margin: '8px 0 14px', maxWidth: 620, lineHeight: 1.5 }}>
+            Stretches where several of your signals drifted from their personal baselines together. Tap one to
+            see what moved and what it may mean — deviations from <em>your</em> normal, not a diagnosis.
+          </p>
+          <EpisodeCards episodes={episodes} />
+        </div>
+      )}
+
+      {/* Deviation map — the evidence behind the episodes */}
       {heatmap.hasData && (
         <div style={{ ...card(16), padding: '22px 26px 18px', marginTop: 14, ...rise(0.46, 0.55) }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -253,15 +276,13 @@ export default function DashboardPage() {
               </span>
             </div>
             <span style={{ ...mono(10.5, 'rgba(232,234,242,.32)'), letterSpacing: '.12em' }}>
-              {episodes.length === 0
-                ? 'NO COMBINED ALERTS · 90 DAYS'
-                : `${episodes.length} EPISODE${episodes.length === 1 ? '' : 'S'} · 90 DAYS`}
+              EVIDENCE · 90 DAYS
             </span>
           </div>
           <p style={{ fontSize: 13, color: 'rgba(232,234,242,.5)', margin: '8px 0 4px', maxWidth: 620, lineHeight: 1.5 }}>
-            Each cell is how far a signal sat from <em>your own</em> rolling baseline that day (robust z).
-            Coral = moved the concerning way, teal = the reassuring way. The strip marks days the
-            multivariate detector escalated — a coherent pattern across signals, not one noisy metric.
+            The evidence behind the episodes above. Each cell is how far a signal sat from <em>your own</em>{' '}
+            rolling baseline that day — coral = moved the concerning way, teal = the reassuring way. The strip
+            marks the days the detector escalated.
           </p>
 
           <div style={{ marginTop: 12 }}>
