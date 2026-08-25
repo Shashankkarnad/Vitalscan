@@ -9,15 +9,17 @@
 import { useCallback, useState } from 'react'
 import type { SleepSegment, SleepNight } from '@/lib/types'
 import { formatHours } from '@/lib/utils'
-import { FONT_MONO, SLEEP_STAGE } from '@/lib/vitalscan/tokens'
+import { FONT_SANS, INK, rgba } from '@/lib/vitalscan/tokens'
 
-// Apple sleep-stage palette (shared with the stacked StageBars); each lane
-// carries its own text label — identity never by color alone.
+// Craft pass: no orange/cyan/indigo rainbow here — every lane is ink at a
+// different opacity (deeper sleep reads more solid), and the lane labels
+// carry identity, not color. Shared StageBars (Dashboard/Signal) keeps the
+// Apple-style palette; this component just stops using it.
 const STAGE_CONFIG = {
-  awake: { y: 0, color: SLEEP_STAGE.awake, label: 'AWAKE' },
-  rem: { y: 1, color: SLEEP_STAGE.rem, label: 'REM' },
-  core: { y: 2, color: SLEEP_STAGE.core, label: 'CORE' },
-  deep: { y: 3, color: SLEEP_STAGE.deep, label: 'DEEP' },
+  awake: { y: 0, color: rgba(INK, 0.22), label: 'AWAKE' },
+  rem: { y: 1, color: rgba(INK, 0.38), label: 'REM' },
+  core: { y: 2, color: rgba(INK, 0.55), label: 'CORE' },
+  deep: { y: 3, color: rgba(INK, 0.78), label: 'DEEP' },
 } as const
 
 const ROW_H = 30
@@ -72,7 +74,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
   )
 
   const mono = (size: number, color: string): React.CSSProperties => ({
-    fontFamily: FONT_MONO,
+    fontFamily: FONT_SANS,
     fontSize: size,
     color,
   })
@@ -132,7 +134,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 setTooltip(null)
               }}
               style={{
-                fontFamily: FONT_MONO,
+                fontFamily: FONT_SANS,
                 fontSize: 10.5,
                 letterSpacing: '.08em',
                 textTransform: 'uppercase',
@@ -167,7 +169,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               x={PADDING.left - 8}
               y={PADDING.top + cfg.y * ROW_H + ROW_H / 2 + 3.5}
               textAnchor="end"
-              fontFamily="IBM Plex Mono"
+              fontFamily="IBM Plex Sans"
               fontSize={9.5}
               letterSpacing="1"
               fill="rgba(234,234,234,.45)"
@@ -232,7 +234,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               <text
                 x={Math.max(PADDING.left, Math.min(tooltip.x - 90, SVG_W - 192)) + 10}
                 y={Math.max(0, tooltip.y - 44) + 16}
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9.5}
                 fill="#eaeaea"
               >
@@ -241,7 +243,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               <text
                 x={Math.max(PADDING.left, Math.min(tooltip.x - 90, SVG_W - 192)) + 10}
                 y={Math.max(0, tooltip.y - 44) + 30}
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9.5}
                 fill="rgba(234,234,234,.55)"
               >
@@ -265,7 +267,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 x={t.x}
                 y={PADDING.top + CHART_H + 16}
                 textAnchor="middle"
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9}
                 letterSpacing="1"
                 fill="rgba(234,234,234,.3)"

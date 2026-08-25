@@ -28,10 +28,14 @@ export function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }
 
-export const FONT_DISPLAY = "'Fraunces', var(--font-fraunces), Georgia, serif"
+// Craft pass: the three artefact screens (home/instruments/evidence) and the
+// shared (scan) shell read as one typeface — IBM Plex Sans, weights 400/500
+// only. FONT_DISPLAY now aliases FONT_SANS so shared h1()/kicker follow.
 export const FONT_SANS = "'IBM Plex Sans', var(--font-ibm-plex-sans), sans-serif"
+export const FONT_DISPLAY = FONT_SANS
 export const FONT_MONO = "'IBM Plex Mono', var(--font-ibm-plex-mono), monospace"
 
-export const CARD_SHADOW = '0 12px 32px -22px rgba(0,0,0,.55), inset 0 1px 0 rgba(234,234,234,.06)'
+// Border only — no inset top-highlight "raised glass".
+export const CARD_SHADOW = 'none'
 export const CARD_BORDER = 'rgba(234,234,234,.09)'
 export const CARD_BG = 'rgba(234,234,234,.035)'

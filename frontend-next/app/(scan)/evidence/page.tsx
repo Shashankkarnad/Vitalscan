@@ -1,21 +1,19 @@
 'use client'
 
 // Evidence — timelines (design lines 223–278): full-width 90-day BandChart
-// per metric with band, outlier dots, NO DATA gap rect, 7h sleep reference,
-// month ticks, per-chart note. The SLEEP section additionally carries the
-// sleep hypnogram (charts-per-vital-section requirement). Cards carry
-// id anchors so Dashboard tiles can deep-link.
+// per metric with band, outlier dots, NO DATA gap rect, 7h sleep hairline,
+// month ticks, per-chart note. SLEEP additionally carries the hypnogram.
+// Craft pass: the 90-day band chart is the figure — no 26px hero number, no
+// nested MetricBreakdown (card-on-card), no "Deep dive →".
 
-import Link from 'next/link'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import BandChart from '@/components/vitalscan/BandChart'
 import Hypnogram from '@/components/vitalscan/Hypnogram'
-import MetricBreakdown from '@/components/vitalscan/MetricBreakdown'
-import { hasContract, getSeries, evidenceNote, buildMetricBreakdown } from '@/lib/vitalscan/derive'
+import { hasContract, getSeries, evidenceNote } from '@/lib/vitalscan/derive'
 import { METRICS, STATUS_WORD, STATUS_COLOR, formatStepsK } from '@/lib/vitalscan/metrics'
-import { rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
-import { card, kicker, h1, lede, rise, pill } from '@/components/vitalscan/styles'
+import { COLOR, INK, FONT_SANS } from '@/lib/vitalscan/tokens'
+import { card, kicker, h1, lede, rise } from '@/components/vitalscan/styles'
 
 export default function EvidencePage() {
   const { result, ready } = useScanResult()
@@ -23,18 +21,16 @@ export default function EvidencePage() {
   if (!ready || !result) return null
   if (!hasContract(result)) return <ContractNotice />
 
-  const mono = (size: number, color: string): React.CSSProperties => ({ fontFamily: FONT_MONO, fontSize: size, color })
-
   return (
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Evidence &middot; last 90 days</div>
-      <h1 style={h1(36)}>Seven signals against your own band.</h1>
+      <h1 style={h1(34)}>Seven signals against your own band.</h1>
       <p style={lede}>
         The shaded band is your personal normal — rolling 60-day median &plusmn; 2 robust SD, not a population chart.
         Points outside it are the only points that matter.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 36 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 32 }}>
         {METRICS.map((meta, i) => {
           const series = getSeries(result, meta.key)
           const band = series.band
@@ -42,7 +38,7 @@ export default function EvidencePage() {
           const noData = status === 'no_data' || series.values.every((v) => v == null)
           const note = evidenceNote(result, meta.key)
 
-          // Latest non-null band edges → "your normal lo–hi" text
+          // Latest non-null band edges → "your normal lo–hi" caption
           let lo: number | null = null
           let hi: number | null = null
           for (let k = series.dates.length - 1; k >= 0; k--) {
@@ -51,12 +47,16 @@ export default function EvidencePage() {
             if (lo != null && hi != null) break
           }
           const fmtAxis = meta.key === 'steps' ? formatStepsK : meta.fmt
-          const breakdown = buildMetricBreakdown(result, meta.key)
           const bandText =
             lo != null && hi != null
-              ? `your normal ${fmtAxis(lo)}–${fmtAxis(hi)}${meta.unit ? ' ' + meta.unit : meta.key === 'sleep_hours' ? '' : ''}`
+              ? `your normal ${fmtAxis(lo)}–${fmtAxis(hi)}${meta.unit ? ' ' + meta.unit : ''}`
               : STATUS_WORD[status].toLowerCase()
-
+          const curTxt =
+            status === 'data_gap'
+              ? `no data · ${band?.gap_days ?? 0} d`
+              : band?.current != null
+                ? `${meta.fmt(band.current)}${meta.unit ? ' ' + meta.unit : ''}`
+                : '—'
           const isSleep = meta.key === 'sleep_hours'
 
           return (
@@ -65,44 +65,56 @@ export default function EvidencePage() {
               id={meta.key}
               className="vs-card-hover"
               style={{
-                ...card(18),
-                border: '1px solid rgba(234,234,234,.1)',
-                padding: '22px 26px',
+                ...card(14),
+                padding: '20px 24px',
                 scrollMarginTop: 24,
                 ...rise(0.16 + i * 0.06, 0.55),
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
-                  <span style={{ ...mono(11, 'rgba(234,234,234,.55)'), letterSpacing: '.16em', textTransform: 'uppercase' }}>
-                    {meta.name}
-                  </span>
-                  {(status === 'watching' || status === 'data_gap' || status === 'no_data') && (
-                    <span style={pill(STATUS_COLOR[status], rgba(STATUS_COLOR[status], 0.4), rgba(STATUS_COLOR[status], 0.09))}>
-                      {STATUS_WORD[status]}
-                    </span>
-                  )}
-                </div>
-                <Link
-                  href={`/signal?m=${meta.key}`}
-                  style={{ ...mono(10, meta.color), letterSpacing: '.1em', textTransform: 'uppercase', textDecoration: 'none' }}
+                <span
+                  style={{
+                    fontFamily: FONT_SANS,
+                    fontWeight: 500,
+                    fontSize: 11,
+                    letterSpacing: '.1em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(234,234,234,.55)',
+                  }}
                 >
-                  Deep dive &rarr;
-                </Link>
+                  {meta.name}
+                </span>
+                {(status === 'watching' || status === 'data_gap' || status === 'no_data') && (
+                  <span
+                    style={{
+                      fontFamily: FONT_SANS,
+                      fontWeight: 500,
+                      fontSize: 10.5,
+                      letterSpacing: '.06em',
+                      textTransform: 'uppercase',
+                      color: STATUS_COLOR[status],
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {STATUS_WORD[status]}
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 12 }}>
-                <span style={mono(26, '#eaeaea')}>
-                  {status !== 'data_gap' && band?.current != null ? meta.fmt(band.current) : '—'}
-                </span>
-                <span style={mono(13, 'rgba(234,234,234,.45)')}>
-                  {status === 'data_gap' ? `no data · ${band?.gap_days ?? 0} d` : band?.current != null ? meta.unit : ''}
-                </span>
-                <span style={{ fontSize: 13, color: 'rgba(234,234,234,.45)', marginLeft: 8 }}>{bandText}</span>
+              {/* Caption, not a hero number — the chart is the figure. */}
+              <div
+                style={{
+                  marginTop: 8,
+                  fontFamily: FONT_SANS,
+                  fontWeight: 400,
+                  fontSize: 13.5,
+                  color: 'rgba(234,234,234,.6)',
+                }}
+              >
+                {curTxt} &middot; {bandText}
               </div>
 
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 12 }}>
                 {noData ? (
                   <div
                     style={{
@@ -112,8 +124,11 @@ export default function EvidencePage() {
                       justifyContent: 'center',
                       borderRadius: 12,
                       background: 'rgba(234,234,234,.025)',
-                      ...mono(10, 'rgba(234,234,234,.38)'),
-                      letterSpacing: '.18em',
+                      fontFamily: FONT_SANS,
+                      fontWeight: 500,
+                      fontSize: 10.5,
+                      letterSpacing: '.1em',
+                      color: 'rgba(234,234,234,.38)',
                     }}
                   >
                     NO DATA IN THIS EXPORT
@@ -124,12 +139,14 @@ export default function EvidencePage() {
                     dates={series.dates}
                     lo={series.lo}
                     hi={series.hi}
-                    color={meta.color}
+                    color={INK}
+                    bandColor={COLOR.teal}
+                    outlierColor={COLOR.coral}
                     width={940}
                     height={176}
                     fmt={fmtAxis}
                     unit={meta.unit || (isSleep ? 'h' : '')}
-                    refLine={isSleep ? { value: 7, label: '7 h reference' } : undefined}
+                    refLine={isSleep ? { value: 7, label: '7h' } : undefined}
                     variant={meta.chartKind}
                     label={`${meta.name} — 90 days against your personal band`}
                   />
@@ -137,20 +154,32 @@ export default function EvidencePage() {
               </div>
 
               {note && (
-                <div style={{ ...mono(11.5, 'rgba(234,234,234,.42)'), marginTop: 10, lineHeight: 1.5 }}>{note}</div>
+                <div
+                  style={{
+                    fontFamily: FONT_SANS,
+                    fontWeight: 400,
+                    fontSize: 12,
+                    color: 'rgba(234,234,234,.42)',
+                    marginTop: 10,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {note}
+                </div>
               )}
-
-              <MetricBreakdown breakdown={breakdown} accent={meta.color} />
 
               {/* SLEEP carries its domain visualization: the hypnogram */}
               {isSleep && (
-                <div style={{ marginTop: 20, borderTop: '1px solid rgba(234,234,234,.08)', paddingTop: 18 }}>
+                <div style={{ marginTop: 18, borderTop: '1px solid rgba(234,234,234,.08)', paddingTop: 16 }}>
                   <div
                     style={{
-                      ...mono(10.5, 'rgba(234,234,234,.4)'),
-                      letterSpacing: '.18em',
+                      fontFamily: FONT_SANS,
+                      fontWeight: 500,
+                      fontSize: 10.5,
+                      letterSpacing: '.1em',
                       textTransform: 'uppercase',
-                      marginBottom: 14,
+                      color: 'rgba(234,234,234,.4)',
+                      marginBottom: 12,
                     }}
                   >
                     Last night &middot; hypnogram
@@ -158,7 +187,15 @@ export default function EvidencePage() {
                   {result.sleep_timeline && Object.keys(result.sleep_timeline).length > 0 ? (
                     <Hypnogram timeline={result.sleep_timeline} nights={result.sleep_nights ?? {}} />
                   ) : (
-                    <div style={{ ...mono(11.5, 'rgba(234,234,234,.42)'), lineHeight: 1.5 }}>
+                    <div
+                      style={{
+                        fontFamily: FONT_SANS,
+                        fontWeight: 400,
+                        fontSize: 12,
+                        color: 'rgba(234,234,234,.42)',
+                        lineHeight: 1.5,
+                      }}
+                    >
                       No staged sleep in this export — the hypnogram needs the watch worn overnight.
                     </div>
                   )}

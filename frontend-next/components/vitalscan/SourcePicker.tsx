@@ -6,7 +6,7 @@
 
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import { useSourceMode } from '@/components/vitalscan/SourceModeContext'
-import { COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
+import { COLOR, rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
 
 export default function SourcePicker() {
   const { result } = useScanResult()
@@ -17,18 +17,6 @@ export default function SourcePicker() {
 
   return (
     <div style={{ marginTop: 22 }}>
-      <div
-        style={{
-          fontFamily: FONT_MONO,
-          fontSize: 10,
-          letterSpacing: '.18em',
-          textTransform: 'uppercase',
-          color: 'rgba(234,234,234,.4)',
-          marginBottom: 8,
-        }}
-      >
-        Instrument source
-      </div>
       <div
         style={{
           display: 'flex',
@@ -50,9 +38,10 @@ export default function SourcePicker() {
               onClick={() => setMode(o.key)}
               aria-pressed={active}
               style={{
-                fontFamily: FONT_MONO,
-                fontSize: 11,
-                letterSpacing: '.06em',
+                fontFamily: FONT_SANS,
+                fontWeight: active ? 500 : 400,
+                fontSize: 12.5,
+                letterSpacing: 0,
                 padding: '6px 12px',
                 borderRadius: 9,
                 border: `1px solid ${active ? rgba(COLOR.teal, 0.5) : 'transparent'}`,

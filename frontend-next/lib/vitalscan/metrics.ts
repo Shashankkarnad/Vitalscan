@@ -121,7 +121,7 @@ export const STATUS_WORD: Record<BandStatus, string> = {
 
 export const STATUS_COLOR: Record<BandStatus, string> = {
   in_range: COLOR.teal,
-  watching: COLOR.amber,
+  watching: COLOR.coral,
   data_gap: COLOR.slate,
   no_data: COLOR.slate,
 }
@@ -139,7 +139,7 @@ export function worstStatus(statuses: BandStatus[]): BandStatus {
 }
 
 export const BADGE_COLOR: Record<DecisionBadge, string> = {
-  WATCHING: COLOR.amber,
+  WATCHING: COLOR.coral,
   ATTENTION: COLOR.coral,
   DATA_GAP: COLOR.slate,
   SUPPRESSED: COLOR.slate,
@@ -154,7 +154,7 @@ export function badgeLabel(b: DecisionBadge): string {
 
 export const GRADE_COLOR: Record<string, string> = {
   TRUSTED: COLOR.teal,
-  PARTIAL: COLOR.amber,
+  PARTIAL: COLOR.coral,
   DISTRUST: COLOR.coral,
   UNGRADED: COLOR.slate,
 }

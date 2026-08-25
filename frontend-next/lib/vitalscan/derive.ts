@@ -472,21 +472,24 @@ export function evidenceNote(result: VitalScanResult, key: MetricKey): string {
 }
 
 // ── Instruments / trust ──────────────────────────────────────────────────
+// View-model only — the API's Source/SourceMetric shape is untouched. Each
+// row exposes `number` (the string to show first, before the grade chip)
+// instead of baking rainbow color/opacity into the data.
 
 export interface TrustRow {
   metric: string
-  color: string
-  rText: string
+  /** r to 2dp (with a true minus sign) when graded against the reference, else coverage %, else "—". */
+  number: string
   grade: string
   gradeColor: string
   dashed: boolean
-  opacity: number
   note: string
 }
 
 export interface TrustGroup {
   source: string
-  role: string
+  roleLabel: string
+  avgCoverage: number
   rows: TrustRow[]
 }
 
@@ -498,26 +501,27 @@ export function buildTrust(sources: Source[]): TrustGroup[] {
         : 0
     const rows: TrustRow[] = s.metrics.map((m) => {
       const meta = METRIC_BY_KEY[m.metric as MetricKey]
-      const rText =
-        m.r == null && m.shared_days == null
-          ? 'reference · sets the baseline'
-          : m.grade === 'UNGRADED'
-            ? `${m.shared_days ?? 0} d overlap`
-            : `r = ${m.r != null ? m.r.toFixed(2) : '—'} · ${m.shared_days ?? 0} d shared`
+      const number =
+        m.r != null
+          ? m.r >= 0
+            ? m.r.toFixed(2)
+            : `\u2212${Math.abs(m.r).toFixed(2)}`
+          : m.coverage_pct != null
+            ? `${Math.round(m.coverage_pct)}%`
+            : '—'
       return {
         metric: meta?.name ?? m.metric,
-        color: meta?.color ?? COLOR.slate,
-        rText,
+        number,
         grade: m.grade,
         gradeColor: GRADE_COLOR[m.grade] ?? COLOR.slate,
         dashed: m.grade === 'DISTRUST',
-        opacity: m.grade === 'DISTRUST' ? 0.48 : m.grade === 'UNGRADED' ? 0.75 : 1,
         note: m.note,
       }
     })
     return {
       source: s.name,
-      role: `${s.role === 'reference' ? 'reference instrument' : 'secondary source'} · avg coverage ${avgCoverage}%`,
+      roleLabel: s.role === 'reference' ? 'Reference' : 'Secondary',
+      avgCoverage,
       rows,
     }
   })
