@@ -1,6 +1,6 @@
 'use client'
 
-// Shared shell for the three artefact screens: /home, /evidence, /instruments.
+// Shared shell: /home, /dashboard (dotted map), /evidence, /instruments, /signal.
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -12,6 +12,7 @@ import { FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
 
 const NAV = [
   { href: '/home', label: 'Home' },
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/evidence', label: 'Evidence' },
   { href: '/instruments', label: 'Instruments' },
 ]

@@ -117,7 +117,7 @@ export default function HomePage() {
               {cat.metrics.map((m) => (
                 <Link
                   key={m.key}
-                  href={`/evidence#${m.key}`}
+                  href={`/signal?m=${m.key}`}
                   className="vs-row-hover"
                   style={{
                     display: 'flex',
