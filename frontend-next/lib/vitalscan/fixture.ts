@@ -1,8 +1,10 @@
 // Demo fixture for portfolio screenshots — satisfies hasContract() so
-// /home, /instruments, /evidence render without a real upload. Two real
-// sources only (Apple Watch reference + Amazfit Helio Ring secondary); no
-// invented devices. Series are generated with a tiny deterministic
-// seeded-noise helper rather than hand-written day-by-day.
+// /home, /instruments, /evidence, /signal, and /dashboard render without a
+// real upload. Two real sources only (Apple Watch reference + Amazfit Helio
+// Ring secondary); no invented devices. Series are generated with a tiny
+// deterministic seeded-noise helper rather than hand-written day-by-day.
+// No on-screen "sample"/"dummy" labels — this file is the only place that
+// says "fixture".
 
 import type {
   VitalScanResult,
@@ -70,8 +72,9 @@ function genSeries(spec: SeriesSpec): (number | null)[] {
   })
 }
 
-function tailNulls(count: number): Set<number> {
-  return new Set(Array.from({ length: count }, (_, k) => N_DAYS - 1 - k))
+/** Interior run of null days (e.g. watch unworn for a stretch mid-window) — not a trailing gap. */
+function interiorNulls(start: number, count: number): Set<number> {
+  return new Set(Array.from({ length: count }, (_, k) => start + k))
 }
 
 /** Rolling personal-normal band, held constant for this fixture, + the derived status/z/gap for the last sample. */
@@ -108,27 +111,37 @@ function zSeriesFor(values: (number | null)[], lo: number, hi: number): (number 
 
 // ── daily series (90 days ending 2026-08-24) ───────────────────────────────
 
+// rhr/hrv were already dense at their original amps (sine wave dominates z relative to
+// band width), so only sleep/steps get a small bump here — enough for more heatmap cells
+// to clear the |z| >= 0.4 neutral midpoint without saturating every row solid.
 const rhr = genSeries({ base: 62, amp: 3, noise: 1.4, seed: 1, overrides: new Map([[18, 12], [46, -13], [71, 11]]) })
 const hrv = genSeries({ base: 42, amp: 4, noise: 2.2, seed: 2 })
 const sleepHours = genSeries({
   base: 7.15,
-  amp: 0.28,
+  amp: 0.32,
   noise: 0.22,
   seed: 3,
   decimals: 2,
-  nullDays: tailNulls(5),
-  overrides: new Map([[24, -2.1], [58, -1.9]]),
+  nullDays: interiorNulls(50, 6),
+  overrides: new Map([[24, -2.1], [58, -1.9], [85, -2.05]]),
 })
 const steps = genSeries({
   base: 9200,
-  amp: 1400,
+  amp: 1600,
   noise: 700,
   seed: 4,
   overrides: new Map(Array.from({ length: 7 }, (_, k) => [N_DAYS - 1 - k, -4300] as const)),
 })
 const meanHr = genSeries({ base: 75, amp: 4, noise: 2, seed: 5 })
-const spo2 = genSeries({ base: 97.2, amp: 0.5, noise: 0.35, seed: 6, decimals: 1, nullDays: new Set([40, 41, 42]) })
-const breathing: (number | null)[] = DATES.map(() => null)
+const spo2 = genSeries({ base: 97.2, amp: 0.7, noise: 0.4, seed: 6, decimals: 1, nullDays: new Set([40, 41, 42]) })
+const breathing = genSeries({
+  base: 14.6,
+  amp: 1.1,
+  noise: 0.45,
+  seed: 7,
+  decimals: 1,
+  nullDays: new Set([12, 13, 55, 56]),
+})
 
 const RHR_BAND = { lo: 58, hi: 68 }
 const HRV_BAND = { lo: 34, hi: 50 }
@@ -136,6 +149,7 @@ const SLEEP_BAND = { lo: 6.2, hi: 7.9 }
 const STEPS_BAND = { lo: 7000, hi: 12500 }
 const MEAN_HR_BAND = { lo: 68, hi: 84 }
 const SPO2_BAND = { lo: 95, hi: 99 }
+const BREATHING_BAND = { lo: 12, hi: 18 }
 
 const daily: DailyData = {
   dates: DATES,
@@ -158,7 +172,7 @@ const bands: Bands = {
   steps: buildBand(steps, STEPS_BAND.lo, STEPS_BAND.hi),
   mean_hr: buildBand(meanHr, MEAN_HR_BAND.lo, MEAN_HR_BAND.hi),
   spo2: buildBand(spo2, SPO2_BAND.lo, SPO2_BAND.hi),
-  breathing: buildBand(breathing, 12, 18),
+  breathing: buildBand(breathing, BREATHING_BAND.lo, BREATHING_BAND.hi),
 }
 
 const z_series: ZSeries = {
@@ -168,14 +182,88 @@ const z_series: ZSeries = {
   steps: zSeriesFor(steps, STEPS_BAND.lo, STEPS_BAND.hi),
   mean_hr: zSeriesFor(meanHr, MEAN_HR_BAND.lo, MEAN_HR_BAND.hi),
   spo2: zSeriesFor(spo2, SPO2_BAND.lo, SPO2_BAND.hi),
+  breathing: zSeriesFor(breathing, BREATHING_BAND.lo, BREATHING_BAND.hi),
 }
 
+// Two multivariate episodes: a two-day strain stretch (rhr up, hrv down — reduced
+// recovery, not exertion) and a one-day rhr spike that lines up with the existing
+// rhr override at index 71. cutoff is the self-calibrated per-person distance
+// threshold, held constant at 3.2 for this fixture.
+const COMBO_CUTOFF = 3.2
+const EP_A_START = 17
+const EP_A_END = 18
+const EP_B_DAY = 71
+
 const combo: Combo = {
-  dist: DATES.map(() => null),
-  cutoff: DATES.map(() => null),
-  alert: DATES.map(() => false),
-  alerts: [],
-  episodes: [],
+  dist: DATES.map((_, i) => {
+    if (i === EP_A_START) return 4.1
+    if (i === EP_A_END) return 4.4
+    if (i === EP_B_DAY) return 3.8
+    return null
+  }),
+  cutoff: DATES.map((_, i) => (i === EP_A_START || i === EP_A_END || i === EP_B_DAY ? COMBO_CUTOFF : null)),
+  alert: DATES.map((_, i) => i === EP_A_START || i === EP_A_END || i === EP_B_DAY),
+  alerts: [
+    {
+      date: DATES[EP_A_START],
+      dist: 4.1,
+      cutoff: COMBO_CUTOFF,
+      gate: ['rhr', 'hrv'],
+      contributors: [
+        { metric: 'rhr', z: 3.0, share: 0.5 },
+        { metric: 'hrv', z: -2.3, share: 0.35 },
+        { metric: 'mean_hr', z: 1.9, share: 0.15 },
+      ],
+    },
+    {
+      date: DATES[EP_A_END],
+      dist: 4.4,
+      cutoff: COMBO_CUTOFF,
+      gate: ['rhr', 'hrv'],
+      contributors: [
+        { metric: 'rhr', z: 3.2, share: 0.5 },
+        { metric: 'hrv', z: -2.6, share: 0.35 },
+        { metric: 'mean_hr', z: 2.1, share: 0.15 },
+      ],
+    },
+    {
+      date: DATES[EP_B_DAY],
+      dist: 3.8,
+      cutoff: COMBO_CUTOFF,
+      gate: ['rhr'],
+      contributors: [
+        { metric: 'rhr', z: 3.4, share: 0.78 },
+        { metric: 'mean_hr', z: 1.2, share: 0.22 },
+      ],
+    },
+  ],
+  episodes: [
+    {
+      start: DATES[EP_A_START],
+      end: DATES[EP_A_END],
+      days: 2,
+      peak_date: DATES[EP_A_END],
+      peak_dist: 4.4,
+      gate: ['rhr', 'hrv'],
+      contributors: [
+        { metric: 'rhr', z: 3.2, share: 0.5 },
+        { metric: 'hrv', z: -2.6, share: 0.35 },
+        { metric: 'mean_hr', z: 2.1, share: 0.15 },
+      ],
+    },
+    {
+      start: DATES[EP_B_DAY],
+      end: DATES[EP_B_DAY],
+      days: 1,
+      peak_date: DATES[EP_B_DAY],
+      peak_dist: 3.8,
+      gate: ['rhr'],
+      contributors: [
+        { metric: 'rhr', z: 3.4, share: 0.78 },
+        { metric: 'mean_hr', z: 1.2, share: 0.22 },
+      ],
+    },
+  ],
 }
 
 // ── sources / instrument trust ──────────────────────────────────────────
@@ -191,7 +279,7 @@ const sources: Source[] = [
       { metric: 'steps', coverage_pct: 98, shared_days: 90, r: null, grade: 'TRUSTED', note: 'Reference — sets the baseline for this metric.' },
       { metric: 'mean_hr', coverage_pct: 96, shared_days: 90, r: null, grade: 'TRUSTED', note: 'Reference — sets the baseline for this metric.' },
       { metric: 'spo2', coverage_pct: 90, shared_days: 87, r: null, grade: 'TRUSTED', note: 'Reference — sets the baseline for this metric.' },
-      { metric: 'breathing', coverage_pct: 2, shared_days: 2, r: null, grade: 'UNGRADED', note: 'Not enough breathing samples this export.' },
+      { metric: 'breathing', coverage_pct: 93, shared_days: 86, r: null, grade: 'TRUSTED', note: 'Reference — sets the baseline for this metric.' },
     ],
   },
   {
@@ -202,11 +290,27 @@ const sources: Source[] = [
       { metric: 'hrv', coverage_pct: 74, shared_days: 71, r: 0.52, grade: 'PARTIAL', note: 'Moderate agreement — included with lower weight.' },
       { metric: 'sleep_hours', coverage_pct: 69, shared_days: 66, r: 0.48, grade: 'PARTIAL', note: 'Moderate agreement — included with lower weight.' },
       { metric: 'steps', coverage_pct: 91, shared_days: 88, r: 0.81, grade: 'TRUSTED', note: 'Strong agreement with the reference device.' },
+      { metric: 'mean_hr', coverage_pct: 72, shared_days: 68, r: 0.31, grade: 'DISTRUST', note: 'Disagrees with Apple Watch on daily load — excluded from the mean-HR band.' },
     ],
   },
 ]
 
 // ── decisions (findings on Home) ─────────────────────────────────────────
+// Built after `bands` so the reading lines quote the actual current/z rather
+// than hand-typed numbers that could drift from the generated series.
+
+function fmtZ(z: number): string {
+  return `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(1)}`
+}
+
+const stepsBand = bands.steps!
+const stepsReading = `${Math.round(stepsBand.current!).toLocaleString('en-US')} steps · band ${STEPS_BAND.lo.toLocaleString('en-US')}–${STEPS_BAND.hi.toLocaleString('en-US')} · z ${fmtZ(stepsBand.z!)}`
+
+const sleepMid = (SLEEP_BAND.lo + SLEEP_BAND.hi) / 2
+const sleepSd = (SLEEP_BAND.hi - SLEEP_BAND.lo) / 4
+const shortNightValue = sleepHours[85]!
+const shortNightZ = (shortNightValue - sleepMid) / sleepSd
+const shortNightReading = `${shortNightValue.toFixed(2)} h · band ${SLEEP_BAND.lo.toFixed(2)}–${SLEEP_BAND.hi.toFixed(2)} h · z ${fmtZ(shortNightZ)}`
 
 const decisions: Decision[] = [
   {
@@ -217,20 +321,20 @@ const decisions: Decision[] = [
     badge: 'WATCHING',
     suppressed: false,
     lines: [
-      { k: 'Reading', v: '4,980 steps · band 7,000–12,500 · z −1.7' },
+      { k: 'Reading', v: stepsReading },
       { k: 'Corroboration', v: 'Mean heart rate stayed inside your band the same days — reads as lower activity, not strain.' },
     ],
   },
   {
-    date: DATES[N_DAYS - 6],
+    date: DATES[85],
     signal: 'Sleep',
     metric: 'sleep_hours',
-    title: 'No sleep readings for 5 days.',
-    badge: 'DATA_GAP',
+    title: 'Sleep ran about two hours short one night this week.',
+    badge: 'ATTENTION',
     suppressed: false,
     lines: [
-      { k: 'Gap', v: '5 days with no sleep data — the watch was likely not worn overnight.' },
-      { k: 'Last sample', v: DATES[N_DAYS - 6] },
+      { k: 'Reading', v: shortNightReading },
+      { k: 'Corroboration', v: 'HRV and resting heart rate stayed in band the next morning — one short night, not a trend.' },
     ],
   },
 ]
@@ -240,10 +344,10 @@ const decisions: Decision[] = [
 const weekly: Weekly = {
   label: 'Week of 18–24 Aug 2026',
   records_read: 48213,
-  in_band: ['rhr', 'hrv', 'mean_hr', 'spo2'],
+  in_band: ['rhr', 'hrv', 'mean_hr', 'spo2', 'sleep_hours', 'breathing'],
   watching: ['steps'],
-  gaps: ['sleep_hours'],
-  no_data: ['breathing'],
+  gaps: [],
+  no_data: [],
 }
 
 // ── one small night of hypnogram data (kept short, per the brief) ────────
@@ -274,8 +378,8 @@ function buildNightSegments(bedDate: string): SleepSegment[] {
   })
 }
 
-const NIGHT_WAKE_DATE = DATES[N_DAYS - 6]
-const NIGHT_BED_DATE = DATES[N_DAYS - 7]
+const NIGHT_WAKE_DATE = DATES[N_DAYS - 1]
+const NIGHT_BED_DATE = DATES[N_DAYS - 2]
 const nightSegments = buildNightSegments(NIGHT_BED_DATE)
 const nightTotals = nightSegments.reduce(
   (acc, seg) => {
