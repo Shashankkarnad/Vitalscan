@@ -1,17 +1,15 @@
 'use client'
 
-// Home — weekly note (design lines 37–121): week label, verdict h1 + sub,
-// SYSTEMS grid of 4 category cards, FINDINGS cards, STEADY footer.
-// Craft pass: verdict is the only large type on the page — no readiness
-// chrome, no coloured icon chips, no nested evidence inside findings.
+// Home — weekly note: week label, Fraunces verdict, four system cards,
+// findings, STEADY footer. Original type + space scale; no stagger.
 
 import Link from 'next/link'
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
 import { Sparkline } from '@/components/vitalscan/BandChart'
 import { hasContract, buildCategories, buildVerdict, buildFindings } from '@/lib/vitalscan/derive'
-import { COLOR, INK, FONT_SANS } from '@/lib/vitalscan/tokens'
-import { card, sectionLabel, rise } from '@/components/vitalscan/styles'
+import { COLOR, INK, FONT_DISPLAY, FONT_SANS } from '@/lib/vitalscan/tokens'
+import { card, sectionLabel } from '@/components/vitalscan/styles'
 
 export default function HomePage() {
   const { result, ready } = useScanResult()
@@ -25,20 +23,28 @@ export default function HomePage() {
 
   return (
     <div style={{ paddingTop: 76 }}>
-      <div style={{ ...sectionLabel, ...rise(0, 0.5) }}>{verdict.weekLabel}</div>
-
-      {/* The only large type on Home. */}
-      <h1
+      <div
         style={{
           fontFamily: FONT_SANS,
           fontWeight: 400,
-          fontSize: 46,
-          lineHeight: 1.16,
-          letterSpacing: '-0.01em',
-          maxWidth: 820,
+          fontSize: 11,
+          letterSpacing: '.18em',
+          textTransform: 'uppercase',
+          color: 'rgba(234,234,234,.42)',
+        }}
+      >
+        {verdict.weekLabel}
+      </div>
+      <h1
+        style={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 300,
+          fontSize: 52,
+          lineHeight: 1.12,
+          letterSpacing: '-0.015em',
+          maxWidth: 840,
           margin: '18px 0 0',
           textWrap: 'pretty',
-          ...rise(0.06, 0.55),
         }}
       >
         {verdict.verdict}
@@ -47,20 +53,18 @@ export default function HomePage() {
         style={{
           fontFamily: FONT_SANS,
           fontWeight: 400,
-          fontSize: 15.5,
+          fontSize: 16.5,
           color: 'rgba(234,234,234,.6)',
-          maxWidth: 640,
-          margin: '14px 0 0',
+          maxWidth: 660,
+          margin: '16px 0 0',
           lineHeight: 1.55,
           textWrap: 'pretty',
-          ...rise(0.12, 0.55),
         }}
       >
         {verdict.verdictSub}
       </p>
 
-      {/* SYSTEMS */}
-      <div style={{ ...sectionLabel, marginTop: 44, ...rise(0.16) }}>SYSTEMS</div>
+      <div style={{ ...sectionLabel, marginTop: 44 }}>SYSTEMS</div>
       <div
         style={{
           display: 'grid',
@@ -69,22 +73,26 @@ export default function HomePage() {
           marginTop: 14,
         }}
       >
-        {categories.map((cat, i) => (
-          <div
-            key={cat.key}
-            className="vs-card-hover"
-            style={{ ...card(14), padding: '16px 18px 15px', ...rise(0.2 + i * 0.05) }}
-          >
+        {categories.map((cat) => (
+          <div key={cat.key} className="vs-card-hover" style={{ ...card(16), padding: '18px 18px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 14, letterSpacing: '-0.005em', color: '#eaeaea' }}>
+              <span
+                style={{
+                  fontFamily: FONT_SANS,
+                  fontWeight: 500,
+                  fontSize: 16,
+                  letterSpacing: '.005em',
+                  color: '#eaeaea',
+                }}
+              >
                 {cat.title}
               </span>
               <span
                 style={{
                   fontFamily: FONT_SANS,
-                  fontWeight: 500,
+                  fontWeight: 400,
                   fontSize: 10.5,
-                  letterSpacing: '.06em',
+                  letterSpacing: '.1em',
                   textTransform: 'uppercase',
                   color: cat.statusColor,
                   whiteSpace: 'nowrap',
@@ -100,7 +108,7 @@ export default function HomePage() {
                 hi={cat.series.hi}
                 color={INK}
                 bandColor={COLOR.teal}
-                height={36}
+                height={38}
                 variant={cat.chartKind}
                 label={`${cat.label} 90-day trend sparkline`}
               />
@@ -134,34 +142,26 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* FINDINGS — title + body only, no nested chart or rationale box */}
-      {findings.length > 0 && <div style={{ ...sectionLabel, marginTop: 40, ...rise(0.2) }}>FINDINGS</div>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
-        {findings.map((f, i) => {
+      {findings.length > 0 && <div style={{ ...sectionLabel, marginTop: 40 }}>FINDINGS</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 14 }}>
+        {findings.map((f) => {
           const id = `${f.decision.metric}-${f.decision.date}`
           return (
-            <div
-              key={id}
-              style={{
-                ...card(14),
-                padding: '22px 26px',
-                ...rise(0.24 + i * 0.08, 0.55),
-              }}
-            >
+            <div key={id} style={{ ...card(16), padding: '24px 28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <span
                   style={{
                     fontFamily: FONT_SANS,
-                    fontWeight: 500,
+                    fontWeight: 400,
                     fontSize: 10.5,
-                    letterSpacing: '.1em',
+                    letterSpacing: '.14em',
                     textTransform: 'uppercase',
                     color: f.color,
                   }}
                 >
                   {f.level}
                 </span>
-                <span style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 11, color: 'rgba(234,234,234,.38)' }}>
+                <span style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 11, letterSpacing: '.1em', color: 'rgba(234,234,234,.38)' }}>
                   {f.date}
                 </span>
               </div>
@@ -169,9 +169,9 @@ export default function HomePage() {
                 style={{
                   fontFamily: FONT_SANS,
                   fontWeight: 500,
-                  fontSize: 16,
-                  margin: '14px 0 0',
-                  letterSpacing: '-.005em',
+                  fontSize: 19,
+                  margin: '16px 0 0',
+                  letterSpacing: '-.01em',
                 }}
               >
                 {f.title}
@@ -181,10 +181,10 @@ export default function HomePage() {
                   style={{
                     fontFamily: FONT_SANS,
                     fontWeight: 400,
-                    fontSize: 14,
+                    fontSize: 15,
                     lineHeight: 1.6,
                     color: 'rgba(234,234,234,.66)',
-                    margin: '8px 0 0',
+                    margin: '10px 0 0',
                     maxWidth: 760,
                     textWrap: 'pretty',
                   }}
@@ -197,7 +197,6 @@ export default function HomePage() {
         })}
       </div>
 
-      {/* STEADY */}
       <div
         style={{
           marginTop: 42,
@@ -206,15 +205,14 @@ export default function HomePage() {
           display: 'flex',
           alignItems: 'baseline',
           gap: 14,
-          ...rise(0.4, 0.55),
         }}
       >
         <span
           style={{
             fontFamily: FONT_SANS,
-            fontWeight: 500,
+            fontWeight: 400,
             fontSize: 10.5,
-            letterSpacing: '.12em',
+            letterSpacing: '.16em',
             color: COLOR.teal,
             whiteSpace: 'nowrap',
           }}
@@ -229,10 +227,9 @@ export default function HomePage() {
         style={{
           fontFamily: FONT_SANS,
           fontWeight: 400,
-          fontSize: 12,
+          fontSize: 11.5,
           color: 'rgba(234,234,234,.32)',
           marginTop: 14,
-          ...rise(0.46, 0.55),
         }}
       >
         {verdict.nextNote}

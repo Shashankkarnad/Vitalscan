@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { buildReadiness } from '@/lib/vitalscan/derive'
 import { formatShortDate } from '@/lib/vitalscan/metrics'
 import { rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
-import { card, rise } from '@/components/vitalscan/styles'
+import { card } from '@/components/vitalscan/styles'
 import type { VitalScanResult } from '@/lib/types'
 
 const mono = (size: number, color: string): React.CSSProperties => ({ fontFamily: FONT_MONO, fontSize: size, color })
@@ -15,7 +15,7 @@ const mono = (size: number, color: string): React.CSSProperties => ({ fontFamily
 export default function ReadinessCard({ result }: { result: VitalScanResult }) {
   const r = buildReadiness(result)
   return (
-    <div style={{ ...card(16), borderColor: rgba(r.color, 0.35), padding: '20px 24px', marginTop: 24, ...rise(0.1, 0.5) }}>
+    <div style={{ ...card(16), borderColor: rgba(r.color, 0.35), padding: '20px 24px', marginTop: 24 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
         <span style={{ fontFamily: FONT_MONO, fontSize: 22, letterSpacing: '.06em', textTransform: 'uppercase', color: r.color }}>
           {r.word}
