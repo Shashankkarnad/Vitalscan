@@ -9,15 +9,17 @@
 import { useCallback, useState } from 'react'
 import type { SleepSegment, SleepNight } from '@/lib/types'
 import { formatHours } from '@/lib/utils'
-import { FONT_MONO, SLEEP_STAGE } from '@/lib/vitalscan/tokens'
+import { FONT_MONO, INK, rgba } from '@/lib/vitalscan/tokens'
 
-// Apple sleep-stage palette (shared with the stacked StageBars); each lane
-// carries its own text label — identity never by color alone.
+// Craft pass: no orange/cyan/indigo rainbow here — every lane is ink at a
+// different opacity (deeper sleep reads more solid), and the lane labels
+// carry identity, not color. Shared StageBars (Dashboard/Signal) keeps the
+// Apple-style palette; this component just stops using it.
 const STAGE_CONFIG = {
-  awake: { y: 0, color: SLEEP_STAGE.awake, label: 'AWAKE' },
-  rem: { y: 1, color: SLEEP_STAGE.rem, label: 'REM' },
-  core: { y: 2, color: SLEEP_STAGE.core, label: 'CORE' },
-  deep: { y: 3, color: SLEEP_STAGE.deep, label: 'DEEP' },
+  awake: { y: 0, color: rgba(INK, 0.22), label: 'AWAKE' },
+  rem: { y: 1, color: rgba(INK, 0.38), label: 'REM' },
+  core: { y: 2, color: rgba(INK, 0.55), label: 'CORE' },
+  deep: { y: 3, color: rgba(INK, 0.78), label: 'DEEP' },
 } as const
 
 const ROW_H = 30

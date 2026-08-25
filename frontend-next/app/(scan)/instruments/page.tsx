@@ -1,13 +1,32 @@
 'use client'
 
-// Instrument trust (design lines 280–312): per-source cards, per-metric rows
-// (dot, metric, r/coverage, grade pill, note), methodology footer.
+// Instruments — the only restage in the craft pass. Two equal columns, one
+// per instrument source, each with device name/role/coverage up top and
+// per-metric rows that lead with the number (r or coverage), then the
+// TRUSTED/PARTIAL/DISTRUST/UNGRADED chip, then an optional muted note.
 
 import { useScanResult } from '@/components/vitalscan/useScanResult'
 import ContractNotice from '@/components/vitalscan/ContractNotice'
-import { hasContract, buildTrust } from '@/lib/vitalscan/derive'
-import { rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
+import SourcePicker from '@/components/vitalscan/SourcePicker'
+import { hasContract, buildTrust, type TrustRow } from '@/lib/vitalscan/derive'
+import { rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
 import { card, kicker, h1, lede, rise } from '@/components/vitalscan/styles'
+
+function chipStyle(row: TrustRow): React.CSSProperties {
+  return {
+    fontFamily: FONT_SANS,
+    fontWeight: 500,
+    fontSize: 9.5,
+    letterSpacing: '.07em',
+    textTransform: 'uppercase',
+    padding: '3px 9px',
+    borderRadius: 999,
+    color: row.gradeColor,
+    border: `1px ${row.dashed ? 'dashed' : 'solid'} ${rgba(row.gradeColor, row.dashed ? 0.5 : 0.35)}`,
+    background: rgba(row.gradeColor, 0.06),
+    whiteSpace: 'nowrap',
+  }
+}
 
 export default function InstrumentsPage() {
   const { result, ready } = useScanResult()
@@ -15,27 +34,29 @@ export default function InstrumentsPage() {
   if (!ready || !result) return null
   if (!hasContract(result)) return <ContractNotice />
 
-  const groups = buildTrust(result.sources ?? [])
-  const referenceName = (result.sources ?? []).find((s) => s.role === 'reference')?.name ?? 'the reference instrument'
+  const sources = result.sources ?? []
+  const groups = buildTrust(sources)
+  const referenceName = sources.find((s) => s.role === 'reference')?.name ?? 'the reference instrument'
+  const names = sources.map((s) => s.name)
+  const heading = names.length >= 2 ? `${names[0]} vs ${names.slice(1).join(' vs ')}.` : names[0] ? `${names[0]}.` : 'Your instruments.'
 
   return (
     <div style={{ paddingTop: 64 }}>
-      <div style={kicker}>Instrument trust</div>
-      <h1 style={h1(36)}>Which instruments earn belief.</h1>
-      <p style={lede}>
-        Every source is graded per metric against the reference instrument. Distrusted pairs are excluded from your
-        baselines and render faded and dashed everywhere in VitalScan — including the charts you just saw.
-      </p>
+      <div style={kicker}>Instruments</div>
+      <h1 style={h1(34)}>{heading}</h1>
+      <p style={lede}>Every source is graded per metric against {referenceName}, not by a settings checklist.</p>
+
+      <SourcePicker />
 
       {groups.length === 0 && (
         <div
           style={{
-            ...card(18),
-            border: '1px solid rgba(234,234,234,.1)',
+            ...card(14),
             padding: '22px 26px',
-            marginTop: 36,
-            fontFamily: FONT_MONO,
-            fontSize: 11.5,
+            marginTop: 32,
+            fontFamily: FONT_SANS,
+            fontWeight: 400,
+            fontSize: 13,
             lineHeight: 1.6,
             color: 'rgba(234,234,234,.42)',
             ...rise(0.16, 0.55),
@@ -45,66 +66,59 @@ export default function InstrumentsPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 36 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 18,
+          marginTop: 32,
+        }}
+      >
         {groups.map((g, i) => (
-          <div
-            key={g.source}
-            style={{
-              ...card(18),
-              border: '1px solid rgba(234,234,234,.1)',
-              padding: '22px 26px',
-              ...rise(0.16 + i * 0.08, 0.55),
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}
-            >
-              <div style={{ fontSize: 16.5, fontWeight: 600 }}>{g.source}</div>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: '.08em', color: 'rgba(234,234,234,.4)' }}>
-                {g.role}
-              </div>
+          <div key={g.source} style={{ ...card(14), padding: '20px 22px', ...rise(0.16 + i * 0.08, 0.55) }}>
+            <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 16, color: '#eaeaea' }}>{g.source}</div>
+            <div style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 12, color: 'rgba(234,234,234,.42)', marginTop: 4 }}>
+              {g.roleLabel} &middot; {g.avgCoverage}%
             </div>
+
             <div style={{ marginTop: 14 }}>
               {g.rows.map((r, k) => (
                 <div
                   key={k}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(160px, 220px) minmax(140px, 200px) 120px 1fr',
-                    gap: 14,
-                    alignItems: 'center',
                     padding: '11px 0',
-                    borderTop: '1px solid rgba(234,234,234,.06)',
-                    opacity: r.opacity,
+                    borderTop: k > 0 ? '1px solid rgba(234,234,234,.06)' : undefined,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: r.color }} />
-                    <span style={{ fontSize: 14, color: 'rgba(234,234,234,.85)' }}>{r.metric}</span>
+                  <div style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 12.5, color: 'rgba(234,234,234,.5)' }}>
+                    {r.metric}
                   </div>
-                  <div style={{ fontFamily: FONT_MONO, fontSize: 12, color: 'rgba(234,234,234,.5)' }}>{r.rText}</div>
-                  <div>
-                    <span
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      marginTop: 5,
+                    }}
+                  >
+                    <span style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 14.5, color: '#eaeaea' }}>{r.number}</span>
+                    <span style={chipStyle(r)}>{r.grade}</span>
+                  </div>
+                  {r.note && (
+                    <div
                       style={{
-                        fontFamily: FONT_MONO,
-                        fontSize: 10,
-                        letterSpacing: '.12em',
-                        padding: '3px 9px',
-                        borderRadius: 999,
-                        color: r.gradeColor,
-                        border: `1px ${r.dashed ? 'dashed' : 'solid'} ${rgba(r.gradeColor, r.dashed ? 0.5 : 0.4)}`,
+                        fontFamily: FONT_SANS,
+                        fontWeight: 400,
+                        fontSize: 12,
+                        color: 'rgba(234,234,234,.4)',
+                        marginTop: 5,
+                        lineHeight: 1.45,
                       }}
                     >
-                      {r.grade}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'rgba(234,234,234,.48)' }}>{r.note}</div>
+                      {r.note}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -114,16 +128,17 @@ export default function InstrumentsPage() {
 
       <div
         style={{
-          fontFamily: FONT_MONO,
-          fontSize: 11.5,
-          lineHeight: 1.7,
-          color: 'rgba(234,234,234,.38)',
-          marginTop: 22,
+          fontFamily: FONT_SANS,
+          fontWeight: 400,
+          fontSize: 12,
+          lineHeight: 1.65,
+          color: 'rgba(234,234,234,.36)',
+          marginTop: 24,
           maxWidth: 720,
           ...rise(0.4, 0.55),
         }}
       >
-        {`r = Pearson agreement vs ${referenceName} over shared days · ≥ 0.70 trusted · 0.40–0.69 partial · < 0.40 distrust · fewer than 15 shared days ungraded. Demotions are logged in the audit trail, never silent.`}
+        {`r = agreement vs ${referenceName} over shared days · \u2265 0.70 trusted · 0.40–0.69 partial · < 0.40 distrust · fewer than 15 shared days ungraded. Demotions are logged in the audit trail.`}
       </div>
     </div>
   )

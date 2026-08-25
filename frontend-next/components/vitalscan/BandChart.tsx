@@ -23,7 +23,15 @@ export interface BandChartProps {
   color: string
   width?: number
   height?: number
-  /** Dashed horizontal reference line, e.g. { value: 7, label: '7 h reference' }. */
+  /**
+   * Band-fill / outlier-dot colors, additive — default to `color` (today's
+   * behaviour: fill rgba(color,.08), outliers = color). Evidence/Home pass
+   * sage for the band and terracotta for outliers, keeping `color` as the
+   * ink line.
+   */
+  bandColor?: string
+  outlierColor?: string
+  /** Reference line, e.g. { value: 7, label: '7h' } — drawn as a quiet hairline. */
   refLine?: { value: number; label: string }
   /** Distrusted-source overlay, drawn faint + dashed under the main line. */
   overlay?: { values: (number | null)[]; label?: string }
@@ -345,7 +353,9 @@ export default function BandChart(props: BandChartProps) {
         aria-label={props.label}
       >
         {props.variant !== 'range' &&
-          geo.bandPaths.map((d, i) => <path key={i} d={d} fill={rgba(props.color, 0.08)} />)}
+          geo.bandPaths.map((d, i) => (
+            <path key={i} d={d} fill={rgba(props.bandColor ?? props.color, props.bandColor ? 0.1 : 0.08)} />
+          ))}
         {geo.ranges.map((r, i) => (
           <rect
             key={`r${i}`}
@@ -375,20 +385,20 @@ export default function BandChart(props: BandChartProps) {
         )}
         {geo.refY != null && props.refLine && (
           <>
-            {/* A reference line is meaningless where there's no data to compare — stop it at the gap. */}
+            {/* A reference line is meaningless where there's no data to compare — stop it at the gap.
+                Hairline: quieter than the band, solid not dashed. */}
             <line
               x1={PL}
               x2={geo.gap ? geo.gap.x : W - PR}
               y1={geo.refY}
               y2={geo.refY}
-              stroke="rgba(234,234,234,.22)"
-              strokeDasharray="3 4"
-              strokeWidth="1"
+              stroke="rgba(234,234,234,.16)"
+              strokeWidth="0.6"
             />
             {/* Label omitted when a trailing gap is present — it would crowd the NO DATA text;
-                the truncated dashed line's y-position still reads against the axis. */}
+                the truncated line's y-position still reads against the axis. */}
             {!geo.gap && (
-              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(234,234,234,.4)">
+              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(234,234,234,.35)">
                 {props.refLine.label}
               </text>
             )}
@@ -402,7 +412,7 @@ export default function BandChart(props: BandChartProps) {
             <path
               key={i}
               d={barPath(b.x, b.w, b.yTop, b.yBase)}
-              fill={b.outlier ? props.color : rgba(props.color, 0.55)}
+              fill={b.outlier ? (props.outlierColor ?? props.color) : rgba(props.color, 0.55)}
             />
           ))
         ) : (
@@ -410,7 +420,15 @@ export default function BandChart(props: BandChartProps) {
             <path d={geo.linePath} fill="none" stroke={props.color} strokeWidth="1.8" strokeLinejoin="round" />
             {props.variant === 'line' &&
               geo.dots.map((dt, i) => (
-                <circle key={i} cx={dt.x} cy={dt.y} r="3.4" fill={props.color} stroke={SURFACE} strokeWidth="1.4" />
+                <circle
+                  key={i}
+                  cx={dt.x}
+                  cy={dt.y}
+                  r="3.4"
+                  fill={props.outlierColor ?? props.color}
+                  stroke={SURFACE}
+                  strokeWidth="1.4"
+                />
               ))}
           </>
         )}
@@ -499,13 +517,15 @@ export interface SparklineProps {
   lo: (number | null)[]
   hi: (number | null)[]
   color: string
+  /** Band-fill color, additive — defaults to `color` (today's behaviour). */
+  bandColor?: string
   height?: number
   label: string
   /** Mirrors BandChart's variant — bars for discrete daily totals. */
   variant?: 'line' | 'bar'
 }
 
-export function Sparkline({ values, lo, hi, color, height = 38, label, variant = 'line' }: SparklineProps) {
+export function Sparkline({ values, lo, hi, color, bandColor, height = 38, label, variant = 'line' }: SparklineProps) {
   const W = 100
   const H = 30
   const N = values.length
@@ -572,7 +592,7 @@ export function Sparkline({ values, lo, hi, color, height = 38, label, variant =
       aria-label={label}
     >
       {bands.map((d, i) => (
-        <path key={i} d={d} fill={rgba(color, 0.08)} />
+        <path key={i} d={d} fill={rgba(bandColor ?? color, bandColor ? 0.1 : 0.08)} />
       ))}
       {variant === 'bar' ? (
         (() => {

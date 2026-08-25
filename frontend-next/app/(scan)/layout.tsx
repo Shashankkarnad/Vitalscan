@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { loadResult } from '@/lib/store'
 import { SourceModeProvider } from '@/components/vitalscan/SourceModeContext'
-import { FONT_DISPLAY, FONT_MONO, FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
+import { FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
 
 const NAV = [
   { href: '/home', label: 'Home' },
@@ -56,14 +56,15 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-            <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 500, fontSize: 19, letterSpacing: '.01em' }}>
+            <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 17, letterSpacing: '.005em' }}>
               VitalScan
             </div>
             <div
               style={{
-                fontFamily: FONT_MONO,
-                fontSize: 10.5,
-                letterSpacing: '.18em',
+                fontFamily: FONT_SANS,
+                fontWeight: 400,
+                fontSize: 11,
+                letterSpacing: '.1em',
                 color: 'rgba(234,234,234,.36)',
                 textTransform: 'uppercase',
               }}
@@ -81,10 +82,10 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
                   className="vs-nav-link"
                   aria-current={active ? 'page' : undefined}
                   style={{
-                    fontFamily: FONT_MONO,
-                    fontSize: 11.5,
-                    letterSpacing: '.08em',
-                    textTransform: 'uppercase',
+                    fontFamily: FONT_SANS,
+                    fontWeight: active ? 500 : 400,
+                    fontSize: 13,
+                    letterSpacing: '.005em',
                     padding: '8px 14px',
                     borderRadius: 9,
                     cursor: 'pointer',
@@ -113,8 +114,9 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
             justifyContent: 'space-between',
             gap: 16,
             flexWrap: 'wrap',
-            fontFamily: FONT_MONO,
-            fontSize: 11,
+            fontFamily: FONT_SANS,
+            fontWeight: 400,
+            fontSize: 12,
             color: 'rgba(234,234,234,.35)',
           }}
         >
