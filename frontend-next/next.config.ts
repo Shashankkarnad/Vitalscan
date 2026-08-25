@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
       { source: '/processing', destination: '/home', permanent: false },
       { source: '/verdict', destination: '/home', permanent: false },
       { source: '/results', destination: '/home', permanent: false },
-      { source: '/dashboard', destination: '/home', permanent: false },
       { source: '/audit', destination: '/home', permanent: false },
-      { source: '/signal', destination: '/evidence', permanent: false },
     ]
   },
 };

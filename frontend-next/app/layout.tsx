@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, IBM_Plex_Sans } from 'next/font/google'
+import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -12,6 +12,12 @@ const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-ibm-plex-sans',
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-ibm-plex-mono',
 })
 
 export const metadata: Metadata = {
@@ -27,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${ibmPlexSans.variable} ${ibmPlexSans.className} h-full antialiased`}>
+    <html lang="en" className={`${fraunces.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${ibmPlexSans.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>
   )
