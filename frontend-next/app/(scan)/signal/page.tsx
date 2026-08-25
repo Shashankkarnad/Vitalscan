@@ -24,7 +24,7 @@ import {
   badgeLabel,
   formatShortDate,
 } from '@/lib/vitalscan/metrics'
-import { COLOR, rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
+import { COLOR, rgba, FONT_DISPLAY, FONT_SANS } from '@/lib/vitalscan/tokens'
 import { card } from '@/components/vitalscan/styles'
 import type { MetricKey } from '@/lib/types'
 
@@ -93,8 +93,8 @@ function SignalDetail() {
             <div style={{ ...sans(10.5, 'rgba(234,234,234,.42)'), letterSpacing: '.18em' }}>METRIC · LAST 90 DAYS</div>
             <h1
               style={{
-                fontFamily: FONT_SANS,
-                fontWeight: 400,
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 300,
                 fontSize: 40,
                 lineHeight: 1.1,
                 letterSpacing: '-0.015em',

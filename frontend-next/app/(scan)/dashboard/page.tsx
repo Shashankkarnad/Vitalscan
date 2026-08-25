@@ -11,8 +11,8 @@ import ZHeatmap from '@/components/vitalscan/ZHeatmap'
 import EpisodeCards from '@/components/vitalscan/EpisodeCards'
 import { hasContract, buildZHeatmap } from '@/lib/vitalscan/derive'
 import { numberWord, capitalize } from '@/lib/vitalscan/metrics'
-import { COLOR, rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
-import { card, kicker, h1, lede } from '@/components/vitalscan/styles'
+import { COLOR, rgba, FONT_DISPLAY, FONT_SANS } from '@/lib/vitalscan/tokens'
+import { card, kicker, lede } from '@/components/vitalscan/styles'
 
 export default function DashboardPage() {
   const { result, ready } = useScanResult()
@@ -34,7 +34,18 @@ export default function DashboardPage() {
   return (
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Dashboard &middot; last 90 days</div>
-      <h1 style={h1(36)}>{dashTitle}</h1>
+      <h1
+        style={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 300,
+          fontSize: 36,
+          lineHeight: 1.15,
+          letterSpacing: '-0.005em',
+          margin: '16px 0 0',
+        }}
+      >
+        {dashTitle}
+      </h1>
       <p style={lede}>
         Each cell is how far a signal sat from your rolling baseline that day. Coral moved the concerning way; sage
         the reassuring way. The strip marks days the detector escalated.
