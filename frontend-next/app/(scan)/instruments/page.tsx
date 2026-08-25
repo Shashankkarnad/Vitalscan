@@ -10,7 +10,7 @@ import ContractNotice from '@/components/vitalscan/ContractNotice'
 import SourcePicker from '@/components/vitalscan/SourcePicker'
 import { hasContract, buildTrust, type TrustRow } from '@/lib/vitalscan/derive'
 import { rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
-import { card, kicker, h1, lede, rise } from '@/components/vitalscan/styles'
+import { card, kicker, h1, lede } from '@/components/vitalscan/styles'
 
 function chipStyle(row: TrustRow): React.CSSProperties {
   return {
@@ -43,7 +43,7 @@ export default function InstrumentsPage() {
   return (
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Instruments</div>
-      <h1 style={h1(34)}>{heading}</h1>
+      <h1 style={h1(36)}>{heading}</h1>
       <p style={lede}>Every source is graded per metric against {referenceName}, not by a settings checklist.</p>
 
       <SourcePicker />
@@ -51,15 +51,14 @@ export default function InstrumentsPage() {
       {groups.length === 0 && (
         <div
           style={{
-            ...card(14),
+            ...card(16),
             padding: '22px 26px',
-            marginTop: 32,
+            marginTop: 36,
             fontFamily: FONT_SANS,
             fontWeight: 400,
             fontSize: 13,
             lineHeight: 1.6,
             color: 'rgba(234,234,234,.42)',
-            ...rise(0.16, 0.55),
           }}
         >
           No per-source summary in this export — every record carried a single source, or source names were absent.
@@ -70,12 +69,12 @@ export default function InstrumentsPage() {
         style={{
           display: 'grid',
           gridTemplateColumns: groups.length >= 2 ? '1fr 1fr' : '1fr',
-          gap: 18,
-          marginTop: 32,
+          gap: 16,
+          marginTop: 36,
         }}
       >
-        {groups.map((g, i) => (
-          <div key={g.source} style={{ ...card(14), padding: '20px 22px', ...rise(0.16 + i * 0.08, 0.55) }}>
+        {groups.map((g) => (
+          <div key={g.source} style={{ ...card(16), padding: '22px 26px' }}>
             <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 16, color: '#eaeaea' }}>{g.source}</div>
             <div style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 12, color: 'rgba(234,234,234,.42)', marginTop: 4 }}>
               {g.roleLabel} &middot; {g.avgCoverage}%
@@ -135,9 +134,8 @@ export default function InstrumentsPage() {
           fontSize: 12,
           lineHeight: 1.65,
           color: 'rgba(234,234,234,.36)',
-          marginTop: 24,
+          marginTop: 22,
           maxWidth: 720,
-          ...rise(0.4, 0.55),
         }}
       >
         {`r = agreement vs ${referenceName} over shared days · \u2265 0.70 trusted · 0.40–0.69 partial · < 0.40 distrust · fewer than 15 shared days ungraded. Demotions are logged in the audit trail.`}

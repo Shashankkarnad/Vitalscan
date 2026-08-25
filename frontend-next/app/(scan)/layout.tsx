@@ -52,7 +52,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
             flexWrap: 'wrap',
           }}
         >
-          <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 17, letterSpacing: '.005em' }}>
+          <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 19, letterSpacing: '.01em' }}>
             VitalScan
           </div>
           <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -67,8 +67,9 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
                   style={{
                     fontFamily: FONT_SANS,
                     fontWeight: active ? 500 : 400,
-                    fontSize: 13,
-                    letterSpacing: '.005em',
+                    fontSize: 11.5,
+                    letterSpacing: '.08em',
+                    textTransform: 'uppercase',
                     padding: '8px 14px',
                     borderRadius: 9,
                     cursor: 'pointer',
@@ -76,7 +77,6 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
                     border: `1px solid ${active ? 'rgba(234,234,234,.14)' : 'transparent'}`,
                     background: active ? 'rgba(234,234,234,.08)' : 'transparent',
                     color: active ? '#eaeaea' : 'rgba(234,234,234,.48)',
-                    transition: 'color .15s ease, background .15s ease',
                   }}
                 >
                   {n.label}
@@ -99,7 +99,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
             flexWrap: 'wrap',
             fontFamily: FONT_SANS,
             fontWeight: 400,
-            fontSize: 12,
+            fontSize: 11,
             color: 'rgba(234,234,234,.35)',
           }}
         >

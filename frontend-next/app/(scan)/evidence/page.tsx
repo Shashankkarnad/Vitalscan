@@ -13,7 +13,7 @@ import Hypnogram from '@/components/vitalscan/Hypnogram'
 import { hasContract, getSeries, evidenceNote } from '@/lib/vitalscan/derive'
 import { METRICS, STATUS_WORD, STATUS_COLOR, formatStepsK } from '@/lib/vitalscan/metrics'
 import { COLOR, INK, FONT_SANS } from '@/lib/vitalscan/tokens'
-import { card, kicker, h1, lede, rise } from '@/components/vitalscan/styles'
+import { card, kicker, h1, lede } from '@/components/vitalscan/styles'
 
 export default function EvidencePage() {
   const { result, ready } = useScanResult()
@@ -24,14 +24,14 @@ export default function EvidencePage() {
   return (
     <div style={{ paddingTop: 64 }}>
       <div style={kicker}>Evidence &middot; last 90 days</div>
-      <h1 style={h1(34)}>Seven signals against your own band.</h1>
+      <h1 style={h1(36)}>Seven signals against your own band.</h1>
       <p style={lede}>
         The shaded band is your personal normal — rolling 60-day median &plusmn; 2 robust SD, not a population chart.
         Points outside it are the only points that matter.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 32 }}>
-        {METRICS.map((meta, i) => {
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 36 }}>
+        {METRICS.map((meta) => {
           const series = getSeries(result, meta.key)
           const band = series.band
           const status = band?.status ?? 'no_data'
@@ -65,10 +65,9 @@ export default function EvidencePage() {
               id={meta.key}
               className="vs-card-hover"
               style={{
-                ...card(14),
-                padding: '20px 24px',
+                ...card(16),
+                padding: '22px 26px',
                 scrollMarginTop: 24,
-                ...rise(0.16 + i * 0.06, 0.55),
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
