@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { loadResult } from '@/lib/store'
 import { SourceModeProvider } from '@/components/vitalscan/SourceModeContext'
+import { FIXTURE_RESULT } from '@/lib/vitalscan/fixture'
 import { FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
 
 const NAV = [
@@ -24,7 +25,7 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
   const [recordsLine, setRecordsLine] = useState<string | null>(null)
 
   useEffect(() => {
-    const r = loadResult()
+    const r = loadResult() ?? FIXTURE_RESULT
     if (r?.weekly?.records_read != null) {
       setRecordsLine(`${r.weekly.records_read.toLocaleString('en-US')} records read`)
     }

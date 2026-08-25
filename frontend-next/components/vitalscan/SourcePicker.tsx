@@ -19,19 +19,6 @@ export default function SourcePicker() {
     <div style={{ marginTop: 22 }}>
       <div
         style={{
-          fontFamily: FONT_SANS,
-          fontWeight: 500,
-          fontSize: 10.5,
-          letterSpacing: '.12em',
-          textTransform: 'uppercase',
-          color: 'rgba(234,234,234,.4)',
-          marginBottom: 8,
-        }}
-      >
-        Instrument source
-      </div>
-      <div
-        style={{
           display: 'flex',
           flexWrap: 'wrap',
           gap: 6,

@@ -7,7 +7,7 @@
 // dashed overlay. Adds a pure-SVG/DOM hover layer (crosshair + tooltip).
 
 import { useCallback, useRef, useState } from 'react'
-import { INK, SURFACE, COLOR, rgba, FONT_MONO } from '@/lib/vitalscan/tokens'
+import { INK, SURFACE, COLOR, rgba, FONT_SANS } from '@/lib/vitalscan/tokens'
 
 const PL = 46
 const PR = 14
@@ -315,7 +315,7 @@ export default function BandChart(props: BandChartProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: FONT_MONO,
+          fontFamily: FONT_SANS,
           fontSize: 11,
           letterSpacing: '.12em',
           color: 'rgba(234,234,234,.4)',
@@ -374,7 +374,7 @@ export default function BandChart(props: BandChartProps) {
               x={geo.gap.cx}
               y={(PT + H - PB) / 2}
               textAnchor="middle"
-              fontFamily="IBM Plex Mono"
+              fontFamily="IBM Plex Sans"
               fontSize="9.5"
               letterSpacing="2"
               fill="rgba(234,234,234,.4)"
@@ -395,13 +395,9 @@ export default function BandChart(props: BandChartProps) {
               stroke="rgba(234,234,234,.16)"
               strokeWidth="0.6"
             />
-            {/* Label omitted when a trailing gap is present — it would crowd the NO DATA text;
-                the truncated line's y-position still reads against the axis. */}
-            {!geo.gap && (
-              <text x={W - PR} y={geo.refY - 6} textAnchor="end" fontFamily="IBM Plex Mono" fontSize="9.5" fill="rgba(234,234,234,.35)">
-                {props.refLine.label}
-              </text>
-            )}
+            <text x={PL + 4} y={geo.refY - 5} fontFamily="IBM Plex Sans" fontSize="9" fill="rgba(234,234,234,.32)">
+              {props.refLine.label}
+            </text>
           </>
         )}
         {geo.overlayPath && (
@@ -439,17 +435,17 @@ export default function BandChart(props: BandChartProps) {
           <path key={`a${i}`} d={`M${ax - 3} ${PT - 9} L${ax + 3} ${PT - 9} L${ax} ${PT - 3} Z`} fill={COLOR.coral} />
         ))}
         {geo.yHi && (
-          <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(234,234,234,.35)">
+          <text x="6" y={geo.yHi.y} fontFamily="IBM Plex Sans" fontSize="10" fill="rgba(234,234,234,.35)">
             {geo.yHi.text}
           </text>
         )}
         {geo.yLo && (
-          <text x="6" y={geo.yLo.y} fontFamily="IBM Plex Mono" fontSize="10" fill="rgba(234,234,234,.35)">
+          <text x="6" y={geo.yLo.y} fontFamily="IBM Plex Sans" fontSize="10" fill="rgba(234,234,234,.35)">
             {geo.yLo.text}
           </text>
         )}
         {geo.ticks.map((tk, i) => (
-          <text key={i} x={tk.x} y={H - 7} fontFamily="IBM Plex Mono" fontSize="9.5" letterSpacing="1" fill="rgba(234,234,234,.3)">
+          <text key={i} x={tk.x} y={H - 7} fontFamily="IBM Plex Sans" fontSize="9.5" letterSpacing="1" fill="rgba(234,234,234,.3)">
             {tk.label}
           </text>
         ))}
@@ -486,7 +482,7 @@ export default function BandChart(props: BandChartProps) {
             border: '1px solid rgba(234,234,234,.12)',
             borderRadius: 8,
             padding: '7px 10px',
-            fontFamily: FONT_MONO,
+            fontFamily: FONT_SANS,
             fontSize: 10.5,
             lineHeight: 1.55,
             color: 'rgba(234,234,234,.85)',

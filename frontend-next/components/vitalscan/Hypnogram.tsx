@@ -9,7 +9,7 @@
 import { useCallback, useState } from 'react'
 import type { SleepSegment, SleepNight } from '@/lib/types'
 import { formatHours } from '@/lib/utils'
-import { FONT_MONO, INK, rgba } from '@/lib/vitalscan/tokens'
+import { FONT_SANS, INK, rgba } from '@/lib/vitalscan/tokens'
 
 // Craft pass: no orange/cyan/indigo rainbow here — every lane is ink at a
 // different opacity (deeper sleep reads more solid), and the lane labels
@@ -74,7 +74,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
   )
 
   const mono = (size: number, color: string): React.CSSProperties => ({
-    fontFamily: FONT_MONO,
+    fontFamily: FONT_SANS,
     fontSize: size,
     color,
   })
@@ -134,7 +134,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 setTooltip(null)
               }}
               style={{
-                fontFamily: FONT_MONO,
+                fontFamily: FONT_SANS,
                 fontSize: 10.5,
                 letterSpacing: '.08em',
                 textTransform: 'uppercase',
@@ -169,7 +169,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               x={PADDING.left - 8}
               y={PADDING.top + cfg.y * ROW_H + ROW_H / 2 + 3.5}
               textAnchor="end"
-              fontFamily="IBM Plex Mono"
+              fontFamily="IBM Plex Sans"
               fontSize={9.5}
               letterSpacing="1"
               fill="rgba(234,234,234,.45)"
@@ -234,7 +234,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               <text
                 x={Math.max(PADDING.left, Math.min(tooltip.x - 90, SVG_W - 192)) + 10}
                 y={Math.max(0, tooltip.y - 44) + 16}
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9.5}
                 fill="#eaeaea"
               >
@@ -243,7 +243,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
               <text
                 x={Math.max(PADDING.left, Math.min(tooltip.x - 90, SVG_W - 192)) + 10}
                 y={Math.max(0, tooltip.y - 44) + 30}
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9.5}
                 fill="rgba(234,234,234,.55)"
               >
@@ -267,7 +267,7 @@ export default function Hypnogram({ timeline, nights }: Props) {
                 x={t.x}
                 y={PADDING.top + CHART_H + 16}
                 textAnchor="middle"
-                fontFamily="IBM Plex Mono"
+                fontFamily="IBM Plex Sans"
                 fontSize={9}
                 letterSpacing="1"
                 fill="rgba(234,234,234,.3)"

@@ -69,7 +69,7 @@ export default function InstrumentsPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: groups.length >= 2 ? '1fr 1fr' : '1fr',
           gap: 18,
           marginTop: 32,
         }}
@@ -86,11 +86,11 @@ export default function InstrumentsPage() {
                 <div
                   key={k}
                   style={{
-                    padding: '11px 0',
+                    padding: '12px 0',
                     borderTop: k > 0 ? '1px solid rgba(234,234,234,.06)' : undefined,
                   }}
                 >
-                  <div style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 12.5, color: 'rgba(234,234,234,.5)' }}>
+                  <div style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 12, color: 'rgba(234,234,234,.5)' }}>
                     {r.metric}
                   </div>
                   <div
@@ -99,13 +99,15 @@ export default function InstrumentsPage() {
                       alignItems: 'baseline',
                       justifyContent: 'space-between',
                       gap: 10,
-                      marginTop: 5,
+                      marginTop: 4,
                     }}
                   >
-                    <span style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 14.5, color: '#eaeaea' }}>{r.number}</span>
+                    <span style={{ fontFamily: FONT_SANS, fontWeight: 400, fontSize: 22, letterSpacing: '-0.02em', color: '#eaeaea' }}>
+                      {r.number}
+                    </span>
                     <span style={chipStyle(r)}>{r.grade}</span>
                   </div>
-                  {r.note && (
+                  {r.note && (r.grade === 'PARTIAL' || r.grade === 'DISTRUST') && (
                     <div
                       style={{
                         fontFamily: FONT_SANS,
