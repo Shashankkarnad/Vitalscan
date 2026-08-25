@@ -1,8 +1,6 @@
 'use client'
 
-// Shared shell for the redesign routes: /home, /dashboard, /evidence,
-// /instruments, /audit. Dark #0c0b09 surface, mono nav buttons
-// (design lines 25–35), footer (lines 352–355). Nav uses real routes.
+// Shared shell for the three artefact screens: /home, /evidence, /instruments.
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -14,10 +12,8 @@ import { FONT_SANS, SURFACE, INK } from '@/lib/vitalscan/tokens'
 
 const NAV = [
   { href: '/home', label: 'Home' },
-  { href: '/dashboard', label: 'Dashboard' },
   { href: '/evidence', label: 'Evidence' },
   { href: '/instruments', label: 'Instruments' },
-  { href: '/audit', label: 'Audit log' },
 ]
 
 export default function ScanLayout({ children }: { children: React.ReactNode }) {
@@ -56,22 +52,8 @@ export default function ScanLayout({ children }: { children: React.ReactNode }) 
             flexWrap: 'wrap',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-            <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 17, letterSpacing: '.005em' }}>
-              VitalScan
-            </div>
-            <div
-              style={{
-                fontFamily: FONT_SANS,
-                fontWeight: 400,
-                fontSize: 11,
-                letterSpacing: '.1em',
-                color: 'rgba(234,234,234,.36)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Groundskeeper&rsquo;s log
-            </div>
+          <div style={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: 17, letterSpacing: '.005em' }}>
+            VitalScan
           </div>
           <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {NAV.map((n) => {
